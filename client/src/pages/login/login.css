@@ -64,6 +64,14 @@ i {
     justify-content: center;
 }
 
+.error-msg {
+    width: 100%;
+    color: #ff0033;
+    font-size: 14px;
+    margin-top: 5px;
+    margin-bottom: 25px;
+}
+
 .password-group {
     position: relative;
     display: flex;
