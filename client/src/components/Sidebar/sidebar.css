@@ -1,0 +1,88 @@
+.sidebar{
+    width: 270px;
+    height: 100dvh;
+    background-color: #0B0A0A;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.sidebar-app-logo {
+    width: 100%;
+    height: 60px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.sidebar-delim{
+    width: 65%;
+    height: 2px;
+    background-color: #2C2C2C;
+    margin: 0 auto;
+    margin-bottom: 5px;
+    margin-top: 5px;
+}
+
+.logout-route {
+    width: 200px;
+    height: 25px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+    margin: 5px 25px;
+    margin-bottom: 10px;
+    padding: 8px;
+    transition: 0.3s;
+    cursor: pointer;
+    color: #ff0033;
+}
+
+.logout-route:hover {
+    background-color: #202020;
+    border-radius: 5px;
+}
+
+.sidebar-user-wrap {
+    margin-top: auto;
+}
+
+.sidebar-user {
+    width: 100%;
+    height: 60px;
+    display: inline-flex;
+    justify-content: center;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.sidebar-user-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 100%;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 10px;
+}
+
+.sidebar-user-details {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.sidebar-user-name {
+    font-size: 16px;
+    font-weight: 500;
+    margin: 0;
+}
+
+.sidebar-user-email {
+    font-size: 12px;
+    font-weight: 400;
+    margin: 0;
+}

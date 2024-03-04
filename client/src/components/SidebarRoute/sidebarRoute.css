@@ -1,0 +1,42 @@
+.sidebar-route {
+    width: 200px;
+    height: 25px;
+    display: inline-flex;
+    justify-content: left;
+    align-items: center;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+    margin: 5px 25px;
+    padding: 8px;
+    transition: 0.3s;
+    cursor: pointer;
+}
+
+.active {
+    color: #1993F0;
+}
+
+.sidebar-route:hover {
+    background-color: #202020;
+    color: #BAD5E6;
+    border-radius: 5px;
+}
+
+.sidebar-route:hover .sidebar-route-text {
+    color: #BAD5E6;
+}
+
+i {
+    display: flex;
+    align-items: center;
+    justify-self: center;
+    margin-right: 15px;
+}
+
+.sidebar-route-text {
+    font-size: 16px;
+    text-decoration: none;
+    color: #F7F7FF;
+    transition: 0.3s;
+}
