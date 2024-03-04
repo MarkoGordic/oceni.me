@@ -7,6 +7,7 @@ function App() {
   return (
     <div className='wrap'>
         <Sidebar />
+        <div className='content'></div>
     </div>
   );
 }
