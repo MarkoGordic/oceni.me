@@ -10,6 +10,15 @@ const base_url = "http://localhost:3000";
 
 router.use(express.urlencoded({extended: true}));
 
+router.get('/status', (req, res) => {
+    if (req.session.userId) {
+        res.json({ isAuthenticated: true });
+    } else {
+        res.json({ isAuthenticated: false });
+    }
+});
+
+
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
@@ -23,10 +32,9 @@ router.post('/login', async (req, res) => {
         const match = await bcrypt.compare(password, user.password);
         if (match) {
             req.session.userId = user.id;
-            req.session.student_id = user.student_id;
 
-            console.log("[INFO] : Login successful for username " + user.username + ".");
-            res.redirect(base_url + '/app');
+            console.log("[INFO] : Login successful for username " + user.first_name + " " + user.last_name + ".");
+            res.status(303).redirect(base_url + '/app');
         } else {
             console.log("[ERROR] : Login attempt failed. Incorrect password.");
             res.redirect(base_url + '/?error=incorrect_password');
