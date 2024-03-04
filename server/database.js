@@ -52,6 +52,16 @@ class Database {
         }
     }
 
+    async getUserById(id) {
+        const query = 'SELECT first_name, last_name, email, profile_image, id FROM users WHERE id = ?';
+        try {
+            const [results] = await this.pool.query(query, [id]);
+            return results.length > 0 ? results[0] : null;
+        } catch (error) {
+            throw error;
+        }
+    }
+
     async registerNewUser(firstName, lastName, email, hashedPassword) {
         const query = 'INSERT INTO users (first_name, last_name, email, password) VALUES (?, ?, ?, ?)';
         try {
