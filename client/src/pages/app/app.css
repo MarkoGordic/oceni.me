@@ -15,5 +15,5 @@ body, #root {
 
 .content {
     height: 100dvh;
-    background-color: aqua;
+    width: 100%;
 }

@@ -42,9 +42,9 @@ function Sidebar() {
             <div className='sidebar-delim'></div>
 
             <div className='sidebar-routes'>
-                <SidebarRoute icon='fi fi-bs-home' text='Početna stranica' path='/' />
+                <SidebarRoute icon='fi fi-bs-home' text='Početna stranica' path='/app' />
                 <SidebarRoute icon='fi fi-rs-book-alt' text='Moji predmeti' path='/courses' />
-                <SidebarRoute icon='fi fi-rs-users' text='Upravljanje studentima' path='/users' />
+                <SidebarRoute icon='fi fi-rs-users' text='Upravljanje studentima' path='/manage_students' />
                 <SidebarRoute icon='fi fi-bs-user' text='Korisnička zona' path='/profile' />
             </div>
             
