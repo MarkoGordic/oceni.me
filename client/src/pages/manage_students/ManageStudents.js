@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useState } from 'react';
 import Sidebar from "../../components/Sidebar/Sidebar";
 import './manage_students.css';
 import Select from 'react-select';
 import makeAnimated from 'react-select/animated';
+import NewStudentModal from "../../components/NewStudentModal/NewStudentModal";
+import StudentCard from '../../components/StudentCard/StudentCard';
 
 const customSelectStyles = {
     control: (styles) => ({
@@ -47,10 +49,60 @@ const customSelectStyles = {
     }),
 };
 
-
-
 function ManageStudents() {
+    const [isModalOpen, setModalOpen] = useState(false);
     const animatedComponents = makeAnimated();
+    const [studentData, setStudentData] = useState({
+        first_name: '',
+        last_name: '',
+        index_number: '',
+        email: '',
+        password: '',
+        profile_image: null,
+        course_code: '',
+    });
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setStudentData({ ...studentData, [name]: value });
+    };
+
+    const handleSelectChange = selectedOption => {
+        setStudentData({ ...studentData, course_code: selectedOption ? selectedOption.value : '' });
+    };
+
+    const handleOpenModal = () => setModalOpen(true);
+    const handleCloseModal = () => setModalOpen(false);
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+
+        const formData = new FormData();
+        formData.append('first_name', studentData.first_name);
+        formData.append('last_name', studentData.last_name);
+        formData.append('index_number', studentData.index_number);
+        formData.append('email', studentData.email);
+        formData.append('password', studentData.password);
+        formData.append('course_code', studentData.course_code);
+
+        if (studentData.profile_image) {
+            formData.append('profile_image', studentData.profile_image);
+        }
+
+        try {
+            const response = await fetch('http://localhost:8000/students/new', {
+                method: 'POST',
+                body: formData,
+            });
+            if (response.ok) {
+                console.log("Student added successfully");
+                setModalOpen(false);
+            } else {
+                console.error("Failed to add student");
+            }
+        } catch (error) {
+            console.error("Error submitting form:", error);
+        }
+    };
 
     const options = [
         { value: 'MR', label: 'Magistarske studije' },
@@ -209,10 +261,17 @@ function ManageStudents() {
                         options={options}
                         styles={customSelectStyles}
                         classNamePrefix="select"
-                        placeholder="Filtriraj usmerenje..."
+                        placeholder="Studijski program"
                         isClearable={true}
                         isSearchable={true}
                     />
+                </div>
+
+                <button className='new-student-button' onClick={handleOpenModal}>Kreiraj novog studenta</button>
+                <NewStudentModal isOpen={isModalOpen} onClose={handleCloseModal} onSubmit={handleSubmit} onChange={handleInputChange} studentData={studentData} selectOnChange={handleSelectChange}/>
+
+                <div className='student-list-wrap'>
+                    <StudentCard name="Nadja Jaksic - IN 33/2023" email="nadjajaksice34@gmail.com" course="Informacioni Inženjering" profile_image={process.env.PUBLIC_URL + '/user_pfp/1.jpg'}/>
                 </div>
             </div>
         </div>
