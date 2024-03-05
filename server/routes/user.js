@@ -17,13 +17,12 @@ router.get('/me', async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        const { first_name, last_name, email, profile_image, id } = user;
+        const { first_name, last_name, email, id } = user;
 
         res.json({
             first_name,
             last_name,
             email,
-            profile_image: profile_image || null,
             id
         });
     } catch (error) {
