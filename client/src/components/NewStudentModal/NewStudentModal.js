@@ -45,6 +45,10 @@ const customSelectStyles = {
       ...styles,
       color: '#F7F7FF',
   }),
+  input: (styles) => ({
+      ...styles,
+      color: '#F7F7FF',
+  }),
 };
 
 const NewStudentModal = ({ isOpen, onClose, onSubmit, onChange, studentData, selectOnChange }) => {
@@ -212,7 +216,7 @@ const NewStudentModal = ({ isOpen, onClose, onSubmit, onChange, studentData, sel
           <input type="text" id="last_name" placeholder="Petrović" name="last_name" value={studentData.last_name} onChange={onChange} required />
 
           <label htmlFor="index_number">Broj indeksa:</label>
-          <input type="text" id="index_number" placeholder="XX YY/ZZZZ" name="index_number" value={studentData.index_number} onChange={onChange} required />
+          <input type="text" id="index_number" placeholder="XX YYY/ZZZZ" name="index_number" value={studentData.index_number} onChange={onChange} required />
 
           <label htmlFor="smer">Studijski program:</label>
           <Select

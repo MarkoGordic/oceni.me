@@ -5,6 +5,7 @@ import Select from 'react-select';
 import makeAnimated from 'react-select/animated';
 import NewStudentModal from "../../components/NewStudentModal/NewStudentModal";
 import StudentCard from '../../components/StudentCard/StudentCard';
+import { toast } from 'react-toastify';
 
 const customSelectStyles = {
     control: (styles) => ({
@@ -44,6 +45,10 @@ const customSelectStyles = {
         backgroundColor: '#1993F0',
     }),
     placeholder: (styles) => ({
+        ...styles,
+        color: '#F7F7FF',
+    }),
+    input: (styles) => ({
         ...styles,
         color: '#F7F7FF',
     }),
@@ -108,6 +113,30 @@ function ManageStudents() {
     const handleCloseModal = () => setModalOpen(false);
     const handleSubmit = async (event) => {
         event.preventDefault();
+    
+        const indexNumberPattern = /^[A-Z]{2}\s\d{1,3}\/\d{4}$/;
+        const emailPattern = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+        const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_])[A-Za-z\d\W_]{10,}$/;
+    
+        if (!indexNumberPattern.test(studentData.index_number)) {
+            toast.error("Neuspešno kreiranje studenta. Proverite format broja indeksa. Primer: IN 22/2023.");
+            return;
+        }
+        
+        if (!studentData.course_code) {
+            toast.error("Neuspešno kreiranje studenta. Molimo izaberite studijski program.");
+            return;
+        }
+
+        if (!emailPattern.test(studentData.email)) {
+            toast.error("Neuspešno kreiranje studenta. Neispravan format elektronske pošte.");
+            return;
+        }
+    
+        if (!passwordPattern.test(studentData.password)) {
+            toast.error("Neuspešno kreiranje studenta. Lozinka mora sadržati najmanje 10 karaktera, od kojih bar jedno malo slovo, jedno veliko slovo, jedan broj i jedan specijalni karakter.");
+            return;
+        }
 
         const formData = new FormData();
         formData.append('first_name', studentData.first_name);
@@ -127,10 +156,10 @@ function ManageStudents() {
                 body: formData,
             });
             if (response.ok) {
-                console.log("Student added successfully");
+                toast.success("Uspešno kreiran nalog za studenta " + studentData.first_name + " " + studentData.last_name + "!");
                 setModalOpen(false);
             } else {
-                console.error("Failed to add student");
+                toast.error("Došlo je do neočekivane greške prilikom kreiranja studentskog naloga.");
             }
         } catch (error) {
             console.error("Error submitting form:", error);
@@ -288,7 +317,7 @@ function ManageStudents() {
             <div className='content'>
                 <div className="search-bar">
                     <i className="fi fi-rr-search search-icon"></i>
-                    <input type="text" className="search-input" placeholder="Pretražite studente..." onChange={handleSearchChange} />
+                    <input type="text" className="search-input" placeholder="Pretražite studente po imenu, prezimenu ili indeksu..." onChange={handleSearchChange} />
                     <Select
                         components={animatedComponents}
                         options={options}
@@ -317,7 +346,7 @@ function ManageStudents() {
                             />
                         ))
                     ) : (
-                        <p>No students found.</p>
+                        <p>Nije pronađen ni jedan student.</p>
                     )}
                 </div>
             </div>

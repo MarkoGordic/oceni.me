@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './sidebar.css';
 import SidebarRoute from '../SidebarRoute/SidebarRoute';
+import { toast } from 'react-toastify';
 
 function Sidebar() {
     const [user, setUser] = useState({
@@ -66,13 +67,12 @@ function Sidebar() {
                         <p className='sidebar-user-email'>{user.email}</p>
                     </div>
                 </div>
-                
 
                 <div className='sidebar-delim'></div>
 
                 <div className='logout-route'>
                     <i className='fi fi-rr-exit'></i>
-                    <a className='sidebar-route-text' href='/logout'>Odjavi se</a>
+                    <a className='sidebar-route-text' href='http://localhost:8000/auth/logout'>Odjavi se</a>
                 </div>
             </div>
         </div>

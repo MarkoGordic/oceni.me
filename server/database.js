@@ -268,9 +268,9 @@ class Database {
     async searchStudents(searchString, courseCode = null) {
         let query = `
             SELECT * FROM students
-            WHERE (index_number LIKE CONCAT('%', ?, '%') 
-            OR first_name LIKE CONCAT('%', ?, '%') 
-            OR last_name LIKE CONCAT('%', ?, '%'))
+            WHERE (index_number LIKE CONCAT('%', ? COLLATE utf8mb4_unicode_ci, '%') 
+            OR first_name LIKE CONCAT('%', ? COLLATE utf8mb4_unicode_ci, '%') 
+            OR last_name LIKE CONCAT('%', ? COLLATE utf8mb4_unicode_ci, '%'))
         `;
     
         const params = [searchString, searchString, searchString];
@@ -299,7 +299,7 @@ class Database {
     
             const modifiedResults = results.map(student => ({
                 ...student,
-                course_name: courseCodeToNameMap[student.course_code] || 'Unknown'
+                course_name: courseCodeToNameMap[student.course_code] || 'Nepoznat studijski program'
             }));
     
             return modifiedResults;
