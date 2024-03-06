@@ -73,5 +73,36 @@ router.post('/search', async (req, res) => {
     }
 });
 
+router.get('/get/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const studentData = await db.getStudentById(id);
+        if (studentData) {
+            res.status(200).json(studentData);
+        } else {
+            res.status(404).send('Student not found');
+        }
+    } catch (error) {
+        console.error("Error fetching student by ID:", error);
+        res.status(500).send("Error fetching student data");
+    }
+});
+
+router.get('/delete/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const result = await db.deleteStudentById(id);
+        if (result) {
+            res.status(200).send("Student successfully deleted");
+        } else {
+            res.status(404).send("Student not found");
+        }
+    } catch (error) {
+        console.error("Error deleting student:", error);
+        res.status(500).send("Error deleting student");
+    }
+});
 
 module.exports = router;

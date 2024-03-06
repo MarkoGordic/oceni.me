@@ -66,3 +66,58 @@
     color: #BAD5E6;
     border-radius: 5px;
 }
+
+.studentInfo-data-wrap {
+    margin-top: 30px;
+    padding-left: 40px;
+    padding-right: 40px;
+    height: 280px;
+    overflow-y: scroll;
+}
+
+.studentInfo-avatar {
+    height: 100px;
+    width: 100px;
+    border-radius: 100%;
+    border: 3px solid #1993F0;
+}
+
+.studentInfo-input {
+    width: 100%;
+}
+
+.modifyModalAdmin-wrap {
+    padding: 20px;
+}
+
+.modifyModalAdmin-wrap button {
+    background-color: #FF5555;
+    color: white;
+    border: none; 
+    padding: 10px 20px; 
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+*::-webkit-scrollbar {
+    width: 8px;
+}
+
+*::-webkit-scrollbar-track {
+    background: #0F0E0E;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: #1993F0;
+    border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: #1074C8;
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #1993F0 #0F0E0E;
+}
