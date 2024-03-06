@@ -1,0 +1,68 @@
+.modify-student-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modify-student-modal-content {
+    display: inline-flex;
+    background-color: #0F0E0E;
+    color: #F7F7FF;
+    padding: 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 650px;
+    height: 450px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.modify-student-modal-column-left {
+    width: 35%;
+    height: 100%;
+    border-right: 2px solid #2C2C2C;
+}
+
+.modify-student-modal-column-right {
+    width: 70%;
+    height: 100%;
+}
+
+.modify-student-modal-tab {
+    width: 180px;
+    height: 25px;
+    display: inline-flex;
+    justify-content: left;
+    align-items: center;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+    margin: 5px;
+    padding: 10px;
+    transition: 0.3s;
+    cursor: pointer;
+}
+
+.modify-student-modal-tab.active {
+    background-color: #202020;
+    color: #1993F0;
+    border-radius: 5px;
+}
+
+.modify-student-modal-tab.active:hover {
+    background-color: #202020;
+    color: #1993F0;
+    border-radius: 5px;
+}
+
+.modify-student-modal-tab:hover {
+    background-color: #202020;
+    color: #BAD5E6;
+    border-radius: 5px;
+}

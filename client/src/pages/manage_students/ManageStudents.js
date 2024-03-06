@@ -6,6 +6,7 @@ import makeAnimated from 'react-select/animated';
 import NewStudentModal from "../../components/NewStudentModal/NewStudentModal";
 import StudentCard from '../../components/StudentCard/StudentCard';
 import { toast } from 'react-toastify';
+import ModifyStudentModal from '../../components/ModifyStudentModal/ModifyStudentModal';
 
 const customSelectStyles = {
     control: (styles) => ({
@@ -69,6 +70,25 @@ function ManageStudents() {
         profile_image: null,
         course_code: '',
     });
+
+    // Modify student modal
+    const [modifyModalOpen, setModifyModalOpen] = useState(false);
+    const [selectedStudentId, setSelectedStudentId] = useState(null);
+    const [selectedStudentData, setSelectedStudentData] = useState(null);
+
+    const handleStudentClick = (studentId) => {
+        setSelectedStudentId(studentId);
+        setModifyModalOpen(true);
+    };
+
+    useEffect(() => {
+        if (selectedStudentId) {
+            fetch(`http://localhost:8000/students/${selectedStudentId}`)
+                .then((response) => response.json())
+                .then((data) => setSelectedStudentData(data))
+                .catch((error) => console.error("Error fetching student data:", error));
+        }
+    }, [selectedStudentId]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -343,12 +363,19 @@ function ManageStudents() {
                                 email={student.email}
                                 course={student.course_name}
                                 profile_image={process.env.PUBLIC_URL + '/student_pfp/' + student.id + '.jpg'}
+                                onClick={() => handleStudentClick(student.id)}
                             />
                         ))
                     ) : (
                         <p>Nije pronađen ni jedan student.</p>
                     )}
                 </div>
+
+                <ModifyStudentModal
+                    isOpen={modifyModalOpen}
+                    onClose={() => setModifyModalOpen(false)}
+                    studentData={selectedStudentData}
+                />
             </div>
         </div>
     );

@@ -201,8 +201,8 @@ const NewStudentModal = ({ isOpen, onClose, onSubmit, onChange, studentData, sel
 ];
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+    <div className="new-student-modal-overlay" onClick={onClose}>
+      <div className="new-student-modal-content" onClick={(e) => e.stopPropagation()}>
         <form onSubmit={onSubmit}>
           <h2>Dodaj novog studenta</h2>
 
@@ -223,7 +223,7 @@ const NewStudentModal = ({ isOpen, onClose, onSubmit, onChange, studentData, sel
             components={animatedComponents}
             options={options}
             styles={customSelectStyles}
-            classNamePrefix="select"
+            classNamePrefix="new-student-select"
             placeholder="Studijski program"
             isClearable={true}
             isSearchable={true}
@@ -238,10 +238,11 @@ const NewStudentModal = ({ isOpen, onClose, onSubmit, onChange, studentData, sel
 
           <button type="submit">DODAJ STUDENTA</button>
         </form>
-        <button className='modal-close-button' onClick={onClose}>ODUSTANI</button>
+        <button className='new-student-modal-close-button' onClick={onClose}>ODUSTANI</button>
       </div>
     </div>
   );
+
 };
 
 export default NewStudentModal;
