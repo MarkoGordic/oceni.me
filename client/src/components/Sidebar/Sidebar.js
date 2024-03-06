@@ -44,7 +44,7 @@ function Sidebar() {
 
             <div className='sidebar-routes'>
                 <SidebarRoute icon='fi fi-bs-home' text='Početna stranica' path='/app' />
-                <SidebarRoute icon='fi fi-rs-book-alt' text='Moji predmeti' path='/courses' />
+                <SidebarRoute icon='fi fi-rs-book-alt' text='Moji predmeti' path='/subjects' />
                 <SidebarRoute icon='fi fi-rs-users' text='Upravljanje studentima' path='/manage_students' />
                 <SidebarRoute icon='fi fi-bs-user' text='Korisnička zona' path='/profile' />
             </div>
@@ -54,6 +54,7 @@ function Sidebar() {
             <div className='sidebar-routes'>
                 <SidebarRoute icon='fi fi-rr-chat-arrow-grow' text='Statistika' path='/admin/statistics' />
                 <SidebarRoute icon='fi fi-rr-fingerprint' text='Upravljanje korisnicima' path='/admin/users' />
+                <SidebarRoute icon='fi fi-rr-graduation-cap' text='Upravljanje predmetima' path='/admin/subjects' />
                 <SidebarRoute icon='fi fi-sr-time-past' text='Istorija aktivnosti' path='/admin/logs' />
                 <SidebarRoute icon='fi fi-rs-shield' text='Administracija' path='/admin' />
             </div>

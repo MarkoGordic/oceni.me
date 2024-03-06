@@ -255,6 +255,28 @@ class Database {
         }
     }
 
+    async getStudentById(id) {
+        const query = 'SELECT first_name, last_name, email, index_number, course_code, id FROM students WHERE id = ?';
+        try {
+            const [results] = await this.pool.query(query, [id]);
+            return results.length > 0 ? results[0] : null;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async deleteStudentById(id) {
+        const query = 'DELETE FROM students WHERE id = ?';
+        try {
+            const [result] = await this.pool.query(query, [id]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('Error deleting student:', error);
+            throw error;
+        }
+    }
+    
+
     async courseCodeExists(course_code) {
         const query = 'SELECT 1 FROM courses WHERE code = ?';
         try {

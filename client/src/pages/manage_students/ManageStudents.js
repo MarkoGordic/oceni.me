@@ -74,21 +74,18 @@ function ManageStudents() {
     // Modify student modal
     const [modifyModalOpen, setModifyModalOpen] = useState(false);
     const [selectedStudentId, setSelectedStudentId] = useState(null);
-    const [selectedStudentData, setSelectedStudentData] = useState(null);
+    const [deletionCount, setDeletionCount] = useState(0);
+
+    useEffect(() => {
+        if (deletionCount > 0) {
+            performSearch();
+        }
+    }, [deletionCount]);
 
     const handleStudentClick = (studentId) => {
         setSelectedStudentId(studentId);
         setModifyModalOpen(true);
     };
-
-    useEffect(() => {
-        if (selectedStudentId) {
-            fetch(`http://localhost:8000/students/${selectedStudentId}`)
-                .then((response) => response.json())
-                .then((data) => setSelectedStudentData(data))
-                .catch((error) => console.error("Error fetching student data:", error));
-        }
-    }, [selectedStudentId]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -374,7 +371,8 @@ function ManageStudents() {
                 <ModifyStudentModal
                     isOpen={modifyModalOpen}
                     onClose={() => setModifyModalOpen(false)}
-                    studentData={selectedStudentData}
+                    studentId={selectedStudentId}
+                    onStudentDeleted={() => setDeletionCount(count => count + 1)}
                 />
             </div>
         </div>
