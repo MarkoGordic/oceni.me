@@ -29,7 +29,7 @@ class Database {
                 password        VARCHAR(100) NOT NULL,
                 email           VARCHAR(100) NOT NULL UNIQUE,
                 last_login_ip   VARCHAR(15),
-                admin           TINYINT
+                role            TINYINT
             );
         `;
 
@@ -214,7 +214,7 @@ class Database {
         }
     }
 
-    async getUserByEmail(email) {
+    async getEmployeeByEmail(email) {
         const query = 'SELECT * FROM users WHERE email = ?';
         try {
             const [results] = await this.pool.query(query, [email]);
@@ -224,7 +224,7 @@ class Database {
         }
     }
 
-    async getUserById(id) {
+    async getEmployeeById(id) {
         const query = 'SELECT first_name, last_name, email, id FROM users WHERE id = ?';
         try {
             const [results] = await this.pool.query(query, [id]);
@@ -234,10 +234,10 @@ class Database {
         }
     }
 
-    async registerNewUser(firstName, lastName, email, hashedPassword) {
-        const query = 'INSERT INTO users (first_name, last_name, email, password) VALUES (?, ?, ?, ?)';
+    async registerNewEmployee(firstName, lastName, email, hashedPassword, role) {
+        const query = 'INSERT INTO users (first_name, last_name, email, password, role) VALUES (?, ?, ?, ?, ?)';
         try {
-            await this.pool.query(query, [firstName, lastName, email, hashedPassword]);
+            await this.pool.query(query, [firstName, lastName, email, hashedPassword, role]);
         } catch (error) {
             throw error;
         }
@@ -275,7 +275,6 @@ class Database {
             throw error;
         }
     }
-    
 
     async courseCodeExists(course_code) {
         const query = 'SELECT 1 FROM courses WHERE code = ?';
@@ -331,6 +330,22 @@ class Database {
         }
     }
     
+    async searchEmplyees(searchString) {
+        let query = `
+            SELECT * FROM users
+            WHERE first_name LIKE CONCAT('%', ? COLLATE utf8mb4_unicode_ci, '%') 
+            OR last_name LIKE CONCAT('%', ? COLLATE utf8mb4_unicode_ci, '%')
+            ORDER BY last_name, first_name;
+        `;
+    
+        try {
+            const [results] = await this.pool.query(query, [searchString, searchString]);
+            return results;
+        } catch (error) {
+            console.error('Error searching for emplyees:', error);
+            throw error;
+        }
+    }
 }
 
 module.exports = Database;

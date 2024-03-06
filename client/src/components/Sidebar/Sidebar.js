@@ -13,7 +13,7 @@ function Sidebar() {
     useEffect(() => {
         const fetchUserData = async () => {
             try {
-                const response = await fetch('http://localhost:8000/user/me', {
+                const response = await fetch('http://localhost:8000/users/me', {
                     credentials: 'include',
                 });
                 if (!response.ok) {
@@ -53,7 +53,7 @@ function Sidebar() {
 
             <div className='sidebar-routes'>
                 <SidebarRoute icon='fi fi-rr-chat-arrow-grow' text='Statistika' path='/admin/statistics' />
-                <SidebarRoute icon='fi fi-rr-fingerprint' text='Upravljanje korisnicima' path='/admin/users' />
+                <SidebarRoute icon='fi fi-rr-fingerprint' text='Upravljanje zaposlenima' path='/admin/users' />
                 <SidebarRoute icon='fi fi-rr-graduation-cap' text='Upravljanje predmetima' path='/admin/subjects' />
                 <SidebarRoute icon='fi fi-sr-time-past' text='Istorija aktivnosti' path='/admin/logs' />
                 <SidebarRoute icon='fi fi-rs-shield' text='Administracija' path='/admin' />
