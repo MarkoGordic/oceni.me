@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from "../../components/Sidebar/Sidebar";
 import './manage_students.css';
 import Select from 'react-select';
@@ -50,6 +50,9 @@ const customSelectStyles = {
 };
 
 function ManageStudents() {
+    const [searchString, setSearchString] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const [selectedCourseFilter, setSelectedCourseFilter] = useState(null);
     const [isModalOpen, setModalOpen] = useState(false);
     const animatedComponents = makeAnimated();
     const [studentData, setStudentData] = useState({
@@ -69,6 +72,36 @@ function ManageStudents() {
 
     const handleSelectChange = selectedOption => {
         setStudentData({ ...studentData, course_code: selectedOption ? selectedOption.value : '' });
+    };
+
+    const handleSearchChange = (event) => {
+        setSearchString(event.target.value);
+    };
+
+    useEffect(() => {
+        if (searchString.trim() !== '' || selectedCourseFilter) {
+            performSearch();
+        }
+    }, [searchString, selectedCourseFilter]);
+
+    const performSearch = async () => {
+        try {
+            const response = await fetch('http://localhost:8000/students/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ search: searchString, course_code: selectedCourseFilter?.value }),
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setSearchResults(data);
+            } else {
+                console.error("Failed to search students");
+            }
+        } catch (error) {
+            console.error("Error searching students:", error);
+        }
     };
 
     const handleOpenModal = () => setModalOpen(true);
@@ -255,7 +288,7 @@ function ManageStudents() {
             <div className='content'>
                 <div className="search-bar">
                     <i className="fi fi-rr-search search-icon"></i>
-                    <input type="text" className="search-input" placeholder="Pretražite studente..." />
+                    <input type="text" className="search-input" placeholder="Pretražite studente..." onChange={handleSearchChange} />
                     <Select
                         components={animatedComponents}
                         options={options}
@@ -264,6 +297,8 @@ function ManageStudents() {
                         placeholder="Studijski program"
                         isClearable={true}
                         isSearchable={true}
+                        onChange={setSelectedCourseFilter}
+                        value={selectedCourseFilter}
                     />
                 </div>
 
@@ -271,7 +306,19 @@ function ManageStudents() {
                 <NewStudentModal isOpen={isModalOpen} onClose={handleCloseModal} onSubmit={handleSubmit} onChange={handleInputChange} studentData={studentData} selectOnChange={handleSelectChange}/>
 
                 <div className='student-list-wrap'>
-                    <StudentCard name="Nadja Jaksic - IN 33/2023" email="nadjajaksice34@gmail.com" course="Informacioni Inženjering" profile_image={process.env.PUBLIC_URL + '/user_pfp/1.jpg'}/>
+                    {searchResults.length > 0 ? (
+                        searchResults.map((student) => (
+                            <StudentCard
+                                key={student.id}
+                                name={`${student.first_name} ${student.last_name} - ${student.index_number}`}
+                                email={student.email}
+                                course={student.course_name}
+                                profile_image={process.env.PUBLIC_URL + '/student_pfp/' + student.id + '.jpg'}
+                            />
+                        ))
+                    ) : (
+                        <p>No students found.</p>
+                    )}
                 </div>
             </div>
         </div>
