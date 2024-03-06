@@ -6,6 +6,7 @@ import App from './pages/app/App';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './utils/ProtectedRoute';
 import ManageStudents from './pages/manage_students/ManageStudents';
+import ManageUsers from './pages/maange_users/ManageUsers';
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify';
 
@@ -26,6 +27,11 @@ root.render(
             <ProtectedRoute>
               <ManageStudents />
             </ProtectedRoute> 
+          } />
+          <Route path="/admin/users" element={
+            <ProtectedRoute>
+              <ManageUsers />
+            </ProtectedRoute>
           } />
         </Routes>
       </BrowserRouter>

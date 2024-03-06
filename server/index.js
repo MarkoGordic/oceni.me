@@ -15,8 +15,8 @@ app.use(session({
 
 const AuthRoutes = require('./routes/auth');
 app.use('/auth', cors({origin: 'http://localhost:3000', credentials: true}), AuthRoutes);
-const UserRoutes = require('./routes/user');
-app.use('/user', cors({origin: 'http://localhost:3000', credentials: true}), UserRoutes);
+const UserRoutes = require('./routes/users');
+app.use('/users', cors({origin: 'http://localhost:3000', credentials: true}), UserRoutes);
 const StudentRoutes = require('./routes/students');
 app.use('/students', cors({origin: 'http://localhost:3000', credentials: true}), StudentRoutes);
 

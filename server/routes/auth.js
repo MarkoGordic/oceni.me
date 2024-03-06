@@ -22,17 +22,17 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const user = await db.getUserByEmail(email);
-        if (!user) {
+        const employee = await db.getEmployeeByEmail(email);
+        if (!employee) {
             console.log("[ERROR] : Login attempt failed. User not found.");
             return res.redirect(base_url + '/?error=user_not_found');
         }
 
-        const match = await bcrypt.compare(password, user.password);
+        const match = await bcrypt.compare(password, employee.password);
         if (match) {
-            req.session.userId = user.id;
+            req.session.userId = employee.id;
 
-            console.log("[INFO] : Login successful for username " + user.first_name + " " + user.last_name + ".");
+            console.log("[INFO] : Login successful for username " + employee.first_name + " " + employee.last_name + ".");
             res.status(303).redirect(base_url + '/app');
         } else {
             console.log("[ERROR] : Login attempt failed. Incorrect password.");
