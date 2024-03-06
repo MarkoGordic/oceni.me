@@ -39,4 +39,18 @@ router.post('/new', upload.single('profile_image'), async (req, res) => {
     }
 });
 
+router.post('/search', async (req, res) => {
+    const { search, course_code } = req.body;
+
+    if (!search) {return res.status(400).json({ message: 'Search parameter is required' });}
+
+    try {
+        const students = await db.searchStudents(search, course_code);
+        res.json(students);
+    } catch (error) {
+        res.status(500).json({ message: 'Error searching for students', error: error.message });
+    }
+});
+
+
 module.exports = router;

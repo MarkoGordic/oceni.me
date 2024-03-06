@@ -50,7 +50,7 @@ class Database {
         const createCoursesTable = `
             CREATE TABLE IF NOT EXISTS courses (
                 code VARCHAR(10) NOT NULL PRIMARY KEY,
-                name VARCHAR(100) NOT NULL
+                name VARCHAR(200) NOT NULL
             );
         `;
 
@@ -264,6 +264,51 @@ class Database {
             throw error;
         }
     }
+
+    async searchStudents(searchString, courseCode = null) {
+        let query = `
+            SELECT * FROM students
+            WHERE (index_number LIKE CONCAT('%', ?, '%') 
+            OR first_name LIKE CONCAT('%', ?, '%') 
+            OR last_name LIKE CONCAT('%', ?, '%'))
+        `;
+    
+        const params = [searchString, searchString, searchString];
+    
+        if (courseCode) {
+            query += ' AND course_code = ?';
+            params.push(courseCode);
+        }
+    
+        query += ' ORDER BY index_number';
+
+        try {
+            const [results] = await this.pool.query(query, params);
+            if (results.length === 0) {
+                return [];
+            }
+    
+            const courseCodes = [...new Set(results.map(student => student.course_code))];
+            const coursesQuery = 'SELECT code, name FROM courses WHERE code IN (?)';
+            const [courseNames] = await this.pool.query(coursesQuery, [courseCodes]);
+    
+            const courseCodeToNameMap = courseNames.reduce((map, course) => {
+                map[course.code] = course.name;
+                return map;
+            }, {});
+    
+            const modifiedResults = results.map(student => ({
+                ...student,
+                course_name: courseCodeToNameMap[student.course_code] || 'Unknown'
+            }));
+    
+            return modifiedResults;
+        } catch (error) {
+            console.error('Error searching for students:', error);
+            throw error;
+        }
+    }
+    
 }
 
 module.exports = Database;
