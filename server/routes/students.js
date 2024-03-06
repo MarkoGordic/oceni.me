@@ -25,6 +25,27 @@ router.post('/new', upload.single('profile_image'), async (req, res) => {
     const { first_name, last_name, index_number, email, password, course_code } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    const indexPattern = /^([A-Za-z]{2})\s(\d{1,3})\/(\d{4})$/;
+    let formattedIndexNumber = index_number;
+
+    if (indexPattern.test(index_number)) {
+        const [, letters, numbers, year] = index_number.match(indexPattern);
+        const formattedNumbers = numbers.padStart(3, '0');
+        formattedIndexNumber = `${letters} ${formattedNumbers}/${year}`;
+    } else {
+        return res.status(400).send("Invalid index number format.");
+    }
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email)) {
+        return res.status(400).send("Invalid email format.");
+    }
+
+    const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{10,}$/;
+    if (!passwordPattern.test(password)) {
+        return res.status(400).send("Password does not meet criteria.");
+    }
+
     const isValidCourseCode = await db.courseCodeExists(course_code);
     if (!isValidCourseCode) {
         return res.status(400).send("Invalid course code provided.");
