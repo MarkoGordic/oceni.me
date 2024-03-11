@@ -5,6 +5,7 @@ const cors = require('cors');
 const session = require('express-session');
 
 app.use(express.json());
+app.use(express.static('static'));
 router.use(express.urlencoded({extended: true}));
 
 app.use(session({
@@ -15,8 +16,8 @@ app.use(session({
 
 const AuthRoutes = require('./routes/auth');
 app.use('/auth', cors({origin: 'http://localhost:3000', credentials: true}), AuthRoutes);
-const UserRoutes = require('./routes/users');
-app.use('/users', cors({origin: 'http://localhost:3000', credentials: true}), UserRoutes);
+const EmployeesRoutes = require('./routes/employees');
+app.use('/employees', cors({origin: 'http://localhost:3000', credentials: true}), EmployeesRoutes);
 const StudentRoutes = require('./routes/students');
 app.use('/students', cors({origin: 'http://localhost:3000', credentials: true}), StudentRoutes);
 

@@ -1,17 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import Sidebar from "../../components/Sidebar/Sidebar";
-import './manageUsers.css';
+import './manageEmployees.css';
 import UserCard from '../../components/UserCard/UserCard';
+import ModifyEmployeeModal from '../../components/ModifyEmployeeModal/ModifyEmployeeModal';
 
-function ManageUsers() {
+function ManageEmployees() {
     const [searchString, setSearchString] = useState('');
     const [searchResults, setSearchResults] = useState([]);
+    const [modifyModalOpen, setModifyModalOpen] = useState(false);
+    const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
+    const [deletionCount, setDeletionCount] = useState(0);
 
     const roleMap = {
         0: 'Dekan',
         1: 'Profesor',
-        2: 'Asistent'
+        2: 'Asistent',
+        3: 'Demonstrator',
+    };
+
+    useEffect(() => {
+        if (deletionCount > 0) {
+            performSearch();
+        }
+    }, [deletionCount]);
+
+    const handleEmployeeClick = (employeeId) => {
+        setSelectedEmployeeId(employeeId);
+        setModifyModalOpen(true);
     };
 
     const handleSearchChange = (event) => {
@@ -26,7 +42,7 @@ function ManageUsers() {
 
     const performSearch = async () => {
         try {
-            const response = await fetch('http://localhost:8000/users/search', {
+            const response = await fetch('http://localhost:8000/employees/search', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -35,18 +51,17 @@ function ManageUsers() {
             });
             if (response.ok) {
                 const data = await response.json();
-                console.log(data);
-                const employeesWithRoleName = data.map(employees => ({
-                    ...employees,
-                    roleName: roleMap[employees.role]
+                const employeesWithRoleName = data.map(employee => ({
+                    ...employee,
+                    roleName: roleMap[employee.role],
                 }));
-                console.log(employeesWithRoleName);
                 setSearchResults(employeesWithRoleName);
             } else {
-                console.error("Failed to search assistants.");
+                toast.error("Failed to search employees.");
             }
         } catch (error) {
-            console.error("Error searching assistants:", error);
+            console.error("Error searching employees:", error);
+            toast.error("Error occurred while searching for employees.");
         }
     };
 
@@ -67,17 +82,24 @@ function ManageUsers() {
                                 name={`${employee.first_name} ${employee.last_name}`}
                                 email={employee.email}
                                 role={employee.roleName}
-                                profile_image={process.env.PUBLIC_URL + '/user_pfp/' + employee.id + '.jpg'}
-                                
+                                profile_image={'http://localhost:8000/user_pfp/' + employee.id + '.jpg'}
+                                onClick={() => handleEmployeeClick(employee.id)}
                             />
                         ))
                     ) : (
                         <p>Nije pronađen ni jedan zaposleni.</p>
                     )}
                 </div>
+
+                <ModifyEmployeeModal
+                    isOpen={modifyModalOpen}
+                    onClose={() => setModifyModalOpen(false)}
+                    employeeId={selectedEmployeeId}
+                    onEmployeeDeleted={() => setDeletionCount(count => count + 1)}
+                />
             </div>
         </div>
     );
 }
 
-export default ManageUsers;
+export default ManageEmployees;

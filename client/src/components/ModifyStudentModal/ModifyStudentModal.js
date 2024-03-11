@@ -75,7 +75,7 @@ function ModifyStudentModal({ isOpen, onClose, studentId, onStudentDeleted  }) {
                 return (
                     <div>
                         <div>
-                            <img className='studentInfo-avatar' src={process.env.PUBLIC_URL + '/student_pfp/' + studentData.id + '.jpg'}></img>
+                            <img className='studentInfo-avatar' src={'http://localhost:8000/student_pfp/' + studentData.id + '.jpg'}></img>
                             <div className='studentInfo-data-wrap'>
                                 <label className='studentInfo-label' htmlFor="first_name">Ime studenta:</label>
                                 <input className='studentInfo-input' type="text" id="first_name" name="first_name" value={studentData.first_name || ''} />

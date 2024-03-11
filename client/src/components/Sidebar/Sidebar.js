@@ -13,7 +13,7 @@ function Sidebar() {
     useEffect(() => {
         const fetchUserData = async () => {
             try {
-                const response = await fetch('http://localhost:8000/users/me', {
+                const response = await fetch('http://localhost:8000/employees/me', {
                     credentials: 'include',
                 });
                 if (!response.ok) {
@@ -62,7 +62,7 @@ function Sidebar() {
             <div className='sidebar-user-wrap'>
 
                 <div className='sidebar-user'>
-                    <img src={process.env.PUBLIC_URL + '/user_pfp/' + user.id + '.jpg'} alt="User Avatar" className='sidebar-user-avatar'></img>
+                    <img src={'http://localhost:8000/user_pfp/' + user.id + '.jpg'} alt="User Avatar" className='sidebar-user-avatar'></img>
                     <div className='sidebar-user-details'>
                         <p className='sidebar-user-name'>{user.name}</p>
                         <p className='sidebar-user-email'>{user.email}</p>
