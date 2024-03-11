@@ -88,8 +88,14 @@ function ManageStudents() {
     };
 
     const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setStudentData({ ...studentData, [name]: value });
+        const { name, value, type } = e.target;
+        console.log(name, value, type);
+        if (type === 'file') {
+            console.log(e.target.files[0]);
+            setStudentData({ ...studentData, ['profile_image']: e.target.files[0] });
+        } else {
+            setStudentData({ ...studentData, [name]: value });
+        }
     };
 
     const handleSelectChange = selectedOption => {
@@ -162,8 +168,10 @@ function ManageStudents() {
         formData.append('email', studentData.email);
         formData.append('password', studentData.password);
         formData.append('course_code', studentData.course_code);
-
+        
+        console.log(studentData.profile_image)
         if (studentData.profile_image) {
+            console.log("AAAAAAAAAA");
             formData.append('profile_image', studentData.profile_image);
         }
 
@@ -359,7 +367,7 @@ function ManageStudents() {
                                 name={`${student.first_name} ${student.last_name} - ${student.index_number}`}
                                 email={student.email}
                                 course={student.course_name}
-                                profile_image={process.env.PUBLIC_URL + '/student_pfp/' + student.id + '.jpg'}
+                                profile_image={'http://localhost:8000/student_pfp/' + student.id + '.jpg'}
                                 onClick={() => handleStudentClick(student.id)}
                             />
                         ))

@@ -1,0 +1,97 @@
+.modify-employee-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modify-employee-modal-content {
+    display: inline-flex;
+    background-color: #0F0E0E;
+    color: #F7F7FF;
+    padding: 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 650px;
+    height: 450px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.modify-employee-modal-column-left {
+    width: 35%;
+    height: 100%;
+    border-right: 2px solid #2C2C2C;
+}
+
+.modify-employee-modal-column-right {
+    width: 70%;
+    height: 100%;
+}
+
+.modify-employee-modal-tab {
+    width: 180px;
+    height: 25px;
+    display: inline-flex;
+    justify-content: left;
+    align-items: center;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+    margin: 5px;
+    padding: 10px;
+    transition: 0.3s;
+    cursor: pointer;
+}
+
+.modify-employee-modal-tab.active {
+    background-color: #202020;
+    color: #1993F0;
+    border-radius: 5px;
+}
+
+.modify-employee-modal-tab.active:hover {
+    background-color: #202020;
+    color: #1993F0;
+    border-radius: 5px;
+}
+
+.modify-employee-modal-tab:hover {
+    background-color: #202020;
+    color: #BAD5E6;
+    border-radius: 5px;
+}
+
+.modifyModalAdmin-wrap {
+    padding: 20px;
+}
+
+.modifyModalAdmin-wrap button {
+    background-color: #FF5555;
+    color: white;
+    border: none; 
+    padding: 10px 20px; 
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.employeeInfo-data-wrap {
+    margin-top: 30px;
+    padding-left: 40px;
+    padding-right: 40px;
+    height: 280px;
+    overflow-y: scroll;
+}
+
+.employeeInfo-avatar {
+    height: 100px;
+    width: 100px;
+    border-radius: 100%;
+    border: 3px solid #1993F0;
+}

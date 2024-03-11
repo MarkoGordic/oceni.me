@@ -5,15 +5,18 @@ const db = new database();
 const bcrypt = require('bcrypt');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 
 const storage = multer.diskStorage({
     destination: function(req, file, cb) {
-        cb(null, 'uploads/')
+        const uploadsDir = path.join(__dirname, '../uploads');
+        fs.mkdirSync(uploadsDir, { recursive: true });
+        cb(null, uploadsDir);
     },
+
     filename: function(req, file, cb) {
         const fileExt = path.extname(file.originalname);
-        const indexNumber = req.body.index_number;
-        cb(null, `${indexNumber}${fileExt}`);
+        cb(null, `${Date.now()}${fileExt}`);
     }
 });
 
@@ -52,7 +55,22 @@ router.post('/new', upload.single('profile_image'), async (req, res) => {
     }
 
     try {
-        await db.addStudent(first_name, last_name, index_number, email, hashedPassword, course_code);
+        const newStudentId = await db.addStudent(first_name, last_name, formattedIndexNumber, email, hashedPassword, course_code);
+    
+        if (req.file) {
+            const targetDir = path.join(__dirname, '../static/student_pfp');
+            
+            fs.mkdirSync(targetDir, { recursive: true });
+            
+            const targetPath = path.join(targetDir, `${newStudentId}.jpg`);
+            
+            try {
+                fs.renameSync(req.file.path, targetPath);
+            } catch (error) {
+                console.error("Error saving profile image:", error);
+            }
+        }
+        
         res.status(201).send("Student added successfully");
     } catch (error) {
         console.error("Error adding student:", error);

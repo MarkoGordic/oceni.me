@@ -234,6 +234,17 @@ class Database {
         }
     }
 
+    async deleteEmployeeById(id) {
+        const query = 'DELETE FROM users WHERE id = ?';
+        try {
+            const [result] = await this.pool.query(query, [id]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('Error deleting employee:', error);
+            throw error;
+        }
+    }
+
     async registerNewEmployee(firstName, lastName, email, hashedPassword, role) {
         const query = 'INSERT INTO users (first_name, last_name, email, password, role) VALUES (?, ?, ?, ?, ?)';
         try {
@@ -244,16 +255,24 @@ class Database {
     }
 
     async addStudent(first_name, last_name, index_number, email, password, course_code) {
-        const query = `
+        const insertQuery = `
             INSERT INTO students (first_name, last_name, index_number, email, password, course_code)
             VALUES (?, ?, ?, ?, ?, ?)
         `;
         try {
-            await this.pool.query(query, [first_name, last_name, index_number, email, password, course_code]);
+            await this.pool.query(insertQuery, [first_name, last_name, index_number, email, password, course_code]);
+            const selectQuery = `SELECT id FROM students WHERE email = ? LIMIT 1`;
+            const [rows] = await this.pool.query(selectQuery, [email]);
+            if (rows.length > 0) {
+                return rows[0].id;
+            } else {
+                return null;
+            }
         } catch (error) {
             throw error;
         }
     }
+    
 
     async getStudentById(id) {
         const query = 'SELECT first_name, last_name, email, index_number, course_code, id FROM students WHERE id = ?';
