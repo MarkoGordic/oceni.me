@@ -12,7 +12,7 @@ function App() {
   useEffect(() => {
       const fetchUserData = async () => {
           try {
-              const response = await fetch('http://localhost:8000/user/me', {
+              const response = await fetch('http://localhost:8000/employees/me', {
                   credentials: 'include',
               });
               if (!response.ok) {

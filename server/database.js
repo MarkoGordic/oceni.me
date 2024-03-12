@@ -479,7 +479,10 @@ class Database {
             SELECT subjects.*, courses.name AS course_name
             FROM subjects
             JOIN courses ON subjects.course_code = courses.code
-            WHERE subjects.name LIKE CONCAT('%', ?, '%') OR subjects.code LIKE CONCAT('%', ?, '%')
+            WHERE (
+                LOWER(subjects.name) LIKE LOWER(CONCAT('%', ?, '%')) 
+                OR LOWER(subjects.code) LIKE LOWER(CONCAT('%', ?, '%'))
+            )
         `;
         const params = [searchString, searchString];
     
@@ -490,7 +493,7 @@ class Database {
     
         if (year) {
             query += ' AND subjects.year = ?';
-            params.push(year);
+            params.push(parseInt(year, 10));
         }
     
         query += ' ORDER BY subjects.name';
@@ -502,7 +505,7 @@ class Database {
             console.error('Error searching for subjects:', error);
             throw error;
         }
-    } 
+    }
 }
 
 module.exports = Database;
