@@ -5,6 +5,7 @@ const db = new database();
 const bcrypt = require('bcrypt');
 
 router.use(express.urlencoded({extended: true}));
+router.use(express.json());
 
 router.get('/me', async (req, res) => {
     if (!req.session.userId) {
@@ -12,13 +13,13 @@ router.get('/me', async (req, res) => {
     }
 
     try {
-        const user = await db.getEmployeeById(req.session.userId);
+        const employee = await db.getEmployeeById(req.session.userId);
         
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+        if (!employee) {
+            return res.status(404).json({ error: 'Employee not found' });
         }
 
-        const { first_name, last_name, email, id } = user;
+        const { first_name, last_name, email, id } = employee;
 
         res.json({
             first_name,
@@ -27,7 +28,7 @@ router.get('/me', async (req, res) => {
             id
         });
     } catch (error) {
-        console.error("[ERROR] : Error fetching user details:", error);
+        console.error("[ERROR] : Error fetching employee details:", error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -96,6 +97,22 @@ router.post('/search', async (req, res) => {
         res.json(emplyees);
     } catch (error) {
         res.status(500).json({ message: 'Error searching for emplyees', error: error.message });
+    }
+});
+
+router.get('/search_professors', async (req, res) => {
+    const { search } = req.query;
+
+    if (!search) {
+        return res.status(400).json({ message: 'Search parameter is required' });
+    }
+
+    try {
+        const professors = await db.searchProfessors(search);
+        res.json(professors);
+    } catch (error) {
+        console.error("Error searching for professors:", error);
+        res.status(500).json({ message: 'Error searching for professors', error: error.message });
     }
 });
 

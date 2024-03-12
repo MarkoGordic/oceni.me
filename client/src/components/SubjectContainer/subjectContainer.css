@@ -1,0 +1,64 @@
+.subject-wrap {
+    width: 650px;
+    height: 70px;
+    padding: 5px;
+    background-color: #0F0E0E;
+    margin-top: 25px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    cursor: pointer;
+    
+    display: inline-flex;
+}
+
+.subject-wrap:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0 0 2px rgba(25, 147, 240, 0.5);
+}
+
+.subject-professor {
+    height: 70px;
+    width: 70px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.subject-professor img {
+    height: 60px;
+    width: 60px;
+    border-radius: 100%;
+    border: 3px solid #1993F0;
+}
+
+.subject-data {
+    width: 580px;
+    height: 70px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.subject-data p {
+    margin: 0;
+}
+
+.subject-name-and-employees {
+    width: 100%;
+    text-align: left;
+    margin-left: 20px;
+}
+
+.subject-name {
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.course-name-and-generation {
+    display: inline-flex;
+    width: 100%;
+    text-align: left;
+    margin-left: 20px;
+}

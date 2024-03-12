@@ -1,0 +1,22 @@
+.professor-item {
+    width: 100%;
+    height: 50px;
+    display: inline-flex;
+    align-items: center;
+    padding: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.professor-item:hover {
+    background-color: #333232;
+}
+
+.professor-profile-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
+    margin-right: 10px;
+    margin-left: 10px;
+    object-fit: cover;
+}

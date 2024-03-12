@@ -21,8 +21,8 @@ class Database {
     async migrate() {
         console.info("[INFO] : Database migration started.");
 
-        const createUsersTable = `
-            CREATE TABLE IF NOT EXISTS users (
+        const createeemployeesTable = `
+            CREATE TABLE IF NOT EXISTS employees (
                 id              INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
                 first_name      VARCHAR(100) NOT NULL,
                 last_name       VARCHAR(100) NOT NULL,
@@ -51,7 +51,7 @@ class Database {
             CREATE TABLE IF NOT EXISTS courses (
                 code VARCHAR(10) NOT NULL PRIMARY KEY,
                 name VARCHAR(200) NOT NULL
-            );
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         `;
 
         const populateCoursesTable = `
@@ -200,22 +200,49 @@ class Database {
                 ('Doktorske studije (studenti upisani od 2006 do 2010)', 'DR');
         `;
 
+        const createSubjectsTable = `
+            CREATE TABLE IF NOT EXISTS subjects (
+                id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+                code VARCHAR(10) NOT NULL UNIQUE,
+                name VARCHAR(200) NOT NULL,
+                professor_id INT NOT NULL,
+                course_code VARCHAR(10) NOT NULL,
+                year YEAR NOT NULL,
+                FOREIGN KEY (professor_id) REFERENCES employees(id) ON DELETE CASCADE,
+                FOREIGN KEY (course_code) REFERENCES courses(code) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        `;
+
+        const createSubjectEmployeesTable = `
+            CREATE TABLE IF NOT EXISTS employee_subjects (
+                employee_id INT NOT NULL,
+                subject_id INT NOT NULL,
+                PRIMARY KEY (employee_id, subject_id),
+                FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE ON UPDATE CASCADE,
+                FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE ON UPDATE CASCADE
+            );
+        `;
+
         try {
-            await this.pool.execute(createUsersTable);
-            console.info("[INFO] : Users table created successfully.");
+            await this.pool.execute(createeemployeesTable);
+            console.info("[INFO] : Employees table created successfully.");
             await this.pool.execute(createCoursesTable);
             console.info("[INFO] : Courses table created successfully.");
             //await this.pool.execute(populateCoursesTable);
             //console.info("[INFO] : Courses table populated successfully.");
             await this.pool.execute(createStudentsTable);
             console.info("[INFO] : Students table created successfully.");
+            await this.pool.execute(createSubjectsTable);
+            console.info("[INFO] : Subjects table created successfully.");
+            await this.pool.execute(createSubjectEmployeesTable);
+            console.info("[INFO] : Employee-Subjects table created successfully.");
         } catch (err) {
-            console.error("[ERROR] : Error creating users table", err);
+            console.error("[ERROR] : Error while running SQL.", err);
         }
     }
 
     async getEmployeeByEmail(email) {
-        const query = 'SELECT * FROM users WHERE email = ?';
+        const query = 'SELECT * FROM employees WHERE email = ?';
         try {
             const [results] = await this.pool.query(query, [email]);
             return results.length > 0 ? results[0] : null;
@@ -225,7 +252,7 @@ class Database {
     }
 
     async getEmployeeById(id) {
-        const query = 'SELECT first_name, last_name, email, id FROM users WHERE id = ?';
+        const query = 'SELECT first_name, last_name, email, id FROM employees WHERE id = ?';
         try {
             const [results] = await this.pool.query(query, [id]);
             return results.length > 0 ? results[0] : null;
@@ -235,7 +262,7 @@ class Database {
     }
 
     async deleteEmployeeById(id) {
-        const query = 'DELETE FROM users WHERE id = ?';
+        const query = 'DELETE FROM employees WHERE id = ?';
         try {
             const [result] = await this.pool.query(query, [id]);
             return result.affectedRows > 0;
@@ -246,7 +273,7 @@ class Database {
     }
 
     async registerNewEmployee(firstName, lastName, email, hashedPassword, role) {
-        const query = 'INSERT INTO users (first_name, last_name, email, password, role) VALUES (?, ?, ?, ?, ?)';
+        const query = 'INSERT INTO employees (first_name, last_name, email, password, role) VALUES (?, ?, ?, ?, ?)';
         try {
             await this.pool.query(query, [firstName, lastName, email, hashedPassword, role]);
         } catch (error) {
@@ -272,7 +299,6 @@ class Database {
             throw error;
         }
     }
-    
 
     async getStudentById(id) {
         const query = 'SELECT first_name, last_name, email, index_number, course_code, id FROM students WHERE id = ?';
@@ -351,7 +377,7 @@ class Database {
     
     async searchEmplyees(searchString) {
         let query = `
-            SELECT * FROM users
+            SELECT * FROM employees
             WHERE first_name LIKE CONCAT('%', ? COLLATE utf8mb4_unicode_ci, '%') 
             OR last_name LIKE CONCAT('%', ? COLLATE utf8mb4_unicode_ci, '%')
             ORDER BY last_name, first_name;
@@ -365,6 +391,118 @@ class Database {
             throw error;
         }
     }
+
+    async searchProfessors(searchString) {
+        let query = `
+            SELECT id, first_name, last_name, email, role
+            FROM employees
+            WHERE (role = 0 OR role = 1)
+            AND (
+                first_name LIKE CONCAT('%', ?, '%') COLLATE utf8mb4_unicode_ci
+                OR last_name LIKE CONCAT('%', ?, '%') COLLATE utf8mb4_unicode_ci
+            )
+            ORDER BY last_name, first_name LIMIT 10;
+        `;
+    
+        try {
+            const [results] = await this.pool.query(query, [searchString, searchString]);
+            return results;
+        } catch (error) {
+            console.error('Error searching for professors:', error);
+            throw error;
+        }
+    }
+
+    async assignEmployeeToSubject(employee_id, subject_id) {
+        const insertQuery = `
+            INSERT INTO employee_subjects (employee_id, subject_id)
+            VALUES (?, ?)
+        `;
+        try {
+            await this.pool.query(insertQuery, [employee_id, subject_id]);
+            return true;
+        } catch (error) {
+            console.error('Error assigning employee to subject:', error);
+            throw error;
+        }
+    }
+
+    async getSubjectsForEmployee(employee_id) {
+        const query = `
+            SELECT s.id, s.code, s.name FROM subjects s
+            INNER JOIN employee_subjects es ON s.id = es.subject_id
+            WHERE es.employee_id = ?
+        `;
+        try {
+            const [results] = await this.pool.query(query, [employee_id]);
+            return results;
+        } catch (error) {
+            console.error('Error retrieving subjects for employee:', error);
+            throw error;
+        }
+    }
+
+    async subjectCodeExists(code) {
+        const query = 'SELECT 1 FROM subjects WHERE code = ?';
+        try {
+            const [results] = await this.pool.query(query, [code]);
+            return results.length > 0;
+        } catch (error) {
+            throw error;
+        }
+    }
+    
+    async addSubject(name, code, professorId, courseCode, year) {
+        const insertQuery = `
+            INSERT INTO subjects (name, code, professor_id, course_code, year)
+            VALUES (?, ?, ?, ?, ?)
+        `;
+        try {
+            await this.pool.query(insertQuery, [name, code, professorId, courseCode, year]);
+        } catch (error) {
+            throw error;
+        }
+    }
+    
+    async professorExists(professorId) {
+        const query = 'SELECT * FROM employees WHERE id = ? AND role IN (0, 1)';
+        try {
+            const [results] = await this.pool.query(query, [professorId]);
+            return results.length > 0;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async searchSubjects(searchString, courseCode = null, year = null) {
+        let query = `
+            SELECT subjects.*, courses.name AS course_name
+            FROM subjects
+            JOIN courses ON subjects.course_code = courses.code
+            WHERE subjects.name LIKE CONCAT('%', ?, '%') OR subjects.code LIKE CONCAT('%', ?, '%')
+        `;
+        const params = [searchString, searchString];
+    
+        if (courseCode) {
+            query += ' AND subjects.course_code = ?';
+            params.push(courseCode);
+        }
+    
+        if (year) {
+            query += ' AND subjects.year = ?';
+            params.push(year);
+        }
+    
+        query += ' ORDER BY subjects.name';
+    
+        try {
+            const [results] = await this.pool.query(query, params);
+            return results;
+        } catch (error) {
+            console.error('Error searching for subjects:', error);
+            throw error;
+        }
+    } 
 }
 
 module.exports = Database;

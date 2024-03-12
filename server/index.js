@@ -20,6 +20,8 @@ const EmployeesRoutes = require('./routes/employees');
 app.use('/employees', cors({origin: 'http://localhost:3000', credentials: true}), EmployeesRoutes);
 const StudentRoutes = require('./routes/students');
 app.use('/students', cors({origin: 'http://localhost:3000', credentials: true}), StudentRoutes);
+const SubjectsRoutes = require('./routes/subjects');
+app.use('/subjects', cors({origin: 'http://localhost:3000', credentials: true}), SubjectsRoutes);
 
 app.listen(8000, () => {
   console.log('Server is running on port: 8000');
