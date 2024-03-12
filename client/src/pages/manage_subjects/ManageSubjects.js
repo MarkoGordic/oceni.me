@@ -1,36 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import Sidebar from "../../components/Sidebar/Sidebar";
-import './manage_students.css';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import './manageSubjects.css';
+import Sidebar from '../../components/Sidebar/Sidebar';
+import SubjectContainer from '../../components/SubjectContainer/SubjectContainer';
+import NewSubjectModal from '../../components/NewSubjectModal/NewSubjectModal';
 import Select from 'react-select';
 import makeAnimated from 'react-select/animated';
-import NewStudentModal from "../../components/NewStudentModal/NewStudentModal";
-import StudentCard from '../../components/StudentCard/StudentCard';
-import { toast } from 'react-toastify';
-import ModifyStudentModal from '../../components/ModifyStudentModal/ModifyStudentModal';
 
-const customSelectStyles = {
+const customYearSelectStyles = {
     control: (styles) => ({
         ...styles,
         backgroundColor: '#1C1B1B',
         borderColor: '#1993F0',
         color: '#F7F7FF',
-        width: 300,
-        minHeight: '40px',
-        '&:hover': { borderColor: '#1993F0' },
-        boxShadow: '0 2px 4px 0 rgba(0, 0, 0, 0.2)',
+        width: '135px',
+        minHeight: '50px',
+        '&:hover': { borderColor: '#1476d2' },
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+        margin: '5px 20px 5px 10px',
+        borderRadius: '25px',
     }),
     menu: (styles) => ({
         ...styles,
-        backgroundColor: '#1C1B1B',
+        backgroundColor: '#202020',
         color: '#F7F7FF',
-        width: 300,
-        boxShadow: '0 2px 4px 0 rgba(0, 0, 0, 0.25)',
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.25)',
     }),
     option: (styles, { isFocused, isSelected }) => ({
         ...styles,
         backgroundColor: isSelected ? '#1993F0' : isFocused ? '#2C2B2B' : undefined,
-        color: isSelected ? '#F7F7FF' : '#F7F7FF',
-        '&:active': { backgroundColor: '#1993F0' },
+        color: '#F7F7FF',
+        '&:active': { backgroundColor: '#1476d2' },
     }),
     singleValue: (styles) => ({
         ...styles,
@@ -39,7 +40,55 @@ const customSelectStyles = {
     dropdownIndicator: (styles) => ({
         ...styles,
         color: '#F7F7FF',
-        '&:hover': { color: '#F7F7FF' },
+        '&:hover': { color: '#1476d2' },
+    }),
+    indicatorSeparator: (styles) => ({
+        ...styles,
+        backgroundColor: '#1993F0',
+    }),
+    placeholder: (styles) => ({
+        ...styles,
+        color: '#F7F7FF',
+    }),
+    input: (styles) => ({
+        ...styles,
+        color: '#F7F7FF',
+    }),
+}
+
+const customCourseSelectStyles = {
+    control: (styles) => ({
+        ...styles,
+        backgroundColor: '#1C1B1B',
+        borderColor: '#1993F0',
+        color: '#F7F7FF',
+        width: '400px',
+        minHeight: '50px',
+        '&:hover': { borderColor: '#1476d2' },
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+        margin: '0 auto',
+        borderRadius: '25px',
+    }),
+    menu: (styles) => ({
+        ...styles,
+        backgroundColor: '#202020',
+        color: '#F7F7FF',
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.25)',
+    }),
+    option: (styles, { isFocused, isSelected }) => ({
+        ...styles,
+        backgroundColor: isSelected ? '#1993F0' : isFocused ? '#2C2B2B' : undefined,
+        color: '#F7F7FF',
+        '&:active': { backgroundColor: '#1476d2' },
+    }),
+    singleValue: (styles) => ({
+        ...styles,
+        color: '#F7F7FF',
+    }),
+    dropdownIndicator: (styles) => ({
+        ...styles,
+        color: '#F7F7FF',
+        '&:hover': { color: '#1476d2' },
     }),
     indicatorSeparator: (styles) => ({
         ...styles,
@@ -55,140 +104,48 @@ const customSelectStyles = {
     }),
 };
 
-function ManageStudents() {
-    const [searchString, setSearchString] = useState('');
-    const [searchResults, setSearchResults] = useState([]);
-    const [selectedCourseFilter, setSelectedCourseFilter] = useState(null);
+function ManageSubjects() {
     const [isModalOpen, setModalOpen] = useState(false);
-    const animatedComponents = makeAnimated();
-    const [studentData, setStudentData] = useState({
-        first_name: '',
-        last_name: '',
-        index_number: '',
-        email: '',
-        password: '',
-        profile_image: null,
-        course_code: '',
+    const [subjects, setSubjects] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedYear, setSelectedYear] = useState(null);
+    const [selectedCourseId, setSelectedCourseId] = useState(null);
+    const [subjectData, setSubjectData] = useState({
+        subject_name: '',
+        code: '',
+        professorId: '',
+        year: '',
+        course_code: ''
     });
-
-    const [modifyModalOpen, setModifyModalOpen] = useState(false);
-    const [selectedStudentId, setSelectedStudentId] = useState(null);
-    const [deletionCount, setDeletionCount] = useState(0);
-
-    useEffect(() => {
-        if (deletionCount > 0) {
-            performSearch();
-        }
-    }, [deletionCount]);
-
-    const handleStudentClick = (studentId) => {
-        setSelectedStudentId(studentId);
-        setModifyModalOpen(true);
-    };
 
     const handleInputChange = (e) => {
         const { name, value, type } = e.target;
-        console.log(name, value, type);
-        if (type === 'file') {
-            console.log(e.target.files[0]);
-            setStudentData({ ...studentData, ['profile_image']: e.target.files[0] });
-        } else {
-            setStudentData({ ...studentData, [name]: value });
-        }
+        setSubjectData({ ...subjectData, [name]: value });
+        toast.success("banana");
     };
 
-    const handleSelectChange = selectedOption => {
-        setStudentData({ ...studentData, course_code: selectedOption ? selectedOption.value : '' });
+    const handleSelectCourseChange = selectedOption => {
+        setSubjectData({ ...subjectData, course_code: selectedOption ? selectedOption.value : '' });
     };
 
-    const handleSearchChange = (event) => {
-        setSearchString(event.target.value);
+    const handleSelectYearChange = selectedOption => {
+        setSubjectData({ ...subjectData, year: selectedOption ? selectedOption.value : '' });
     };
 
-    useEffect(() => {
-        if (searchString.trim() !== '' || selectedCourseFilter) {
-            performSearch();
-        }
-    }, [searchString, selectedCourseFilter]);
-
-    const performSearch = async () => {
-        try {
-            const response = await fetch('http://localhost:8000/students/search', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ search: searchString, course_code: selectedCourseFilter?.value }),
-            });
-            if (response.ok) {
-                const data = await response.json();
-                setSearchResults(data);
-            } else {
-                console.error("Failed to search students");
-            }
-        } catch (error) {
-            console.error("Error searching students:", error);
-        }
+    const handleProfessorChange = (id) => {
+        setSubjectData({ ...subjectData, professorId: id });
     };
 
-    const handleOpenModal = () => setModalOpen(true);
-    const handleCloseModal = () => setModalOpen(false);
-    const handleSubmit = async (event) => {
-        event.preventDefault();
-    
-        const indexNumberPattern = /^[A-Z]{2}\s\d{1,3}\/\d{4}$/;
-        const emailPattern = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
-        const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_])[A-Za-z\d\W_]{10,}$/;
-    
-        if (!indexNumberPattern.test(studentData.index_number)) {
-            toast.error("Neuspešno kreiranje studenta. Proverite format broja indeksa. Primer: IN 22/2023.");
-            return;
+    const getYearOptions = () => {
+        const currentYear = new Date().getFullYear();
+        const options = [];
+        for (let i = currentYear; i >= 1950; i--) {
+            options.push({ value: i.toString(), label: i.toString() });
         }
-        
-        if (!studentData.course_code) {
-            toast.error("Neuspešno kreiranje studenta. Molimo izaberite studijski program.");
-            return;
-        }
-
-        if (!emailPattern.test(studentData.email)) {
-            toast.error("Neuspešno kreiranje studenta. Neispravan format elektronske pošte.");
-            return;
-        }
-    
-        if (!passwordPattern.test(studentData.password)) {
-            toast.error("Neuspešno kreiranje studenta. Lozinka mora sadržati najmanje 10 karaktera, od kojih bar jedno malo slovo, jedno veliko slovo, jedan broj i jedan specijalni karakter.");
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('first_name', studentData.first_name);
-        formData.append('last_name', studentData.last_name);
-        formData.append('index_number', studentData.index_number);
-        formData.append('email', studentData.email);
-        formData.append('password', studentData.password);
-        formData.append('course_code', studentData.course_code);
-        
-        if (studentData.profile_image) {
-            formData.append('profile_image', studentData.profile_image);
-        }
-
-        try {
-            const response = await fetch('http://localhost:8000/students/new', {
-                method: 'POST',
-                body: formData,
-            });
-            if (response.ok) {
-                toast.success("Uspešno kreiran nalog za studenta " + studentData.first_name + " " + studentData.last_name + "!");
-                setModalOpen(false);
-            } else {
-                toast.error("Došlo je do neočekivane greške prilikom kreiranja studentskog naloga.");
-            }
-        } catch (error) {
-            console.error("Error submitting form:", error);
-        }
+        return options;
     };
 
-    const options = [
+    const courseCodeOptions = [
         { value: 'MR', label: 'Magistarske studije' },
         { value: 'XA', label: 'Arhitektura i urbanizam (INTEGRISANE STUDIJE)' },
         { value: 'XE', label: 'Elektrotehnika i računarstvo (INTEGRISANE STUDIJE)' },
@@ -333,55 +290,123 @@ function ManageStudents() {
         { value: 'DR', label: 'Doktorske studije (studenti upisani od 2006 do 2010)' }
     ];
 
+    const animatedComponents = makeAnimated();
+
+    const handleOpenModal = () => setModalOpen(true);
+    const handleCloseModal = () => setModalOpen(false);
+
+    const fetchSubjects = async () => {
+        if (!searchTerm.trim()) {
+            setSubjects([]);
+            return;
+        }
+    
+        try {
+            const queryParams = new URLSearchParams();
+            if (searchTerm) queryParams.append('searchString', searchTerm);
+            if (selectedYear) queryParams.append('year', selectedYear.value);
+            if (selectedCourseId) queryParams.append('courseCode', selectedCourseId.value);
+    
+            const response = await fetch(`http://localhost:8000/subjects/search?${queryParams.toString()}`);
+            if (!response.ok) throw new Error('Network response was not ok');
+            const data = await response.json();
+            setSubjects(data);
+        } catch (error) {
+            console.error('Error fetching subjects:', error);
+            toast.error('Došlo je do greške prilikom dohvatanja predmeta.');
+        }
+    };
+
+    useEffect(() => {
+        fetchSubjects();
+    }, [searchTerm, selectedYear, selectedCourseId]);
+
+    const handleModalSubmit = async (event) => {
+        event.preventDefault();
+
+        const formData = new FormData();
+        formData.append('subject_name', subjectData.subject_name);
+        formData.append('code', subjectData.code);
+        formData.append('professorId', subjectData.professorId);
+        formData.append('year', subjectData.year);
+        formData.append('course_code', subjectData.course_code);
+    
+        try {
+            const response = await fetch('http://localhost:8000/subjects/new', {
+                method: 'POST',
+                body: formData,
+            });
+    
+            if (response.ok) {
+                setModalOpen(false);
+                fetchSubjects();
+                toast.success("Uspešno kreiran predemt " + subjectData.subject_name + " - " + subjectData.code + " !");
+                return;
+            }
+    
+            toast.error("Došlo je do neočekivane greške prilikom kreiranja novog predmeta.");
+        } catch (error) {
+            console.error('Error adding subject:', error);
+            toast.error('Došlo je do greške prilikom dodavanja predmeta.');
+        }
+    };
+    
     return (
         <div className='wrap'>
+            <ToastContainer theme="dark" />
             <Sidebar />
             <div className='content'>
+                <h1>Upravljanje predmetima</h1>
                 <div className="search-bar">
                     <i className="fi fi-rr-search search-icon"></i>
-                    <input type="text" className="search-input" placeholder="Pretražite studente po imenu, prezimenu ili indeksu..." onChange={handleSearchChange} />
+                    <input 
+                        type="text" 
+                        className="search-input" 
+                        placeholder="Pretražite predmete..." 
+                        value={searchTerm} 
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
                     <Select
                         components={animatedComponents}
-                        options={options}
-                        styles={customSelectStyles}
-                        classNamePrefix="select"
-                        placeholder="Studijski program"
+                        options={getYearOptions()}
                         isClearable={true}
                         isSearchable={true}
-                        onChange={setSelectedCourseFilter}
-                        value={selectedCourseFilter}
+                        placeholder="Godina"
+                        onChange={setSelectedYear}
+                        value={selectedYear}
+                        styles={customYearSelectStyles}
+                    />
+                    <Select
+                        components={animatedComponents}
+                        options={courseCodeOptions}
+                        isClearable={true}
+                        isSearchable={true}
+                        placeholder="Studijski program"
+                        onChange={setSelectedCourseId}
+                        value={selectedCourseId}
+                        styles={customCourseSelectStyles}
                     />
                 </div>
 
-                <button className='new-student-button' onClick={handleOpenModal}>Kreiraj novog studenta</button>
-                <NewStudentModal isOpen={isModalOpen} onClose={handleCloseModal} onSubmit={handleSubmit} onChange={handleInputChange} studentData={studentData} selectOnChange={handleSelectChange}/>
+                <button className='new-subject-button' onClick={handleOpenModal}>+ DODAJ PREDMET</button>
+                <NewSubjectModal
+                    isOpen={isModalOpen}
+                    onClose={handleCloseModal}
+                    onSubmit={handleModalSubmit}
+                    onInputChange={handleInputChange}
+                    onSelectCourseChnage={handleSelectCourseChange}
+                    onSelectYearChange={handleSelectYearChange}
+                    onProfessorChange={handleProfessorChange}
+                    subjectData={subjectData}/>
 
-                <div className='student-list-wrap'>
-                    {searchResults.length > 0 ? (
-                        searchResults.map((student) => (
-                            <StudentCard
-                                key={student.id}
-                                name={`${student.first_name} ${student.last_name} - ${student.index_number}`}
-                                email={student.email}
-                                course={student.course_name}
-                                profile_image={'http://localhost:8000/student_pfp/' + student.id + '.jpg'}
-                                onClick={() => handleStudentClick(student.id)}
-                            />
-                        ))
-                    ) : (
-                        <p>Nije pronađen ni jedan student.</p>
-                    )}
+                <div className='subject-list-wrap'>
+                    {subjects.map(subject => (
+                        <SubjectContainer key={subject.id} subject={subject} />
+                    ))}
                 </div>
-
-                <ModifyStudentModal
-                    isOpen={modifyModalOpen}
-                    onClose={() => setModifyModalOpen(false)}
-                    studentId={selectedStudentId}
-                    onStudentDeleted={() => setDeletionCount(count => count + 1)}
-                />
             </div>
         </div>
     );
 }
 
-export default ManageStudents;
+export default ManageSubjects;
