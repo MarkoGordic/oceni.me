@@ -301,13 +301,20 @@ function ManageSubjects() {
             return;
         }
     
-        try {
-            const queryParams = new URLSearchParams();
-            if (searchTerm) queryParams.append('searchString', searchTerm);
-            if (selectedYear) queryParams.append('year', selectedYear.value);
-            if (selectedCourseId) queryParams.append('courseCode', selectedCourseId.value);
+        const searchParameters = {
+            searchString: searchTerm,
+            year: selectedYear ? selectedYear.value : null,
+            courseCode: selectedCourseId ? selectedCourseId.value : null,
+        };
     
-            const response = await fetch(`http://localhost:8000/subjects/search?${queryParams.toString()}`);
+        try {
+            const response = await fetch('http://localhost:8000/subjects/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(searchParameters),
+            });
             if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
             setSubjects(data);

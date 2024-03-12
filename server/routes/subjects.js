@@ -35,10 +35,10 @@ router.post('/new', upload.none(), async (req, res) => {
     }
 });
 
-router.get('/search', async (req, res) => {
-    const { searchString, courseCode, year } = req.query;
+router.post('/search', async (req, res) => {
+    const { searchString, courseCode, year } = req.body;
 
-    if (searchString == null) {
+    if (!searchString) {
         return res.status(400).json({ message: "Search string is required." });
     }
 
@@ -50,6 +50,7 @@ router.get('/search', async (req, res) => {
         res.status(500).json({ message: "Internal server error while searching for subjects." });
     }
 });
+
 
 
 module.exports = router;

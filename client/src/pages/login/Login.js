@@ -35,11 +35,11 @@ function Login() {
             <h1 style={{ marginBottom: errorMessage ? '0px' : '20px' }}>PRIJAVA</h1>
             {errorMessage && <p className="error-msg">{errorMessage}</p>}
 
-            <label for="email"><i class="fi fi-rs-envelope"></i>Elektronska pošta</label>
+            <label htmlFor="email"><i className="fi fi-rs-envelope"></i>Elektronska pošta</label>
             <input type="email" id="email" name="email" placeholder="primer@tidajem.rs"/>
 
-            <div class="password-group">
-                <label for="password"><i class="fi fi-rr-lock"></i>Lozinka</label>
+            <div className="password-group">
+                <label htmlFor="password"><i className="fi fi-rr-lock"></i>Lozinka</label>
                 <input type={isPasswordVisible ? "text" : "password"} id="password" name="password" placeholder="MnogoJakaSifra"/>
                 <span onClick={togglePasswordVisibility} className="eye-icon">
                   <i className={isPasswordVisible ? "fi fi-rr-eye-crossed" : "fi fi-rs-eye"}></i>
@@ -50,7 +50,7 @@ function Login() {
             <p className='info'>Zaboravili ste lozinku? <a href="/reset-password">Postavite novu.</a></p>
           </form>
         </div>
-        <div class="footer">
+        <div className="footer">
             <p>made by Gordic with 💙</p>
         </div>
       </div>
