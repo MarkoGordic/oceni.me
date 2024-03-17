@@ -69,6 +69,7 @@ function ManageEmployees() {
         <div className='wrap'>
             <Sidebar />
             <div className='content'>
+                <h1 className='page-title'>Upravljanje zaposlenima</h1>
                 <div className="search-bar">
                     <i className="fi fi-rr-search search-icon"></i>
                     <input type="text" className="search-input" placeholder="Pretražite zaposlene unošenjem imena ili prezimena..." onChange={handleSearchChange} />

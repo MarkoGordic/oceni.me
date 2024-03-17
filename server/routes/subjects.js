@@ -54,6 +54,20 @@ router.post('/search', async (req, res) => {
     }
 });
 
+router.get('/me', async (req, res) => {
+    if (!req.session || !req.session.userId) {
+        return res.status(401).json({ message: "Unauthorized access. User is not logged in." });
+    }
+
+    try {
+        const userId = req.session.userId;
+        const subjects = await db.getSubjectsForEmployee(userId);
+        res.status(200).json(subjects);
+    } catch (error) {
+        console.error('Error retrieving subjects for employee:', error);
+        res.status(500).json({ message: "Internal server error while fetching subjects for employee." });
+    }
+});
 
 
 module.exports = router;

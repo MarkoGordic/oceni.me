@@ -11,6 +11,7 @@ function App() {
     });
 
     const [activities, setActivities] = useState([]);
+    const [currentTime, setCurrentTime] = useState(new Date());
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -36,6 +37,12 @@ function App() {
         };
 
         fetchUserData();
+
+        const timer = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 1000);
+
+        return () => clearInterval(timer);
     }, []);
 
     const fetchActivities = async (userId) => {
@@ -79,13 +86,17 @@ function App() {
 
     return (
         <div className='wrap'>
-            <Sidebar />
-            <div className='content'>
-                <div className='content-wrap'>
-                    <div className="greeting-container">
-                        <h1 className="greeting-message">{getGreeting()}</h1> 
-                        <hr className="delimiter"/>
+        <Sidebar />
+        <div className='content'>
+            <div className='content-wrap'>
+                <div className="greeting-container">
+                    <h1 className="greeting-message">{getGreeting()}</h1>
+                    <hr className="delimiter"/>
+                    <div className="date-time-container">
+                        <h2 className="current-date">{currentTime.toLocaleDateString('sr-Latn-RS', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'})}</h2>
+                        <h3 className="current-time">{currentTime.toLocaleTimeString('sr-Latn-RS', {hour: '2-digit', minute: '2-digit', second: '2-digit'})}</h3>
                     </div>
+                </div>
                     <div className="timeline-container"> 
                         <div className="timeline">
                             {activities.map((activity, index) => (
