@@ -353,7 +353,7 @@ function ManageStudents() {
                     />
                 </div>
 
-                <button className='new-student-button' onClick={handleOpenModal}>Kreiraj novog studenta</button>
+                <button className='new-student-button' onClick={handleOpenModal}><div className='new-button-content'><i className="fi fi-rs-add"></i> DODAJ STUDENTA</div></button>
                 <NewStudentModal isOpen={isModalOpen} onClose={handleCloseModal} onSubmit={handleSubmit} onChange={handleInputChange} studentData={studentData} selectOnChange={handleSelectChange}/>
 
                 <div className='student-list-wrap'>

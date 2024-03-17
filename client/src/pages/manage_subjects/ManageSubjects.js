@@ -395,7 +395,7 @@ function ManageSubjects() {
                     />
                 </div>
 
-                <button className='new-subject-button' onClick={handleOpenModal}>+ DODAJ PREDMET</button>
+                <button className='new-subject-button' onClick={handleOpenModal}><div className='new-button-content'><i className="fi fi-rs-add"></i> DODAJ PREDMET</div></button>
                 <NewSubjectModal
                     isOpen={isModalOpen}
                     onClose={handleCloseModal}

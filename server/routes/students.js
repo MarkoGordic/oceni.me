@@ -26,6 +26,9 @@ router.use(express.urlencoded({extended: true}));
 
 router.post('/new', upload.single('profile_image'), async (req, res) => {
     const { first_name, last_name, index_number, email, password, course_code } = req.body;
+    const userAgent = req.headers['user-agent'] || 'Unknown User Agent';
+    const employee = await db.getEmployeeById(req.session.userId);
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const indexPattern = /^([A-Za-z]{2})\s(\d{1,3})\/(\d{4})$/;
@@ -71,9 +74,13 @@ router.post('/new', upload.single('profile_image'), async (req, res) => {
             }
         }
         
+        await db.createLogEntry(req.session.userId, `${employee.first_name} ${employee.last_name}`, `Uspešno kreiranje korisničkog naloga za studenta ${first_name} ${last_name}.`, 'INFO', 'INFO', req.ip, userAgent);
         res.status(201).send("Student added successfully");
     } catch (error) {
-        console.error("Error adding student:", error);
+        await db.createLogEntry(null, `${employee.first_name} ${employee.last_name}`, `Neuspešan pokušaj kreiranja korisničkog naloga za studenta ${first_name} ${last_name}.`, 'GREŠKA', 'INFO', req.ip, userAgent);
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(400).send("Student with that index number already exists");
+        }
         res.status(500).send("Error adding student");
     }
 });
@@ -109,12 +116,16 @@ router.get('/get/:id', async (req, res) => {
 
 router.get('/delete/:id', async (req, res) => {
     const { id } = req.params;
+    const userAgent = req.headers['user-agent'] || 'Unknown User Agent';
+    const employee = await db.getEmployeeById(req.session.userId);
 
     try {
         const result = await db.deleteStudentById(id);
         if (result) {
+            await db.createLogEntry(id, `${employee.first_name} ${employee.last_name}`, `Obrisan je korisnički nalog za studenta ${result.first_name} ${result.last_name}.`, 'INFO', 'INFO', req.ip, userAgent);
             res.status(200).send("Student successfully deleted");
         } else {
+            await db.createLogEntry(id, `${employee.first_name} ${employee.last_name}`, `Neuspešan pokusaj brisanja korisničkog naloga za studenta sa ID ${id}.`, 'ERROR', 'INFO', req.ip, userAgent);
             res.status(404).send("Student not found");
         }
     } catch (error) {

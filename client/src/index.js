@@ -8,6 +8,7 @@ import ProtectedRoute from './utils/ProtectedRoute';
 import ManageStudents from './pages/manage_students/ManageStudents';
 import ManageEmployees from './pages/manage_employess/ManageEmployees';
 import ManageSubjects from './pages/manage_subjects/ManageSubjects';
+import SystemLogs from './pages/system_logs/SystemLogs';
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify';
 
@@ -37,6 +38,11 @@ root.render(
           <Route path="/admin/users" element={
             <ProtectedRoute>
               <ManageEmployees />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/logs" element={
+            <ProtectedRoute>
+              <SystemLogs />
             </ProtectedRoute>
           } />
         </Routes>

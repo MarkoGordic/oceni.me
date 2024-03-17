@@ -22,6 +22,8 @@ const StudentRoutes = require('./routes/students');
 app.use('/students', cors({origin: 'http://localhost:3000', credentials: true}), StudentRoutes);
 const SubjectsRoutes = require('./routes/subjects');
 app.use('/subjects', cors({origin: 'http://localhost:3000', credentials: true}), SubjectsRoutes);
+const LogRoutes = require('./routes/logs');
+app.use('/logs', cors({origin: 'http://localhost:3000', credentials: true}), LogRoutes);
 
 app.listen(8000, () => {
   console.log('Server is running on port: 8000');
