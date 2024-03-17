@@ -10,6 +10,7 @@ import ManageEmployees from './pages/manage_employess/ManageEmployees';
 import ManageSubjects from './pages/manage_subjects/ManageSubjects';
 import SystemLogs from './pages/system_logs/SystemLogs';
 import MySubjects from './pages/my_subjects/MySubjects';
+import UserProfile from './pages/user_profile/UserProfile';
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify';
 
@@ -29,6 +30,11 @@ root.render(
           <Route path="subjects" element={
             <ProtectedRoute>
               <MySubjects />
+            </ProtectedRoute>
+          } />
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <UserProfile />
             </ProtectedRoute>
           } />
           <Route path="/manage_students" element={

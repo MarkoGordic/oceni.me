@@ -41,8 +41,7 @@ const SystemLogs = () => {
             }
         })
         .catch(error => {
-            console.error("Error fetching logs:", error);
-            toast.error("Error fetching logs.");
+            toast.error('Došlo je do greške prilikom preuzimanja istorije aktivnosti.');
         });
     };    
 
@@ -114,7 +113,7 @@ const SystemLogs = () => {
                         </tbody>
                     </table>
                     <div className="pagination">
-                    <button onClick={handlePrevious} disabled={page <= 0}><i class="fi fi-rr-angle-double-left"></i></button>
+                        <button onClick={handlePrevious} disabled={page <= 0}><i class="fi fi-rr-angle-double-left"></i></button>
                         <button onClick={handleNext} disabled={!hasMore}><i class="fi fi-rr-angle-double-right"></i></button>
                     </div>
                 </div>

@@ -298,6 +298,40 @@ class Database {
         }
     }
 
+    async updateEmployeeInfo(userId, updateFields) {
+        let query = `UPDATE employees SET `;
+        let queryParams = [];
+        let setParts = [];
+        
+        if (updateFields.firstName) {
+            setParts.push(`first_name = ?`);
+            queryParams.push(updateFields.firstName);
+        }
+        if (updateFields.lastName) {
+            setParts.push(`last_name = ?`);
+            queryParams.push(updateFields.lastName);
+        }
+        if (updateFields.email) {
+            setParts.push(`email = ?`);
+            queryParams.push(updateFields.email);
+        }
+    
+        if (setParts.length === 0) {
+            throw new Error("No fields provided for update");
+        }
+    
+        query += setParts.join(', ') + ` WHERE id = ?`;
+        queryParams.push(userId);
+    
+        try {
+            await this.pool.query(query, queryParams);
+        } catch (error) {
+            console.error('Error updating employee info:', error);
+            throw error;
+        }
+    }
+    
+
     async addStudent(first_name, last_name, index_number, email, password, course_code) {
         const insertQuery = `
             INSERT INTO students (first_name, last_name, index_number, email, password, course_code)
