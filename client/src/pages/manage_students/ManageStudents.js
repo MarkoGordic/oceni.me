@@ -337,6 +337,7 @@ function ManageStudents() {
         <div className='wrap'>
             <Sidebar />
             <div className='content'>
+                <h1>Upravljanje studentima</h1>
                 <div className="search-bar">
                     <i className="fi fi-rr-search search-icon"></i>
                     <input type="text" className="search-input" placeholder="Pretražite studente po imenu, prezimenu ili indeksu..." onChange={handleSearchChange} />

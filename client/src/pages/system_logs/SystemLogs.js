@@ -6,7 +6,7 @@ import './systemLogs.css';
 const SystemLogs = () => {
     const [logs, setLogs] = useState([]);
     const [page, setPage] = useState(0);
-    const pageSize = 25;
+    const pageSize = 15;
     const [hasMore, setHasMore] = useState(false);
 
     useEffect(() => {

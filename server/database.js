@@ -446,18 +446,31 @@ class Database {
 
     async getSubjectsForEmployee(employee_id) {
         const query = `
-            SELECT s.id, s.code, s.name FROM subjects s
-            INNER JOIN employee_subjects es ON s.id = es.subject_id
-            WHERE es.employee_id = ?
+            (
+                SELECT s.*, c.name as course_name
+                FROM subjects s
+                JOIN courses c ON s.course_code = c.code
+                INNER JOIN employee_subjects es ON s.id = es.subject_id
+                WHERE es.employee_id = ?
+            )
+            UNION DISTINCT
+            (
+                SELECT s.*, c.name as course_name
+                FROM subjects s
+                JOIN courses c ON s.course_code = c.code
+                WHERE s.professor_id = ?
+            )
+            ORDER BY name;
         `;
+    
         try {
-            const [results] = await this.pool.query(query, [employee_id]);
+            const [results] = await this.pool.query(query, [employee_id, employee_id]);
             return results;
         } catch (error) {
             console.error('Error retrieving subjects for employee:', error);
             throw error;
         }
-    }
+    }      
 
     async subjectCodeExists(code) {
         const query = 'SELECT 1 FROM subjects WHERE code = ?';
@@ -537,7 +550,7 @@ class Database {
         }
     }
 
-    async getLogs(employeeId = null, offset = 0, limit = 25) {
+    async getLogs(employeeId = null, offset = 0, limit = 15) {
         let query;
         const params = [];
     
