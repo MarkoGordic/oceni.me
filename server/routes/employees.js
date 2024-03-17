@@ -33,6 +33,51 @@ router.get('/me', async (req, res) => {
     }
 });
 
+router.post('/me/update', async (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const userId = req.session.userId;
+    const { firstName, lastName, email } = req.body;
+
+    if (!firstName && !lastName && !email) {
+        return res.status(400).json({ error: 'At least one field must be provided' });
+    }
+
+    try {
+        const currentUser = await db.getEmployeeById(userId);
+        if (!currentUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        let logDetails = [];
+        if (firstName && firstName !== currentUser.first_name) {
+            logDetails.push(`ime: ${currentUser.first_name} -> ${firstName}`);
+        }
+        if (lastName && lastName !== currentUser.last_name) {
+            logDetails.push(`prezime: ${currentUser.last_name} -> ${lastName}`);
+        }
+        if (email && email !== currentUser.email) {
+            logDetails.push(`email: ${currentUser.email} -> ${email}`);
+        }
+
+        await db.updateEmployeeInfo(userId, { firstName, lastName, email });
+
+        if (logDetails.length > 0) {
+            const logMessage = `Izmenjeni su lični podaci korisnika. (${logDetails.join(', ')})`;
+            await db.createLogEntry(userId, `${currentUser.first_name} ${currentUser.last_name}`, logMessage, 'INFO', 'INFO', req.ip, req.headers['user-agent']);
+        }
+
+        res.status(200).json({ message: 'Employee info updated successfully' });
+    } catch (error) {
+        console.error("[ERROR] : Error updating employee details:", error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+
+
 router.post('/new', async (req, res) => {
     const { first_name, last_name, email, password, role } = req.body;
     const userAgent = req.headers['user-agent'] || 'Unknown User Agent';

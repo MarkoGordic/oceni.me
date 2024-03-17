@@ -1,0 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&display=swap');
+@import "~@flaticon/flaticon-uicons/css/all/all";
+
+body, #root {
+    width: 100%;
+    height: 100dvh;
+  
+    margin: 0;
+    padding: 0;
+    background-color: #131313;
+    
+    font-family: "Jost", sans-serif;
+    color: #f7f7ff;
+}
+
+.content {
+    height: 100dvh;
+    width: 100%;
+
+    text-align: center;
+}
+
+.userinfo-wrap1 {
+    display: inline-flex;
+}
+
+.userinfo-wrap1 img {
+    height: 200px;
+    width: 200px;
+    border-radius: 100%;
+    border: 3px solid #1993F0;
+    margin-right: 20px;
+    margin-top: 20px;
+}
+
+.userinfo-details {
+    text-align: left;
+    width: 400px;
+}
+
+.userinfo-fullname {
+    font-size: 30px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.userinfo-email {
+    font-size: 20px;
+    font-weight: 400;
+    margin-bottom: 10px;
+}
+
+.userinfo-edit {
+    width: 500px;
+    margin: 20px auto;
+    padding: 20px;
+}
+
+.userinfo-edit h2 {
+    color: #f7f7ff;
+    margin-bottom: 20px;
+}
+
+.userInfo-editwrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.userInfo-editwrap label {
+    color: #f7f7ff;
+    margin-bottom: 5px;
+    text-align: left;
+    width: 100%;
+}
+
+.userInfo-editwrap input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    border: 1px solid #1993F0;
+    background-color: #131313;
+    color: #f7f7ff;
+}
+
+.userinfo-edit button {
+    padding: 10px 10px;
+    background-color: #1993F0;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-family: "Jost", sans-serif;
+}
+
+.userinfo-edit button i {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.userinfo-edit button:hover {
+    background-color: #1476d2;
+}
