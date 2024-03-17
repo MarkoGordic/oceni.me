@@ -20,11 +20,12 @@ router.get('/status', (req, res) => {
 
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
+    const userAgent = req.headers['user-agent'] || 'Unknown User Agent';
 
     try {
         const employee = await db.getEmployeeByEmail(email);
         if (!employee) {
-            console.log("[ERROR] : Login attempt failed. User not found.");
+            await db.createLogEntry(null, '', `Neuspešan pokušaj logovanja za korisnika ${email}: Korisnik nije pronađen`, 'UPOZORENJE', 'AUTORIZACIJA', req.ip, userAgent);
             return res.redirect(base_url + '/?error=user_not_found');
         }
 
@@ -32,25 +33,32 @@ router.post('/login', async (req, res) => {
         if (match) {
             req.session.userId = employee.id;
 
-            console.log("[INFO] : Login successful for username " + employee.first_name + " " + employee.last_name + ".");
+            await db.createLogEntry(employee.id, `${employee.first_name} ${employee.last_name}`, 'Korisnik se ulogovao/la na sistem.', 'INFO', 'AUTORIZACIJA', req.ip, userAgent);
             res.status(303).redirect(base_url + '/app');
         } else {
-            console.log("[ERROR] : Login attempt failed. Incorrect password.");
+            await db.createLogEntry(employee.id, `${employee.first_name} ${employee.last_name}`, 'Neuspešan pokušaj logovanja, pogrešna lozinka', 'UPOZORENJE', 'AUTORIZACIJA', req.ip, userAgent);
             res.redirect(base_url + '/?error=incorrect_password');
         }
     } catch (error) {
-        console.error("[ERROR] : Error during login:", error);
+        await db.createLogEntry(null, '', "Došlo je do greške prilikom logovanja: " + error.message, 'GREŠKA', 'AUTORIZACIJA', req.ip, userAgent);
         res.redirect(base_url + '/?error=login_error');
     }
 });
 
-router.get('/logout', (req, res) => {
-    req.session.destroy((err) => {
+router.get('/logout', async (req, res) => {
+    const userId = req.session.userId;
+    const userAgent = req.headers['user-agent'] || 'Unknown User Agent';
+    const employee = await db.getEmployeeById(userId);
+
+    req.session.destroy(async (err) => {
+        const fullName = employee ? `${employee.first_name} ${employee.last_name}` : '';
+
         if (err) {
-            console.error("[ERROR] : Error clearing session during logout:", err);
+            await db.createLogEntry(userId, fullName, "Došlo je do greške prilikom brisanja korisničke sesije: " + err.message, 'GREŠKA', 'AUTORIZACIJA', req.ip, userAgent);
             return res.status(500).send("Error logging out");
         }
 
+        await db.createLogEntry(userId, fullName, 'Korisnik se izlogovao/la sa sistema', 'INFO', 'AUTORIZACIJA', req.ip, userAgent);
         res.clearCookie('connect.sid');
 
         res.redirect(base_url + '/');

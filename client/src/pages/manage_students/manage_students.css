@@ -66,6 +66,12 @@ body, #root {
     font-family: "Inter", sans-serif;
 }
 
+.new-button-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .new-student-button:hover {
     background-color: #1476d2;
 }

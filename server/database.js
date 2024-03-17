@@ -223,6 +223,21 @@ class Database {
             );
         `;
 
+        const createSystemActivityLogsTable = `
+            CREATE TABLE IF NOT EXISTS system_activity_logs (
+                id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+                employee_id INT,
+                employee VARCHAR(255),
+                message TEXT NOT NULL,
+                severity ENUM('DEBUG', 'INFO', 'UPOZORENJE', 'GREŠKA', 'KRITIČNO') NOT NULL,
+                log_type ENUM('AUTORIZACIJA', 'INFO', 'SISTEM', 'GREŠKA'),
+                ip VARCHAR(39),
+                user_agent TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        `;
+
         try {
             await this.pool.execute(createeemployeesTable);
             console.info("[INFO] : Employees table created successfully.");
@@ -236,6 +251,8 @@ class Database {
             console.info("[INFO] : Subjects table created successfully.");
             await this.pool.execute(createSubjectEmployeesTable);
             console.info("[INFO] : Employee-Subjects table created successfully.");
+            await this.pool.execute(createSystemActivityLogsTable);
+            console.info("[INFO] : System activity logs table created successfully.");
         } catch (err) {
             console.error("[ERROR] : Error while running SQL.", err);
         }
@@ -506,6 +523,51 @@ class Database {
             throw error;
         }
     }
+
+    async createLogEntry(employeeId, fullName, message, severity, logType, ip, userAgent) {
+        const query = `
+            INSERT INTO system_activity_logs (employee_id, employee, message, severity, log_type, ip, user_agent)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `;
+        try {
+            await this.pool.query(query, [employeeId, fullName, message, severity, logType, ip, userAgent]);
+        } catch (error) {
+            console.error('Error creating log entry:', error);
+            throw error;
+        }
+    }
+
+    async getLogs(employeeId = null, offset = 0, limit = 25) {
+        let query;
+        const params = [];
+    
+        if (employeeId) {
+            query = `
+                SELECT * FROM system_activity_logs
+                WHERE user_id = ?
+                ORDER BY created_at DESC
+                LIMIT ? OFFSET ?
+            `;
+            params.push(employeeId, limit, offset);
+        } else {
+            query = `
+                SELECT * FROM system_activity_logs
+                ORDER BY created_at DESC
+                LIMIT ? OFFSET ?
+            `;
+            params.push(limit, offset);
+        }
+    
+        try {
+            const [results] = await this.pool.query(query, params);
+            return results;
+        } catch (error) {
+            console.error('Error retrieving logs:', error);
+            throw error;
+        }
+    }
+    
+    
 }
 
 module.exports = Database;

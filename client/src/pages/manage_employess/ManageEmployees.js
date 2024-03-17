@@ -74,6 +74,8 @@ function ManageEmployees() {
                     <input type="text" className="search-input" placeholder="Pretražite zaposlene unošenjem imena ili prezimena..." onChange={handleSearchChange} />
                 </div>
 
+                <button className='new-employee-button'><div className='new-button-content'><i className="fi fi-rs-add"></i> DODAJ ZAPOSLENOG</div></button>
+
                 <div className='users-list-wrap'>
                     {searchResults.length > 0 ? (
                         searchResults.map((employee) => (
