@@ -38,6 +38,22 @@ router.post('/new', upload.none(), async (req, res) => {
     }
 });
 
+router.get('/get/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const subject = await db.getSubjectById(id);
+        if (subject) {
+            res.json(subject);
+        } else {
+            res.status(404).send('Subject not found.');
+        }
+    } catch (error) {
+        console.error('Error getting subject:', error);
+        res.status(500).send('Internal server error while fetching subject.');
+    }
+});
+
 router.post('/search', async (req, res) => {
     const { searchString, courseCode, year } = req.body;
 

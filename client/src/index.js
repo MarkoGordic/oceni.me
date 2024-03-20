@@ -11,6 +11,8 @@ import ManageSubjects from './pages/manage_subjects/ManageSubjects';
 import SystemLogs from './pages/system_logs/SystemLogs';
 import MySubjects from './pages/my_subjects/MySubjects';
 import UserProfile from './pages/user_profile/UserProfile';
+import SubjectOverview from './pages/subject_overview/SubjectOverview';
+import NewTestWizard from './pages/NewTestWizard/NewTestWizard';
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify';
 
@@ -30,6 +32,16 @@ root.render(
           <Route path="subjects" element={
             <ProtectedRoute>
               <MySubjects />
+            </ProtectedRoute>
+          } />
+          <Route path="/subjects/:id/overview" element={
+            <ProtectedRoute>
+              <SubjectOverview />
+            </ProtectedRoute>
+          } />
+          <Route path="/subjects/:id/tests/new" element={
+            <ProtectedRoute>
+              <NewTestWizard />
             </ProtectedRoute>
           } />
           <Route path="/profile" element={

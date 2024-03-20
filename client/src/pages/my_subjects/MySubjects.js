@@ -3,9 +3,11 @@ import { toast, ToastContainer } from 'react-toastify';
 import './mySubjects.css';
 import Sidebar from '../../components/Sidebar/Sidebar';
 import SubjectContainer from '../../components/SubjectContainer/SubjectContainer';
+import { useNavigate } from 'react-router-dom';
 
 const MySubjects = () => {
     const [subjects, setSubjects] = useState([]);
+    const navigate = useNavigate();
 
     useEffect(() => {
         fetchSubjects();
@@ -27,6 +29,10 @@ const MySubjects = () => {
         }
     };
 
+    const handleSubjectClick = (subjectId) => {
+        navigate(`/subjects/${subjectId}/overview`);
+    };
+
     return (
         <div className='wrap'>
             <ToastContainer theme="dark" />
@@ -35,8 +41,10 @@ const MySubjects = () => {
                 <h1>Moji predmeti</h1>
                 <p>Ovde možete videti sve predmete kojima možete upravljati. Kliknite na predmet da biste videli više informacija.</p>
                 <div className='subjects-list'>
-                    {subjects.map((subject, index) => (
-                        <SubjectContainer key={index} subject={subject} />
+                    {subjects.map((subject) => (
+                        <div key={subject.id} onClick={() => handleSubjectClick(subject.id)}>
+                            <SubjectContainer subject={subject} />
+                        </div>
                     ))}
                 </div>
             </div>
