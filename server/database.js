@@ -38,6 +38,7 @@ class Database {
                 id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
                 first_name VARCHAR(100) NOT NULL,
                 last_name VARCHAR(100) NOT NULL,
+                year YEAR NOT NULL,
                 index_number VARCHAR(20) NOT NULL UNIQUE,
                 email VARCHAR(100) NOT NULL UNIQUE,
                 password VARCHAR(100) NOT NULL,
@@ -332,13 +333,13 @@ class Database {
     }
     
 
-    async addStudent(first_name, last_name, index_number, email, password, course_code) {
+    async addStudent(first_name, last_name, index_number, year, email, password, course_code) {
         const insertQuery = `
-            INSERT INTO students (first_name, last_name, index_number, email, password, course_code)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO students (first_name, last_name, index_number, year, email, password, course_code)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         `;
         try {
-            await this.pool.query(insertQuery, [first_name, last_name, index_number, email, password, course_code]);
+            await this.pool.query(insertQuery, [first_name, last_name, index_number, year, email, password, course_code]);
             const selectQuery = `SELECT id FROM students WHERE email = ? LIMIT 1`;
             const [rows] = await this.pool.query(selectQuery, [email]);
             if (rows.length > 0) {
@@ -352,7 +353,7 @@ class Database {
     }
 
     async getStudentById(id) {
-        const query = 'SELECT first_name, last_name, email, index_number, course_code, id FROM students WHERE id = ?';
+        const query = 'SELECT first_name, last_name, email, index_number, year, course_code, id FROM students WHERE id = ?';
         try {
             const [results] = await this.pool.query(query, [id]);
             return results.length > 0 ? results[0] : null;
@@ -524,6 +525,23 @@ class Database {
         try {
             await this.pool.query(insertQuery, [name, code, professorId, courseCode, year]);
         } catch (error) {
+            throw error;
+        }
+    }
+
+    async getSubjectById(id) {
+        const query = `
+            SELECT subjects.*, employees.first_name AS professor_first_name, employees.last_name AS professor_last_name, courses.name AS course_name
+            FROM subjects
+            JOIN employees ON subjects.professor_id = employees.id
+            JOIN courses ON subjects.course_code = courses.code
+            WHERE subjects.id = ?
+        `;
+        try {
+            const [results] = await this.pool.query(query, [id]);
+            return results.length > 0 ? results[0] : null;
+        } catch (error) {
+            console.error('Error retrieving subject by ID:', error);
             throw error;
         }
     }

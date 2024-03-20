@@ -34,8 +34,10 @@ router.post('/new', upload.single('profile_image'), async (req, res) => {
     const indexPattern = /^([A-Za-z]{2})\s(\d{1,3})\/(\d{4})$/;
     let formattedIndexNumber = index_number;
 
+    let studentYear;
     if (indexPattern.test(index_number)) {
-        const [, letters, numbers, year] = index_number.match(indexPattern);
+        let [, letters, numbers, year] = index_number.match(indexPattern);
+        studentYear = year;
         const formattedNumbers = numbers.padStart(3, '0');
         formattedIndexNumber = `${letters} ${formattedNumbers}/${year}`;
     } else {
@@ -58,7 +60,7 @@ router.post('/new', upload.single('profile_image'), async (req, res) => {
     }
 
     try {
-        const newStudentId = await db.addStudent(first_name, last_name, formattedIndexNumber, email, hashedPassword, course_code);
+        const newStudentId = await db.addStudent(first_name, last_name, formattedIndexNumber, studentYear, email, hashedPassword, course_code);
     
         if (req.file) {
             const targetDir = path.join(__dirname, '../static/student_pfp');
@@ -74,10 +76,11 @@ router.post('/new', upload.single('profile_image'), async (req, res) => {
             }
         }
         
-        await db.createLogEntry(req.session.userId, `${employee.first_name} ${employee.last_name}`, `Uspešno kreiranje korisničkog naloga za studenta ${first_name} ${last_name}.`, 'INFO', 'INFO', req.ip, userAgent);
+        await db.createLogEntry(req.session.userId, `${first_name} ${last_name}`, `Uspešno kreiranje korisničkog naloga za studenta ${first_name} ${last_name}.`, 'INFO', 'INFO', req.ip, userAgent);
         res.status(201).send("Student added successfully");
     } catch (error) {
-        await db.createLogEntry(null, `${employee.first_name} ${employee.last_name}`, `Neuspešan pokušaj kreiranja korisničkog naloga za studenta ${first_name} ${last_name}.`, 'GREŠKA', 'INFO', req.ip, userAgent);
+        console.log(error)
+        await db.createLogEntry(null, `${first_name} ${last_name}`, `Neuspešan pokušaj kreiranja korisničkog naloga za studenta ${first_name} ${last_name}.`, 'GREŠKA', 'INFO', req.ip, userAgent);
         if (error.code === 'ER_DUP_ENTRY') {
             return res.status(400).send("Student with that index number already exists");
         }
