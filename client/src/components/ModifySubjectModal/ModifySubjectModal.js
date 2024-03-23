@@ -1,38 +1,37 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import './manageSubjects.css';
-import Sidebar from '../../components/Sidebar/Sidebar';
-import SubjectContainer from '../../components/SubjectContainer/SubjectContainer';
-import NewSubjectModal from '../../components/NewSubjectModal/NewSubjectModal';
-import ModifySubjectModal from '../../components/ModifySubjectModal/ModifySubjectModal';
 import Select from 'react-select';
+import { toast } from 'react-toastify';
+import './modifySubjectModal.css';
 import makeAnimated from 'react-select/animated';
+import ProfessorSearchItem from '../ProfessorSearchItem/ProfessorSearchItem';
 
-const customYearSelectStyles = {
-    control: (styles) => ({
+const customSelectStyles = {
+    control: (styles, { isFocused }) => ({
         ...styles,
         backgroundColor: '#1C1B1B',
-        borderColor: '#1993F0',
+        borderColor: isFocused ? '#1993F0' : '#333333',
         color: '#F7F7FF',
-        width: '135px',
-        minHeight: '50px',
-        '&:hover': { borderColor: '#1476d2' },
-        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-        margin: '5px 20px 5px 10px',
-        borderRadius: '25px',
+        width: '100%',
+        minHeight: '40px',
+        '&:hover': { borderColor: isFocused ? '#1993F0' : '#555555' },
+        boxShadow: 'none',
+        borderRadius: '5px',
+        marginBottom: '10px',
     }),
     menu: (styles) => ({
         ...styles,
-        backgroundColor: '#202020',
+        backgroundColor: '#1C1B1B',
         color: '#F7F7FF',
-        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.25)',
+        width: 'auto',
+        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.5)',
+        borderRadius: '5px',
     }),
     option: (styles, { isFocused, isSelected }) => ({
         ...styles,
         backgroundColor: isSelected ? '#1993F0' : isFocused ? '#2C2B2B' : undefined,
         color: '#F7F7FF',
-        '&:active': { backgroundColor: '#1476d2' },
+        '&:active': { backgroundColor: '#1668B2', color: '#F7F7FF' },
+        padding: '10px',
     }),
     singleValue: (styles) => ({
         ...styles,
@@ -41,7 +40,7 @@ const customYearSelectStyles = {
     dropdownIndicator: (styles) => ({
         ...styles,
         color: '#F7F7FF',
-        '&:hover': { color: '#1476d2' },
+        '&:hover': { color: '#AAD1F9' },
     }),
     indicatorSeparator: (styles) => ({
         ...styles,
@@ -50,108 +49,39 @@ const customYearSelectStyles = {
     placeholder: (styles) => ({
         ...styles,
         color: '#F7F7FF',
+        opacity: 0.7,
     }),
     input: (styles) => ({
         ...styles,
         color: '#F7F7FF',
     }),
-}
-
-const customCourseSelectStyles = {
-    control: (styles) => ({
-        ...styles,
-        backgroundColor: '#1C1B1B',
-        borderColor: '#1993F0',
-        color: '#F7F7FF',
-        width: '400px',
-        minHeight: '50px',
-        '&:hover': { borderColor: '#1476d2' },
-        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-        margin: '0 auto',
-        borderRadius: '25px',
-    }),
-    menu: (styles) => ({
-        ...styles,
-        backgroundColor: '#202020',
-        color: '#F7F7FF',
-        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.25)',
-    }),
-    option: (styles, { isFocused, isSelected }) => ({
-        ...styles,
-        backgroundColor: isSelected ? '#1993F0' : isFocused ? '#2C2B2B' : undefined,
-        color: '#F7F7FF',
-        '&:active': { backgroundColor: '#1476d2' },
-    }),
-    singleValue: (styles) => ({
+    noOptionsMessage: (styles) => ({
         ...styles,
         color: '#F7F7FF',
     }),
-    dropdownIndicator: (styles) => ({
+    menuList: (styles) => ({
         ...styles,
-        color: '#F7F7FF',
-        '&:hover': { color: '#1476d2' },
-    }),
-    indicatorSeparator: (styles) => ({
-        ...styles,
-        backgroundColor: '#1993F0',
-    }),
-    placeholder: (styles) => ({
-        ...styles,
-        color: '#F7F7FF',
-    }),
-    input: (styles) => ({
-        ...styles,
-        color: '#F7F7FF',
+        padding: 0,
     }),
 };
 
-function ManageSubjects() {
-    const [isModalOpen, setModalOpen] = useState(false);
-    const [isModifyModalOpen, setModifyModalOpen] = useState(false);
-    const [selectedSubjectForEdit, setSelectedSubjectForEdit] = useState(null);
-    const [subjects, setSubjects] = useState([]);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [selectedYear, setSelectedYear] = useState(null);
-    const [selectedCourseId, setSelectedCourseId] = useState(null);
+function ModifySubjectModal({ isOpen, onClose, subject_id, onSubjectUpdated }) {
+    const [professorSearchTerm, setProfessorSearchTerm] = useState('');
+    const [professorResults, setProfessorResults] = useState([]);
+    const [selectedProfessor, setSelectedProfessor] = useState(null);
+    const [selectedYearOption, setSelectedYearOption] = useState(null);
+    const [selectedCourseOption, setSelectedCourseOption] = useState(null);
+    const wrapperRef = useRef(null);
+    const animatedComponents = makeAnimated();
     const [subjectData, setSubjectData] = useState({
-        subject_name: '',
+        name: '',
         code: '',
-        professorId: '',
+        professor_id: '',
+        course_code: '',
         year: '',
-        course_code: ''
+        subject_id: ''
     });
-
-    const handleInputChange = (e) => {
-        const { name, value, type } = e.target;
-        setSubjectData({ ...subjectData, [name]: value });
-        toast.success("banana");
-    };
-
-    const handleSubjectEdit = (subjectId) => {
-        setSelectedSubjectForEdit(subjectId);
-        setModifyModalOpen(true);
-    };
-
-    const handleCloseModifyModal = () => {
-        setModifyModalOpen(false);
-        setSelectedSubjectForEdit(null);
-    };
-
-    const handleSubjectUpdated = async () => {
-        await fetchSubjects();
-    };
-
-    const handleSelectCourseChange = selectedOption => {
-        setSubjectData({ ...subjectData, course_code: selectedOption ? selectedOption.value : '' });
-    };
-
-    const handleSelectYearChange = selectedOption => {
-        setSubjectData({ ...subjectData, year: selectedOption ? selectedOption.value : '' });
-    };
-
-    const handleProfessorChange = (id) => {
-        setSubjectData({ ...subjectData, professorId: id });
-    };
+    const [isLoading, setIsLoading] = useState(false);
 
     const getYearOptions = () => {
         const currentYear = new Date().getFullYear();
@@ -162,7 +92,9 @@ function ManageSubjects() {
         return options;
     };
 
-    const courseCodeOptions = [
+    const yearOptions = getYearOptions();
+
+    const courseOptions = [
         { value: 'MR', label: 'Magistarske studije' },
         { value: 'XA', label: 'Arhitektura i urbanizam (INTEGRISANE STUDIJE)' },
         { value: 'XE', label: 'Elektrotehnika i računarstvo (INTEGRISANE STUDIJE)' },
@@ -307,141 +239,236 @@ function ManageSubjects() {
         { value: 'DR', label: 'Doktorske studije (studenti upisani od 2006 do 2010)' }
     ];
 
-    const animatedComponents = makeAnimated();
-
-    const handleOpenModal = () => setModalOpen(true);
-    const handleCloseModal = () => setModalOpen(false);;
-
-    const fetchSubjects = async () => {
-        if (!searchTerm.trim()) {
-            setSubjects([]);
-            return;
+    useEffect(() => {
+        if (isOpen && subject_id) {
+            fetchSubjectData(subject_id);
         }
-    
-        const searchParameters = {
-            searchString: searchTerm,
-            year: selectedYear ? selectedYear.value : null,
-            courseCode: selectedCourseId ? selectedCourseId.value : null,
-        };
-    
+    }, [isOpen, subject_id]);
+
+    async function fetchSubjectData(id) {
+        setIsLoading(true);
+
         try {
-            const response = await fetch('http://localhost:8000/subjects/search', {
+            const response = await fetch(`http://localhost:8000/subjects/get/${id}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch data');
+            }
+            const data = await response.json();
+
+            setSubjectData({ 
+              course_code: data.course_code, 
+              year: data.year, 
+              subject_name: data.name, 
+              code: data.code, 
+              professor_id: data.professor_id,
+              subject_id: data.id
+            });
+
+            const selectedYear = yearOptions.find(option => option.value === data.year.toString());
+            const selectedCourse = courseOptions.find(option => option.value === data.course_code);
+            setSelectedYearOption(selectedYear);
+            setSelectedCourseOption(selectedCourse);
+
+            if (data.professor_id) {
+                const profResponse = await fetch(`http://localhost:8000/employees/get/${data.professor_id}`);
+                if (profResponse.ok) {
+                    const profData = await profResponse.json();
+                    handleSelectProfessor(profData);
+                }
+            }
+        } catch (error) {
+            console.error("Error fetching subject data:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setSubjectData(prevState => ({
+            ...prevState,
+            [name]: value
+        }));
+    };
+
+    const onSelectCourseChange = (selectedOption) => {
+        setSubjectData(prevState => ({
+            ...prevState,
+            course_code: selectedOption ? selectedOption.value : ''
+        }));
+        setSelectedCourseOption(selectedOption);
+    };
+
+    const onSelectYearChange = (selectedOption) => {
+        setSubjectData(prevState => ({
+            ...prevState,
+            year: selectedOption ? selectedOption.value : ''
+        }));
+        setSelectedYearOption(selectedOption);
+    };
+
+    const handleSelectProfessor = (professor) => {
+        setSelectedProfessor(professor);
+        setProfessorSearchTerm('');
+        setProfessorResults([]);
+        setSubjectData(prevState => ({
+            ...prevState,
+            professor_id: professor.id
+        }));
+    };
+    
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        try {
+            const response = await fetch(`http://localhost:8000/subjects/update`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(searchParameters),
+                body: JSON.stringify(subjectData,),
             });
-            if (!response.ok) throw new Error('Network response was not ok');
-            const data = await response.json();
-            setSubjects(data);
+
+            if (!response.ok) {
+                throw new Error('Failed to update subject data');
+            }
+
+            toast.success("Predmet je uspešno ažuriran");
+            onSubjectUpdated();
+            onClose();
         } catch (error) {
-            console.error('Error fetching subjects:', error);
-            toast.error('Došlo je do greške prilikom dohvatanja predmeta.');
+            console.error("Error updating subject data:", error);
+            toast.error("Došlo je do greške prilikom ažuriranja predmeta");
+        } finally {
+            setIsLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchSubjects();
-    }, [searchTerm, selectedYear, selectedCourseId]);
-
-    const handleModalSubmit = async (event) => {
-        event.preventDefault();
-
-        const formData = new FormData();
-        formData.append('subject_name', subjectData.subject_name);
-        formData.append('code', subjectData.code);
-        formData.append('professorId', subjectData.professorId);
-        formData.append('year', subjectData.year);
-        formData.append('course_code', subjectData.course_code);
-    
-        try {
-            const response = await fetch('http://localhost:8000/subjects/new', {
-                method: 'POST',
-                body: formData,
-            });
-    
-            if (response.ok) {
-                setModalOpen(false);
-                fetchSubjects();
-                toast.success("Uspešno kreiran predemt " + subjectData.subject_name + " - " + subjectData.code + " !");
+        const fetchProfessors = async () => {
+            if (!professorSearchTerm) {
+                setProfessorResults([]);
                 return;
             }
     
-            toast.error("Došlo je do neočekivane greške prilikom kreiranja novog predmeta.");
-        } catch (error) {
-            console.error('Error adding subject:', error);
-            toast.error('Došlo je do greške prilikom dodavanja predmeta.');
-        }
-    };
+            try {
+                const response = await fetch(`http://localhost:8000/employees/search_professors?search=${professorSearchTerm}`);
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                setProfessorResults(data.slice(0, 10));
+            } catch (error) {
+                console.error('Error fetching professors:', error);
+            }
+        };
     
+        fetchProfessors();
+    }, [professorSearchTerm]);
+
+    function useOutsideAlerter(ref, onOutsideClick) {
+        useEffect(() => {
+            function handleClickOutside(event) {
+                if (ref.current && !ref.current.contains(event.target)) {
+                    onOutsideClick();
+                }
+            }
+    
+            document.addEventListener("mousedown", handleClickOutside);
+            return () => document.removeEventListener("mousedown", handleClickOutside);
+        }, [ref, onOutsideClick]);
+    }
+
+    useOutsideAlerter(wrapperRef, () => {
+        if (isOpen) setProfessorResults([]);
+    });
+
+    if (!isOpen) return null;
+
     return (
-        <div className='wrap'>
-            <ToastContainer theme="dark" />
-            <Sidebar />
-            <div className='content'>
-                <h1>Upravljanje predmetima</h1>
-                <div className="search-bar">
-                    <i className="fi fi-rr-search search-icon"></i>
-                    <input 
-                        type="text" 
-                        className="search-input" 
-                        placeholder="Pretražite predmete..." 
-                        value={searchTerm} 
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                    <Select
-                        components={animatedComponents}
-                        options={getYearOptions()}
-                        isClearable={true}
-                        isSearchable={true}
-                        placeholder="Godina"
-                        onChange={setSelectedYear}
-                        value={selectedYear}
-                        styles={customYearSelectStyles}
-                    />
-                    <Select
-                        components={animatedComponents}
-                        options={courseCodeOptions}
-                        isClearable={true}
-                        isSearchable={true}
-                        placeholder="Studijski program"
-                        onChange={setSelectedCourseId}
-                        value={selectedCourseId}
-                        styles={customCourseSelectStyles}
-                    />
-                </div>
+        <div className="modify-subject-modal-overlay" onClick={onClose}>
+            <div className="modify-subject-modal-content" onClick={(e) => e.stopPropagation()}>
+                <form onSubmit={handleSubmit}>
+                    <h2>Izmena predmeta</h2>
+                    <div className='modify-subject-input-wrap'>
+                        <label htmlFor="subject_name">Naziv predmeta</label>
+                        <input id="subject_name" type="text" name="subject_name" placeholder="Unesite naziv predmeta" value={subjectData.subject_name} onChange={handleInputChange} />
 
-                <button className='new-subject-button' onClick={handleOpenModal}><div className='new-button-content'><i className="fi fi-rs-add"></i> DODAJ PREDMET</div></button>
-                <NewSubjectModal
-                    isOpen={isModalOpen}
-                    onClose={handleCloseModal}
-                    onSubmit={handleModalSubmit}
-                    onInputChange={handleInputChange}
-                    onSelectCourseChnage={handleSelectCourseChange}
-                    onSelectYearChange={handleSelectYearChange}
-                    onProfessorChange={handleProfessorChange}
-                    subjectData={subjectData}/>
+                        <label htmlFor="subject_code">Šifra predmeta</label>
+                        <input id="subject_code" type="text" name="code" placeholder="Unesite šifru predmeta" value={subjectData.code} onChange={handleInputChange} />
 
-                <ModifySubjectModal
-                    isOpen={isModifyModalOpen}
-                    onClose={handleCloseModifyModal}
-                    subject_id={selectedSubjectForEdit}
-                    onSubjectUpdated={handleSubjectUpdated}
-                />
+                        <label>Odabir predmetnog profesora</label>
+                        <div className="search-bar-modify-subject-modal" ref={wrapperRef} style={{ position: 'relative' }}>
+                            <input
+                                type="text"
+                                className="search-input-modify-subject-modal"
+                                placeholder="Pretražite profesora..."
+                                value={professorSearchTerm}
+                                onChange={(e) => setProfessorSearchTerm(e.target.value)}
+                            />
+                            {professorResults.length > 0 && (
+                                <div className="professor-results-dropdown">
+                                    {professorResults.map(professor => (
+                                        <ProfessorSearchItem
+                                            key={professor.id}
+                                            professor={professor}
+                                            onSelect={() => handleSelectProfessor(professor)}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
 
-                <div className='subject-list-wrap'>
-                {subjects.map(subject => (
-                    <SubjectContainer 
-                        key={subject.id} 
-                        subject={subject} 
-                        onClick={() => handleSubjectEdit(subject.id)}
-                    />
-                ))}
-                </div>
+                        {selectedProfessor ? (
+                            <div className="selected-professor-display">
+                                <img src={'http://localhost:8000/user_pfp/' + selectedProfessor.id + '.jpg'} alt="Selected professor" className="selected-professor-image"/>
+                                <div className="selected-professor-info">
+                                    <span>{selectedProfessor.first_name} {selectedProfessor.last_name}</span>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="selected-professor-placeholder">
+                                Nema odabranog profesora
+                            </div>
+                        )}
+
+                        <div className="selects-container">
+                            <div className="select-course-and-year">
+                                <label htmlFor="course">Studijski program i Godina upisa</label>
+                                <div className="selects-row">
+                                    <Select
+                                        id="course"
+                                        components={animatedComponents}
+                                        options={courseOptions}
+                                        styles={customSelectStyles}
+                                        placeholder="Studijski program"
+                                        isClearable={true}
+                                        className="course-select"
+                                        value={selectedCourseOption}
+                                        onChange={onSelectCourseChange}
+                                    />
+                                    <Select
+                                        id="year"
+                                        components={animatedComponents}
+                                        options={yearOptions}
+                                        styles={customSelectStyles}
+                                        placeholder="Godina"
+                                        className="year-select"
+                                        value={selectedYearOption}
+                                        onChange={onSelectYearChange}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="modal-action-buttons">
+                        <button type="submit" className="submit-button" disabled={isLoading}>SAČUVAJ PROMENE</button>
+                        <button type="button" className="cancel-button" onClick={onClose}>ODUSTANI</button>
+                    </div>
+                </form>
             </div>
         </div>
     );
 }
 
-export default ManageSubjects;
+export default ModifySubjectModal;
