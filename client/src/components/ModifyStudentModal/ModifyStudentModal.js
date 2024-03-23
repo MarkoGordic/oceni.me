@@ -57,6 +57,14 @@ function ModifyStudentModal({ isOpen, onClose, studentId, onStudentDeleted  }) {
         setStudentData(null);
     };
 
+    const handleStudentInputChange = (e) => {
+        const { name, value } = e.target;
+        setStudentData(prevState => ({
+            ...prevState,
+            [name]: value
+        }));
+    };
+
     const handleModalContentClick = (e) => e.stopPropagation();
 
     const handleTabClick = (tabName) => setActiveTab(tabName);
@@ -78,19 +86,19 @@ function ModifyStudentModal({ isOpen, onClose, studentId, onStudentDeleted  }) {
                             <img className='studentInfo-avatar' src={'http://localhost:8000/student_pfp/' + studentData.id + '.jpg'}></img>
                             <div className='studentInfo-data-wrap'>
                                 <label className='studentInfo-label' htmlFor="first_name">Ime studenta:</label>
-                                <input className='studentInfo-input' type="text" id="first_name" name="first_name" value={studentData.first_name || ''} />
+                                <input className='studentInfo-input' type="text" id="first_name" name="first_name" value={studentData.first_name || ''} onChange={handleStudentInputChange} />
 
                                 <label className='studentInfo-label' htmlFor="last_name">Prezime studenta:</label>
-                                <input className='studentInfo-input' type="text" id="last_name" name="last_name" value={studentData.last_name || ''} />
+                                <input className='studentInfo-input' type="text" id="last_name" name="last_name" value={studentData.last_name || ''} onChange={handleStudentInputChange} />
 
                                 <label className='studentInfo-label' htmlFor="index_number">Broj indeksa:</label>
-                                <input className='studentInfo-input' type="text" id="index_number" name="index_number" value={studentData.index_number || ''} />
+                                <input className='studentInfo-input' type="text" id="index_number" name="index_number" value={studentData.index_number || ''} onChange={handleStudentInputChange} />
                             
                                 <label className='studentInfo-label' htmlFor="email">Elektronska pošta:</label>
-                                <input className='studentInfo-input' type="email" id="email" placeholder="primer.tidajem@uns.ac.rs" name="email" value={studentData.email || ''} />
+                                <input className='studentInfo-input' type="email" id="email" placeholder="primer.tidajem@uns.ac.rs" name="email" value={studentData.email || ''} onChange={handleStudentInputChange} />
 
                                 <label className='studentInfo-label' htmlFor="password">Postavi novu lozinku:</label>
-                                <input className='studentInfo-input' type="password" id="password" placeholder="MnogoJakaSifra" name="password" />
+                                <input className='studentInfo-input' type="password" id="password" placeholder="MnogoJakaSifra" name="password" onChange={handleStudentInputChange} />
 
                             </div>
                         </div>
@@ -114,17 +122,47 @@ function ModifyStudentModal({ isOpen, onClose, studentId, onStudentDeleted  }) {
 
     if (!isOpen) return null;
 
+    const saveChanges = async () => {
+        setIsLoading(true);
+        try {
+            if (studentData.password === '') {
+                delete studentData.password;
+            }
+    
+            const response = await fetch(`http://localhost:8000/students/update`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ...studentData,
+                    id: studentId,
+                }),
+            });
+    
+            if (!response.ok) {
+                throw new Error('Failed to update student data');
+            }
+    
+            toast.success("Podaci studenta su uspešno ažurirani.");
+            onClose();
+        } catch (error) {
+            console.error("Error updating student data:", error);
+            toast.error("Došlo je do greške prilikom ažuriranja podataka studenta.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+
     return (
         <div className="modify-student-modal-overlay" onClick={handleOverlayClick}>
             <div className="modify-student-modal-content" onClick={handleModalContentClick}>
             <div className='modify-student-modal-column-left'>
+                <div className="tabs-container">
                     <div className={`modify-student-modal-tab ${activeTab === 'studentInfo' ? 'active' : ''}`} onClick={() => handleTabClick('studentInfo')}>
                         <i className='fi fi-bs-user'></i>
                         <p className='sidebar-route-text'>O Studentu</p>
-                    </div>
-                    <div className={`modify-student-modal-tab ${activeTab === 'manageGroups' ? 'active' : ''}`} onClick={() => handleTabClick('manageGroups')}>
-                        <i className='fi fi-rr-users'></i>
-                        <p className='sidebar-route-text'>Upravljaj grupama</p>
                     </div>
                     <div className={`modify-student-modal-tab ${activeTab === 'activiyLogs' ? 'active' : ''}`} onClick={() => handleTabClick('activiyLogs')}>
                     <i className='fi fi-sr-time-past'></i>
@@ -139,9 +177,21 @@ function ModifyStudentModal({ isOpen, onClose, studentId, onStudentDeleted  }) {
                         <p className='sidebar-route-text'>Upravljaj nalogom</p>
                     </div>
                 </div>
-                <div className='modify-student-modal-column-right'>
-                    {renderRightColumnContent()}
+
+                <div className="bottom-buttons-container">
+                    <div className="modify-student-modal-button-green" onClick={saveChanges}>
+                        <i className='fi fi-rs-disk'></i>
+                        <p className='sidebar-route-text'>SAČUVAJ</p>
+                    </div>
+                    <div className="modify-student-modal-button-red" onClick={onClose}>
+                        <i className='fi fi-br-cross'></i>
+                        <p className='sidebar-route-text'>ODUSTANI</p>
+                    </div>
                 </div>
+            </div>
+            <div className='modify-student-modal-column-right'>
+                    {renderRightColumnContent()}
+            </div>
             </div>
         </div>
     );

@@ -88,6 +88,63 @@ router.post('/new', upload.single('profile_image'), async (req, res) => {
     }
 });
 
+router.post('/update', async (req, res) => {
+    const { id, first_name, last_name, index_number, email, password } = req.body;
+
+    if (!id) {
+        return res.status(400).send("Student ID is required.");
+    }
+
+    const studentData = await db.getStudentById(id);
+    if (!studentData) {
+        return res.status(404).send("Student not found.");
+    }
+
+    const updateData = {
+        first_name: first_name || studentData.first_name,
+        last_name: last_name || studentData.last_name,
+        index_number: index_number || studentData.index_number,
+    };
+
+    if(index_number){
+        const indexPattern = /^([A-Za-z]{2})\s(\d{1,3})\/(\d{4})$/;
+        if (!indexPattern.test(index_number)) {
+            return res.status(400).send("Invalid index number format.");
+        }
+        updateData.index_number = index_number;
+    } else
+        updateData.index_number = studentData.index_number;
+
+
+    if(email){
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailPattern.test(email)) {
+            return res.status(400).send("Invalid email format.");
+        }
+        updateData.email = email;
+    } else
+        updateData.email = studentData.email;
+
+    if (password) {
+        const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{10,}$/;
+        if (!passwordPattern.test(password)) {
+            return res.status(400).send("Password does not meet criteria.");
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        updateData.password = hashedPassword;
+    }
+
+    try {
+        await db.updateStudentById(id, updateData);
+        res.status(200).send("Student updated successfully");
+    } catch (error) {
+        console.error("Error updating student:", error);
+        res.status(500).send("Error updating student");
+    }
+});
+
+
 router.post('/search', async (req, res) => {
     const { search, course_code } = req.body;
 

@@ -54,6 +54,48 @@ router.get('/get/:id', async (req, res) => {
     }
 });
 
+router.post('/update', upload.none(), async (req, res) => {
+    const { subject_id, subject_name, code, professor_id, year, course_code } = req.body;
+
+    if (!(subject_id && subject_name && code && professor_id && year && course_code)) {
+        return res.status(400).send("All fields are required.");
+    }
+
+    try {
+        const isValidProfessor = await db.professorExists(professor_id);
+        if (!isValidProfessor) {
+            return res.status(400).send("Invalid professor ID provided.");
+        }
+
+        const isValidCourseCode = await db.courseCodeExists(course_code);
+        if (!isValidCourseCode) {
+            return res.status(400).send("Invalid course code provided.");
+        }
+
+        await db.updateSubject(subject_id, { subject_name, code, professor_id, year, course_code });
+        res.status(200).send("Subject updated successfully");
+    } catch (error) {
+        console.error('Error updating subject:', error);
+        res.status(500).send("Error updating subject");
+    }
+});
+
+router.get('/delete/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const deleted = await db.deleteSubjectById(id);
+        if (deleted) {
+            res.status(200).send("Subject successfully deleted");
+        } else {
+            res.status(404).send("Subject not found");
+        }
+    } catch (error) {
+        console.error('Error deleting subject:', error);
+        res.status(500).send("Error deleting subject");
+    }
+});
+
 router.post('/search', async (req, res) => {
     const { searchString, courseCode, year } = req.body;
 
