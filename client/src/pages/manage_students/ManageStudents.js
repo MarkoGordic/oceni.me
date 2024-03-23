@@ -88,7 +88,7 @@ function ManageStudents() {
 
     const handleInputChange = (e) => {
         const { name, value, type } = e.target;
-        console.log(name, value, type);
+
         if (type === 'file') {
             console.log(e.target.files[0]);
             setStudentData({ ...studentData, ['profile_image']: e.target.files[0] });
@@ -119,6 +119,7 @@ function ManageStudents() {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ search: searchString, course_code: selectedCourseFilter?.value }),
+                credentials: 'include',
             });
             if (response.ok) {
                 const data = await response.json();

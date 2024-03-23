@@ -128,7 +128,7 @@ router.get('/delete/:id', async (req, res) => {
             await db.createLogEntry(id, `${employee.first_name} ${employee.last_name}`, `Obrisan je korisnički nalog za studenta ${result.first_name} ${result.last_name}.`, 'INFO', 'INFO', req.ip, userAgent);
             res.status(200).send("Student successfully deleted");
         } else {
-            await db.createLogEntry(id, `${employee.first_name} ${employee.last_name}`, `Neuspešan pokusaj brisanja korisničkog naloga za studenta sa ID ${id}.`, 'ERROR', 'INFO', req.ip, userAgent);
+            await db.createLogEntry(id, `${employee.first_name} ${employee.last_name}`, `Neuspešan pokusaj brisanja korisničkog naloga za studenta sa ID ${id}.`, 'GREŠKA', 'INFO', req.ip, userAgent);
             res.status(404).send("Student not found");
         }
     } catch (error) {

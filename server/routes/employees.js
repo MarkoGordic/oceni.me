@@ -3,6 +3,24 @@ const router = express.Router();
 const database = require('../database');
 const db = new database();
 const bcrypt = require('bcrypt');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+const storage = multer.diskStorage({
+    destination: function(req, file, cb) {
+        const uploadsDir = path.join(__dirname, '../uploads');
+        fs.mkdirSync(uploadsDir, { recursive: true });
+        cb(null, uploadsDir);
+    },
+
+    filename: function(req, file, cb) {
+        const fileExt = path.extname(file.originalname);
+        cb(null, `${Date.now()}${fileExt}`);
+    }
+});
+
+const upload = multer({ storage: storage });
 
 router.use(express.urlencoded({extended: true}));
 router.use(express.json());
@@ -76,9 +94,7 @@ router.post('/me/update', async (req, res) => {
     }
 });
 
-
-
-router.post('/new', async (req, res) => {
+router.post('/new', upload.single('profile_image'), async (req, res) => {
     const { first_name, last_name, email, password, role } = req.body;
     const userAgent = req.headers['user-agent'] || 'Unknown User Agent';
     const employee = await db.getEmployeeById(req.session.userId);
@@ -86,18 +102,32 @@ router.post('/new', async (req, res) => {
     if (!first_name || !last_name || !email || !password || role === undefined) {
         return res.status(400).json({ error: 'Missing required employee details' });
     }
-
+    
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
+        const newEmployeeId = await db.registerNewEmployee(first_name, last_name, email, hashedPassword, role);
 
-        await db.registerNewEmployee(first_name, last_name, email, hashedPassword, role);
+        if (req.file) {
+            const targetDir = path.join(__dirname, '../static/user_pfp');
+            
+            fs.mkdirSync(targetDir, { recursive: true });
+            
+            const targetPath = path.join(targetDir, `${newEmployeeId}.jpg`);
+            
+            try {
+                fs.renameSync(req.file.path, targetPath);
+            } catch (error) {
+                console.error("Error saving profile image:", error);
+            }
+        }
+        
         await db.createLogEntry(req.session.userId, `${employee.first_name} ${employee.last_name}`, `Kreiran je novi korisnički naloga za zaposlenog ${first_name} ${last_name}.`, 'INFO', 'INFO', req.ip, userAgent);
         res.status(201).json({ message: 'Employee created successfully' });
     } catch (error) {
         if (error.code === 'ER_DUP_ENTRY') {
             return res.status(400).json({ error: 'Email already exists' });
         }
-        await db.createLogEntry(req.session.userId, `${employee.first_name} ${employee.last_name}`, `Neuspešan pokusaj kreiranja novog korisničkog naloga za zaposlenog ${first_name} ${last_name}.`, 'ERROR', 'INFO', req.ip, userAgent);
+        await db.createLogEntry(req.session.userId, `${employee.first_name} ${employee.last_name}`, `Neuspešan pokusaj kreiranja novog korisničkog naloga za zaposlenog ${first_name} ${last_name}.`, 'GREŠKA', 'INFO', req.ip, userAgent);
         res.status(500).json({ error: 'Internal server error' });
     }
 });

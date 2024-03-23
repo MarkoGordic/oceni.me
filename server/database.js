@@ -293,11 +293,19 @@ class Database {
     async registerNewEmployee(firstName, lastName, email, hashedPassword, role) {
         const query = 'INSERT INTO employees (first_name, last_name, email, password, role) VALUES (?, ?, ?, ?, ?)';
         try {
-            await this.pool.query(query, [firstName, lastName, email, hashedPassword, role]);
+            const [result] = await this.pool.query(query, [firstName, lastName, email, hashedPassword, role]);
+            const selectQuery = `SELECT id FROM employees WHERE email = ? LIMIT 1`;
+            const [rows] = await this.pool.query(selectQuery, [email]);
+            if (rows.length > 0) {
+                return rows[0].id;
+            } else {
+                return null;
+            }
         } catch (error) {
             throw error;
         }
     }
+    
 
     async updateEmployeeInfo(userId, updateFields) {
         let query = `UPDATE employees SET `;
