@@ -1,0 +1,120 @@
+.new-employee-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.new-employee-modal-content {
+    background-color: #0F0E0E;
+    color: #F7F7FF;
+    padding: 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.new-employee-modal-content form {
+    display: flex;
+    flex-direction: column;
+}
+
+.new-employee-modal-content input {
+    width: 100%;
+    background-color: #0B0A0A;
+    color: #F7F7FF; 
+    border: 1px solid #F7F7FF;
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.new-employee-modal-content input:focus {
+    outline: none;
+    border-color: #1993F0;
+    box-shadow: 0 0 0 2px rgba(25, 147, 240, 0.5);
+}
+
+.new-employee-modal-content button[type="submit"], .new-employee-modal-content button[type="button"] {
+    width: 100%;
+    height: 40px;
+    margin-top: 10px;
+    
+    font-family: "Jost", sans-serif;
+    font-size: 20px;
+
+    cursor: pointer;
+    outline: none;
+    border: none;
+    background-color: #1993F0;
+    color: white;
+    transition: background-color 0.2s ease;
+}
+
+.new-employee-modal-content button[type="submit"]:hover, .new-employee-modal-content button[type="button"]:hover {
+    background-color: #1476d2;
+}
+
+.new-employee-modal-content button[type="button"] {
+    background-color: #ff0033;
+}
+
+.new-employee-modal-content button[type="button"]:hover {
+    background-color: #d10000;
+}
+
+.search-bar-new-employee-modal {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.search-input-new-employee-modal {
+    flex-grow: 1;
+    border: none;
+    background-color: transparent;
+    color: #f7f7ff;
+    padding: 10px;
+    font-size: 16px;
+    border-bottom: 2px solid #f7f7ff;
+}
+
+.search-input-new-employee-modal:focus {
+    outline: none;
+}
+
+.new-employee-input-wrap {
+    width: 100%;
+    position: relative;
+}
+
+.modal-action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.selects-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.selects-row {
+    display: flex;
+    gap: 10px;
+}
+
+.employee-role-select {
+    width: 100%;
+}
