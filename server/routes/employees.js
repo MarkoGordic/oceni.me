@@ -95,6 +95,41 @@ router.post('/me/update', async (req, res) => {
     }
 });
 
+router.post('/reset_password', async (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+        return res.status(400).json({ error: 'Both old and new passwords are required' });
+    }
+
+    try {
+        const user = await db.getEmployeeById(req.session.userId);
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const match = await bcrypt.compare(oldPassword, user.password);
+
+        if (!match) {
+            return res.status(401).json({ error: 'Old password is incorrect' });
+        }
+
+        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+        await db.resetEmployeePassword(req.session.userId, hashedNewPassword);
+
+        res.json({ message: 'Password updated successfully' });
+    } catch (error) {
+        console.error("[ERROR] : Error resetting password:", error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 router.post('/new', upload.single('profile_image'), async (req, res) => {
     const { first_name, last_name, email, password, role } = req.body;
     const userAgent = req.headers['user-agent'] || 'Unknown User Agent';

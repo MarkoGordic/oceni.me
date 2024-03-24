@@ -24,6 +24,7 @@ const SystemLogs = () => {
                 offset: page * pageSize,
                 limit: pageSize + 1
             }),
+            credentials: 'include'
         })
         .then(response => {
             if (!response.ok) {

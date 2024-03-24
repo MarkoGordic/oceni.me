@@ -28,16 +28,24 @@ app.use(['/user_pfp/:imageName', '/student_pfp/:imageName'], (req, res, next) =>
   });
 });
 
+function ensureAuthenticated(req, res, next) {
+  if (req.session.userId) {
+    next();
+  } else {
+    res.redirect('http://localhost:3000/');
+  }
+}
+
 const AuthRoutes = require('./routes/auth');
 app.use('/auth', cors({origin: 'http://localhost:3000', credentials: true}), AuthRoutes);
 const EmployeesRoutes = require('./routes/employees');
-app.use('/employees', cors({origin: 'http://localhost:3000', credentials: true}), EmployeesRoutes);
+app.use('/employees', cors({origin: 'http://localhost:3000', credentials: true}), ensureAuthenticated, EmployeesRoutes);
 const StudentRoutes = require('./routes/students');
-app.use('/students', cors({origin: 'http://localhost:3000', credentials: true}), StudentRoutes);
+app.use('/students', cors({origin: 'http://localhost:3000', credentials: true}), ensureAuthenticated, StudentRoutes);
 const SubjectsRoutes = require('./routes/subjects');
-app.use('/subjects', cors({origin: 'http://localhost:3000', credentials: true}), SubjectsRoutes);
+app.use('/subjects', cors({origin: 'http://localhost:3000', credentials: true}), ensureAuthenticated, SubjectsRoutes);
 const LogRoutes = require('./routes/logs');
-app.use('/logs', cors({origin: 'http://localhost:3000', credentials: true}), LogRoutes);
+app.use('/logs', cors({origin: 'http://localhost:3000', credentials: true}), ensureAuthenticated, LogRoutes);
 
 app.listen(8000, () => {
   console.log('Server is running on port: 8000');
