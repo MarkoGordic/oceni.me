@@ -270,7 +270,7 @@ class Database {
     }
 
     async getEmployeeById(id) {
-        const query = 'SELECT first_name, last_name, email, id, role FROM employees WHERE id = ?';
+        const query = 'SELECT first_name, last_name, email, password, id, role FROM employees WHERE id = ?';
         try {
             const [results] = await this.pool.query(query, [id]);
             return results.length > 0 ? results[0] : null;
@@ -336,6 +336,17 @@ class Database {
             await this.pool.query(query, queryParams);
         } catch (error) {
             console.error('Error updating employee info:', error);
+            throw error;
+        }
+    }
+
+    async resetEmployeePassword(userId, hashedNewPassword) {
+        const query = 'UPDATE employees SET password = ? WHERE id = ?';
+        try {
+            const [result] = await this.pool.query(query, [hashedNewPassword, userId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('Error resetting employee password:', error);
             throw error;
         }
     }

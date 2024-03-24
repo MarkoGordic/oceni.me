@@ -11,7 +11,11 @@ const SubjectOverview = () => {
     useEffect(() => {
         const fetchSubjectData = async () => {
             try {
-                const response = await fetch(`http://localhost:8000/subjects/get/${id}`);
+                const response = await fetch(`http://localhost:8000/subjects/get/${id}`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
                 if (!response.ok) {
                     throw new Error('Could not fetch subject data');
                 }

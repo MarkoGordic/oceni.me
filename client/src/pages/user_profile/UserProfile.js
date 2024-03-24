@@ -16,6 +16,16 @@ const UserProfile = () => {
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
     const [oldPassword, setOldPassword] = useState('');
 
+    const [isOldPasswordVisible, setIsOldPasswordVisible] = useState(false);
+    const [isNewPasswordVisible, setIsNewPasswordVisible] = useState(false);
+    const [isConfirmNewPasswordVisible, setIsConfirmNewPasswordVisible] = useState(false);
+
+    const togglePasswordVisibility = (passwordType) => {
+        if (passwordType === 'old') setIsOldPasswordVisible(!isOldPasswordVisible);
+        if (passwordType === 'new') setIsNewPasswordVisible(!isNewPasswordVisible);
+        if (passwordType === 'confirmNew') setIsConfirmNewPasswordVisible(!isConfirmNewPasswordVisible);
+    };
+
     useEffect(() => {
         fetch('http://localhost:8000/employees/me', { credentials: 'include' })
             .then(response => response.json())
@@ -63,6 +73,41 @@ const UserProfile = () => {
         });
     };
 
+    const handlePasswordUpdate = () => {
+        if (newPassword !== confirmNewPassword) {
+            toast.error('Nova lozinka i potvrda lozinke se ne podudaraju.');
+            return;
+        }
+
+        fetch('http://localhost:8000/employees/reset_password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                oldPassword: oldPassword,
+                newPassword: newPassword
+            }),
+            credentials: 'include',
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('Problem with response');
+        })
+        .then(data => {
+            toast.success("Vaša lozinka je uspešno promenjena.");
+            setOldPassword('');
+            setNewPassword('');
+            setConfirmNewPassword('');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            toast.error("Neuspešna promena lozinke.");
+        });
+    };
+
     return (
         <div className='wrap'>
             <ToastContainer theme="dark" />
@@ -77,8 +122,8 @@ const UserProfile = () => {
                     </div>
                 </div>
                 <div className='userinfo-edit'>
-                    <h2>Izmeni podatke</h2>
                     <div className='userInfo-editwrap'>
+                        <h2>Izmeni podatke</h2>
                         <label className='studentInfo-label' htmlFor="firstName">Ime:</label>
                         <input className='studentInfo-input' type="text" id="firstName" name="firstName" defaultValue={user.firstName} onChange={handleInputChange} />
 
@@ -88,7 +133,37 @@ const UserProfile = () => {
                         <label className='studentInfo-label' htmlFor="email">Elektronska pošta:</label>
                         <input className='studentInfo-input' type="email" id="email" name="email" defaultValue={user.email} onChange={handleInputChange} />
 
-                        <button className='userinfo-editbtn' onClick={handleUserUpdate}><i class="fi fi-rr-disk"></i> SAČUVAJ IZMENE</button>
+                        <button className='userinfo-editbtn' onClick={handleUserUpdate}><i className="fi fi-rr-disk"></i> SAČUVAJ IZMENE</button>
+                    </div>
+
+                    <div className='userInfo-editwrap'>
+                        <h2>Promena lozinke</h2>
+
+                        <label className='studentInfo-label' htmlFor="oldPassword">Stara lozinka:</label>
+                        <div className="userinfo-password-input-group">
+                            <input className='studentInfo-input' type={isOldPasswordVisible ? "text" : "password"} id="oldPassword" name="oldPassword" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} />
+                            <span onClick={() => togglePasswordVisibility('old')} className="userinfo-eye-icon">
+                                <i className={isOldPasswordVisible ? "fi fi-rr-eye-crossed" : "fi fi-rs-eye"}></i>
+                            </span>
+                        </div>
+
+                        <label className='studentInfo-label' htmlFor="newPassword">Nova lozinka:</label>
+                        <div className="userinfo-password-input-group">
+                            <input className='studentInfo-input' type={isNewPasswordVisible ? "text" : "password"} id="newPassword" name="newPassword" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                            <span onClick={() => togglePasswordVisibility('new')} className="userinfo-eye-icon">
+                                <i className={isNewPasswordVisible ? "fi fi-rr-eye-crossed" : "fi fi-rs-eye"}></i>
+                            </span>
+                        </div>
+
+                        <label className='studentInfo-label' htmlFor="confirmNewPassword">Potvrdi novu lozinku:</label>
+                        <div className="userinfo-password-input-group">
+                            <input className='studentInfo-input' type={isConfirmNewPasswordVisible ? "text" : "password"} id="confirmNewPassword" name="confirmNewPassword" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} />
+                            <span onClick={() => togglePasswordVisibility('confirmNew')} className="userinfo-eye-icon">
+                                <i className={isConfirmNewPasswordVisible ? "fi fi-rr-eye-crossed" : "fi fi-rs-eye"}></i>
+                            </span>
+                        </div>
+
+                        <button className='userinfo-editbtn' onClick={handlePasswordUpdate}><i className="fi fi-rr-disk"></i> PROMENI LOZINKU</button>
                     </div>
                 </div>
             </div>
