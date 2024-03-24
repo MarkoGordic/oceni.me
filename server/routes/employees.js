@@ -37,13 +37,14 @@ router.get('/me', async (req, res) => {
             return res.status(404).json({ error: 'Employee not found' });
         }
 
-        const { first_name, last_name, email, id } = employee;
+        const { first_name, last_name, email, id, role } = employee;
 
         res.json({
             first_name,
             last_name,
             email,
-            id
+            id,
+            role
         });
     } catch (error) {
         console.error("[ERROR] : Error fetching employee details:", error);

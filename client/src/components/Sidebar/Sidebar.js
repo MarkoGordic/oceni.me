@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import './sidebar.css';
 import SidebarRoute from '../SidebarRoute/SidebarRoute';
-import { toast } from 'react-toastify';
 
 function Sidebar() {
     const [user, setUser] = useState({
         name: '',
         email: '',
-        avatar: ''
+        avatar: '',
+        role: null,
     });
 
     useEffect(() => {
@@ -24,7 +24,8 @@ function Sidebar() {
                     name: userData.first_name + ' ' + userData.last_name,
                     email: userData.email,
                     avatar: userData.avatar,
-                    id: userData.id
+                    id: userData.id,
+                    role: userData.role,
                 });
             } catch (error) {
                 console.error('There was a problem fetching user data:', error);
@@ -49,14 +50,18 @@ function Sidebar() {
                 <SidebarRoute icon='fi fi-bs-user' text='Korisnička zona' path='/profile' />
             </div>
             
-            <div className='sidebar-delim'></div>
+            {user.role === 0 && (
+                <div className='sidebar-delim'></div>
+            )}
 
-            <div className='sidebar-routes'>
-                <SidebarRoute icon='fi fi-rr-chat-arrow-grow' text='Statistika' path='/admin/statistics' />
-                <SidebarRoute icon='fi fi-rr-fingerprint' text='Upravljanje zaposlenima' path='/admin/users' />
-                <SidebarRoute icon='fi fi-rr-graduation-cap' text='Upravljanje predmetima' path='/admin/subjects' />
-                <SidebarRoute icon='fi fi-sr-time-past' text='Istorija aktivnosti' path='/admin/logs' />
-            </div>
+            {user.role === 0 && (
+                <div className='sidebar-routes'>
+                    <SidebarRoute icon='fi fi-rr-chat-arrow-grow' text='Statistika' path='/admin/statistics' />
+                    <SidebarRoute icon='fi fi-rr-fingerprint' text='Upravljanje zaposlenima' path='/admin/users' />
+                    <SidebarRoute icon='fi fi-rr-graduation-cap' text='Upravljanje predmetima' path='/admin/subjects' />
+                    <SidebarRoute icon='fi fi-sr-time-past' text='Istorija aktivnosti' path='/admin/logs' />
+                </div>
+            )}
 
             <div className='sidebar-user-wrap'>
 

@@ -270,7 +270,7 @@ class Database {
     }
 
     async getEmployeeById(id) {
-        const query = 'SELECT first_name, last_name, email, id FROM employees WHERE id = ?';
+        const query = 'SELECT first_name, last_name, email, id, role FROM employees WHERE id = ?';
         try {
             const [results] = await this.pool.query(query, [id]);
             return results.length > 0 ? results[0] : null;

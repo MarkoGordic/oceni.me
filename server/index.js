@@ -3,6 +3,8 @@ const router = express.Router();
 const app = express();
 const cors = require('cors');
 const session = require('express-session');
+const path = require('path');
+const fs = require('fs');
 
 app.use(express.json());
 app.use(express.static('static'));
@@ -13,6 +15,18 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
 }));
+
+app.use(['/user_pfp/:imageName', '/student_pfp/:imageName'], (req, res, next) => {
+  const filePath = path.join(__dirname, 'static', req.originalUrl);
+
+  fs.access(filePath, fs.constants.F_OK, (err) => {
+      if (err) {
+          res.sendFile(path.join(__dirname, 'static', 'default.png'));
+      } else {
+          next();
+      }
+  });
+});
 
 const AuthRoutes = require('./routes/auth');
 app.use('/auth', cors({origin: 'http://localhost:3000', credentials: true}), AuthRoutes);
