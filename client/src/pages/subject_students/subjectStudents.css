@@ -1,0 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&display=swap');
+@import "~@flaticon/flaticon-uicons/css/all/all";
+
+body, #root {
+    width: 100%;
+    height: 100dvh;
+  
+    margin: 0;
+    padding: 0;
+    background-color: #131313;
+    
+    font-family: "Jost", sans-serif;
+    color: #f7f7ff;
+}
+
+.content {
+    height: 100dvh;
+    width: 100%;
+
+    text-align: center;
+}
+
+.subjectstudents-subject-name {
+    font-size: 22px;
+    font-weight: 300;
+    margin-bottom: 40px;
+}
+
+.subject-students-table {
+    width: 90%;
+    margin: 0 auto;
+    border-collapse: collapse;
+    background-color: #1a1a1a;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.subject-students-table th, .subject-students-table td {
+    padding: 12px;
+    text-align: left;
+    color: #f7f7ff;
+}
+
+.subject-students-table th {
+    background-color: #1993F0;
+    color: #ffffff;
+}
+
+.subject-students-table tr:nth-child(even) {
+    background-color: #262626;
+}
+
+.subject-students-table tr:hover {
+    background-color: #2a3036;
+}
+
+.subject-students-table th:first-child,
+.subject-students-table td:first-child {
+    text-align: center;
+}
+
+@media screen and (max-width: 768px) {
+    .subject-students-table {
+        width: 100%;
+    }
+
+    .subject-students-table th, .subject-students-table td {
+        padding: 8px;
+    }
+}

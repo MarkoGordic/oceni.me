@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './subjectSidebar.css';
 import SidebarRoute from '../SidebarRoute/SidebarRoute';
 import { toast } from 'react-toastify';
+import { useLocation } from 'react-router-dom';
 
 function SubjectSidebar() {
     const [user, setUser] = useState({
@@ -9,6 +10,9 @@ function SubjectSidebar() {
         email: '',
         avatar: ''
     });
+
+    const location = useLocation();
+    const subjectId = location.pathname.split('/')[2] || 'defaultSubjectId';
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -34,6 +38,8 @@ function SubjectSidebar() {
         fetchUserData();
     }, []);
 
+    const basePath = `/subjects/${subjectId}`;
+
     return (
         <div className="sidebar">
             <div className='sidebar-app-logo'>
@@ -43,17 +49,17 @@ function SubjectSidebar() {
             <div className='sidebar-delim'></div>
 
             <div className='sidebar-routes'>
-                <SidebarRoute icon='fi fi-bs-home' text='Pregled predmeta' path='./overview' />
-                <SidebarRoute icon='fi fi-rr-list-check' text='Kolokvijumi' path='./tests' />
-                <SidebarRoute icon='fi fi-br-plus' text='Novi kolokvijum' path='./tests/new' />
-                <SidebarRoute icon='fi fi-rs-users' text='Spisak studenata' path='./students' />
+                <SidebarRoute icon='fi fi-bs-home' text='Pregled predmeta' path={`${basePath}/overview`} />
+                <SidebarRoute icon='fi fi-rr-list-check' text='Kolokvijumi' path={`${basePath}/tests`} />
+                <SidebarRoute icon='fi fi-br-plus' text='Novi kolokvijum' path={`${basePath}/tests/new`} />
+                <SidebarRoute icon='fi fi-rs-users' text='Spisak studenata' path={`${basePath}/students`} />
             </div>
             
             <div className='sidebar-delim'></div>
 
             <div className='sidebar-routes'>
-                <SidebarRoute icon='fi fi-sr-time-past' text='Istorija aktivnosti' path='./logs' />
-                <SidebarRoute icon='fi fi-rs-shield' text='Upravljaj predmetom' path='./manage' />
+                <SidebarRoute icon='fi fi-sr-time-past' text='Istorija aktivnosti' path={`${basePath}/logs`} />
+                <SidebarRoute icon='fi fi-rs-shield' text='Upravljaj predmetom' path={`${basePath}/manage`} />
             </div>
 
             <div className='sidebar-delim'></div>

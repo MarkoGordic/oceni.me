@@ -144,7 +144,6 @@ router.post('/update', async (req, res) => {
     }
 });
 
-
 router.post('/search', async (req, res) => {
     const { search, course_code } = req.body;
 
@@ -191,6 +190,26 @@ router.get('/delete/:id', async (req, res) => {
     } catch (error) {
         console.error("Error deleting student:", error);
         res.status(500).send("Error deleting student");
+    }
+});
+
+router.get('/from_subject/:id', async (req, res) => {
+    const { id } = req.params;
+
+    if (!id) {
+        return res.status(400).send("Subject ID is required.");
+    }
+
+    try {
+        const students = await db.getStudentsFromSubject(id);
+        if (students) {
+            res.status(200).json(students);
+        } else {
+            res.status(404).send("Students not found.");
+        }
+    } catch (error) {
+        console.error("Error fetching students based on subject ID:", error);
+        res.status(500).send("Error fetching students");
     }
 });
 

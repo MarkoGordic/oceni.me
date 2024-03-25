@@ -124,7 +124,6 @@ function ManageSubjects() {
     const handleInputChange = (e) => {
         const { name, value, type } = e.target;
         setSubjectData({ ...subjectData, [name]: value });
-        toast.success("banana");
     };
 
     const handleSubjectEdit = (subjectId) => {
@@ -327,10 +326,11 @@ function ManageSubjects() {
         try {
             const response = await fetch('http://localhost:8000/subjects/search', {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(searchParameters),
+                body: JSON.stringify(searchParameters)
             });
             if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();

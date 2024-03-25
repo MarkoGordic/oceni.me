@@ -177,6 +177,7 @@ function ManageStudents() {
             const response = await fetch('http://localhost:8000/students/new', {
                 method: 'POST',
                 body: formData,
+                credentials: 'include',
             });
             if (response.ok) {
                 toast.success("Uspešno kreiran nalog za studenta " + studentData.first_name + " " + studentData.last_name + "!");
