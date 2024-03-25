@@ -470,6 +470,29 @@ class Database {
             throw error;
         }
     }
+
+    async getStudentsFromSubject(subjectId) {
+        const subjectQuery = `
+            SELECT year, course_code FROM subjects WHERE id = ?
+        `;
+
+        try {
+            const [subjectResult] = await this.pool.query(subjectQuery, [subjectId]);
+            if (subjectResult.length === 0) {
+                throw new Error('Subject not found.');
+            }
+            const { year, course_code } = subjectResult[0];
+    
+            const studentsQuery = `
+                SELECT * FROM students WHERE year = ? AND course_code = ?
+            `;
+            const [studentsResult] = await this.pool.query(studentsQuery, [year, course_code]);
+            return studentsResult;
+        } catch (error) {
+            console.error('Error retrieving students for subject:', error);
+            throw error;
+        }
+    }
     
     async searchEmplyees(searchString) {
         let query = `
@@ -596,25 +619,16 @@ class Database {
         const setParts = [];
 
         for (const [key, value] of Object.entries(updateData)) {
-            switch (key) {
-                case 'subject_name':
-                    setParts.push(`name = ?`);
-                    break;
-                case 'code':
-                case 'professor_id':
-                case 'year':
-                case 'course_code':
-                    setParts.push(`${key} = ?`);
-                    break;
-                default:
-                    console.log(`Unexpected field: ${key}`);
-                    continue;
+            if (['name', 'code', 'professor_id', 'year', 'course_code'].includes(key)) {
+                setParts.push(`${key} = ?`);
+                queryParams.push(value);
+            } else {
+                console.log(`Unexpected or invalid field: ${key}`);
             }
-            queryParams.push(value);
         }
     
         if (setParts.length === 0) {
-            throw new Error('No update fields provided');
+            throw new Error('No valid fields provided for update.');
         }
     
         query += setParts.join(', ') + ' WHERE id = ?';
@@ -627,7 +641,7 @@ class Database {
             console.error('Error updating subject:', error);
             throw error;
         }
-    }    
+    }
     
     async professorExists(professorId) {
         const query = 'SELECT * FROM employees WHERE id = ? AND role IN (0, 1)';

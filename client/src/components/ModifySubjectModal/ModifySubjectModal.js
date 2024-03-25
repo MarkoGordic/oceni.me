@@ -249,7 +249,10 @@ function ModifySubjectModal({ isOpen, onClose, subject_id, onSubjectUpdated }) {
         setIsLoading(true);
 
         try {
-            const response = await fetch(`http://localhost:8000/subjects/get/${id}`);
+            const response = await fetch(`http://localhost:8000/subjects/get/${id}`, {
+                method: 'GET',
+                credentials: 'include'
+            });
             if (!response.ok) {
                 throw new Error('Failed to fetch data');
             }
@@ -270,7 +273,10 @@ function ModifySubjectModal({ isOpen, onClose, subject_id, onSubjectUpdated }) {
             setSelectedCourseOption(selectedCourse);
 
             if (data.professor_id) {
-                const profResponse = await fetch(`http://localhost:8000/employees/get/${data.professor_id}`);
+                const profResponse = await fetch(`http://localhost:8000/employees/get/${data.professor_id}`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
                 if (profResponse.ok) {
                     const profData = await profResponse.json();
                     handleSelectProfessor(profData);
@@ -328,6 +334,7 @@ function ModifySubjectModal({ isOpen, onClose, subject_id, onSubjectUpdated }) {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(subjectData,),
+                credentials: 'include'
             });
 
             if (!response.ok) {

@@ -13,6 +13,7 @@ import MySubjects from './pages/my_subjects/MySubjects';
 import UserProfile from './pages/user_profile/UserProfile';
 import SubjectOverview from './pages/subject_overview/SubjectOverview';
 import NewTestWizard from './pages/NewTestWizard/NewTestWizard';
+import SubjectStudents from './pages/subject_students/SubjectStudents';
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify';
 
@@ -42,6 +43,11 @@ root.render(
           <Route path="/subjects/:id/tests/new" element={
             <ProtectedRoute>
               <NewTestWizard />
+            </ProtectedRoute>
+          } />
+          <Route path="/subjects/:id/students" element={
+            <ProtectedRoute>
+              <SubjectStudents />
             </ProtectedRoute>
           } />
           <Route path="/profile" element={
