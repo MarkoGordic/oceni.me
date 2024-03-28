@@ -60,3 +60,38 @@ body, #root {
     color: #f7f7ff;
     font-size: 16px;
 }
+
+.newtest-info {
+    margin: 0;
+    font-size: 16px;
+}
+
+.newtest-configs {
+    height: 550px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.newtest-warning {
+    margin-top: 10px;
+}
+
+.confirm-tests-btn {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #f7f7ff;
+    background-color: #1e90ff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-family: "Jost", sans-serif;
+}
+
+.confirm-tests-btn:hover {
+    background-color: #007bff;
+}

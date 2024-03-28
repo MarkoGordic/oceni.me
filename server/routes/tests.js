@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const fsp = fs.promises;
 const unzipper = require('unzipper');
 const readline = require('readline');
 
@@ -26,8 +27,8 @@ const upload = multer({ storage: storage });
 
 const testConfigStorage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const configId = req.body.configId;
-    const dest = `uploads/test_configs/${configId}`;
+    const configid = req.body.configid;
+    const dest = `uploads/test_configs/${configid}`;
     if (!fs.existsSync(dest)){
       fs.mkdirSync(dest, { recursive: true });
     }
@@ -39,26 +40,78 @@ const testConfigStorage = multer.diskStorage({
 });
 const uploadTestConfig = multer({ storage: testConfigStorage });
 
-router.post('/configure/new', uploadTestConfig.single('zipFile'), async (req, res) => {
+const asyncHandler = fn => (req, res, next) =>
+  Promise.resolve(fn(req, res, next)).catch(next);
+
+router.post('/configure/new', uploadTestConfig.single('zipFile'), asyncHandler(async (req, res) => {
   if (!req.file) {
     return res.status(400).send('No file uploaded.');
   }
 
-  const configId = await db.addNewTestConfig(req.session.userId);
+  const configid = await db.addNewTestConfig(req.session.userId);
   const zipPath = req.file.path;
+  const extractPath = `uploads/test_configs/${configid}`;
 
   try {
-    await fs.createReadStream(zipPath)
-      .pipe(unzipper.Extract({ path: `uploads/test_configs/${configId}` }))
-      .promise();
+    fs.createReadStream(zipPath)
+      .pipe(unzipper.Extract({ path: extractPath }))
+      .promise()
+      .then(async () => {
+        await fsp.unlink(zipPath);
 
-    fs.unlinkSync(zipPath);
-    res.json({ configId });
+        const filenames = await fsp.readdir(extractPath);
+        const testFiles = filenames.filter(name => /^t\d{2}/.test(name));
+        const filesDetails = [];
+
+        for (const filename of testFiles) {
+          const content = await fsp.readFile(`${extractPath}/${filename}`, 'utf-8');
+          filesDetails.push({ name: filename, content: content.trimEnd() });
+        }
+
+        res.json({ configid, files: filesDetails });
+      });
   } catch (error) {
-    console.error('Error extracting file:', error);
-    res.status(500).send('An error occurred while extracting the file.');
+    console.error('Error during file processing:', error);
+    res.status(500).send('An error occurred during file processing.');
   }
-});
+}));
+
+router.post('/configure/complete', uploadTestConfig.single('solutionFile'), asyncHandler(async (req, res) => {
+  if (!req.file) {
+    return res.status(400).send('No file uploaded.');
+  }
+
+  if (path.extname(req.file.originalname).toLowerCase() !== '.s') {
+    await fsp.unlink(req.file.path);
+    return res.status(400).send('File must have the .S extension.');
+  }
+
+  const configId = req.body.configid;
+  const solutionPath = req.file.path;
+  const newPath = `uploads/test_configs/${configId}/output`;
+  
+  const testsConfig = JSON.parse(req.body.testsConfig);
+
+  try {
+    await fsp.access(newPath, fs.constants.F_OK);
+  } catch (error) {
+    await fsp.mkdir(newPath, { recursive: true });
+  }
+
+  try {
+    const newFilePath = path.join(newPath, req.file.originalname);
+    await fsp.rename(solutionPath, newFilePath);
+
+    const configFilePath = path.join(newPath, 'config.json');
+    await fsp.writeFile(configFilePath, JSON.stringify(testsConfig, null, 2), 'utf8');
+
+    res.send({ success: true });
+  } catch (error) {
+    console.error('Error moving solution file or writing config:', error);
+    res.status(500).send('An error occurred while processing the solution file or writing the config.');
+  }
+}));
+
 
 function convertIndexFormat(index) {
   const match = index.match(/([a-zA-Z]+)(\d+)-(\d+)/);
@@ -75,31 +128,32 @@ function convertIndexFormat(index) {
 async function getStudentList(testId) {
   const filePath = path.join(__dirname, `../uploads/tests/${testId}/provera/spisak_stud_koji_trenutno_rade_proveru.txt`);
 
-  if (!fs.existsSync(filePath)) {
-    throw new Error("File does not exist.");
-  }
+  try {
+    await fs.access(filePath);
 
-  const fileStream = fs.createReadStream(filePath);
-  const rl = readline.createInterface({
-    input: fileStream,
-    crlfDelay: Infinity
-  });
+    const fileStream = fs.createReadStream(filePath);
+    const rl = readline.createInterface({
+      input: fileStream,
+      crlfDelay: Infinity
+    });
 
-  const students = [];
-
-  for await (const line of rl) {
-    const parts = line.split(',').map(part => part.trim());
-    if (parts.length > 1) {
-      if(parts[1] != '')
+    const students = [];
+    for await (const line of rl) {
+      const parts = line.split(',').map(part => part.trim());
+      if (parts.length > 1 && parts[1] !== '') {
         parts[1] = convertIndexFormat(parts[1]);
         students.push([parts[0], parts[1]]);
+      }
     }
-  }
 
-  return students;
+    return students;
+  } catch (error) {
+    console.error(`Error accessing or reading the student list file: ${filePath}`, error);
+    throw new Error("File does not exist or cannot be accessed.");
+  }
 }
 
-router.post('/new', upload.single('zipFile'), async (req, res) => {
+router.post('/new', upload.single('zipFile'), asyncHandler(async (req, res) => {
   if (!req.file) {
     return res.status(400).send('No file uploaded.');
   }
@@ -109,26 +163,24 @@ router.post('/new', upload.single('zipFile'), async (req, res) => {
   const zipPath = req.file.path;
 
   try {
-    await fs.createReadStream(zipPath)
+    fs.createReadStream(zipPath)
       .pipe(unzipper.Extract({ path: `uploads/tests/${testId}` }))
-      .promise();
+      .promise()
+      .then(async () => {
+        await fsp.unlink(zipPath);
 
-    fs.unlinkSync(zipPath);
-
-    try {
-      const studentList = await getStudentList(testId);
-      
-      console.log(studentList);
-      res.json({ testId, studentList });
-    } catch (error) {
-      console.error('Error reading student list:', error);
-      res.status(500).send('Error processing student list.');
-    }
+        try {
+          const studentList = await getStudentList(testId);
+          res.json({ testId, studentList });
+        } catch (error) {
+          console.error('Error reading student list:', error);
+          res.status(500).send('Error processing student list.');
+        }
+      });
   } catch (error) {
     console.error('Error extracting file:', error);
     res.status(500).send('An error occurred while extracting the file.');
   }
-});
-
+}));
 
 module.exports = router;
