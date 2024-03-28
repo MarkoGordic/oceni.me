@@ -359,6 +359,7 @@ function ManageSubjects() {
             const response = await fetch('http://localhost:8000/subjects/new', {
                 method: 'POST',
                 body: formData,
+                credentials: 'include',
             });
     
             if (response.ok) {

@@ -239,6 +239,15 @@ class Database {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         `;
 
+        const createTestsTable = `
+            CREATE TABLE IF NOT EXISTS tests (
+                id INT NOT NULL AUTO_INCREMENT,
+                subject_id INT NOT NULL,
+                PRIMARY KEY (id),
+                FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        `;
+
         try {
             await this.pool.execute(createeemployeesTable);
             console.info("[INFO] : Employees table created successfully.");
@@ -254,6 +263,8 @@ class Database {
             console.info("[INFO] : Employee-Subjects table created successfully.");
             await this.pool.execute(createSystemActivityLogsTable);
             console.info("[INFO] : System activity logs table created successfully.");
+            await this.pool.execute(createTestsTable);
+            console.info("[INFO] : Tests table created successfully.");
         } catch (err) {
             console.error("[ERROR] : Error while running SQL.", err);
         }
@@ -729,6 +740,42 @@ class Database {
         }
     }
     
+    async addNewTest(subjectId) {
+        try {
+            const insertQuery = `INSERT INTO tests (subject_id) VALUES (?)`;
+            await this.pool.query(insertQuery, [subjectId]);
+    
+            const selectQuery = `SELECT id AS testId FROM tests WHERE subject_id = ? ORDER BY id DESC LIMIT 1`;
+            const [selectResult] = await this.pool.query(selectQuery, [subjectId]);
+            
+            if (selectResult.length === 0) {
+                throw new Error("Failed to retrieve the last inserted test ID.");
+            }
+
+            const testId = selectResult[0].testId;
+            
+            return testId;
+        } catch (error) {
+            console.error('Error while adding test:', error);
+            throw error;
+        }
+    }
+    
+    async getStudentsByIndexes(indexes) {
+        const placeholders = indexes.map(() => '?').join(',');
+        const query = `
+            SELECT * FROM students
+            WHERE index_number IN (${placeholders})
+        `;
+    
+        try {
+            const [results] = await this.pool.query(query, indexes);
+            return results;
+        } catch (error) {
+            console.error('Error retrieving students by indexes:', error);
+            throw error;
+        }
+    }
     
 }
 

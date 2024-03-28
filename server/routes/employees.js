@@ -187,19 +187,25 @@ router.get('/get/:id', async (req, res) => {
 router.get('/delete/:id', async (req, res) => {
     const { id } = req.params;
     const userAgent = req.headers['user-agent'] || 'Unknown User Agent';
-    const employee = await db.getEmployeeById(req.session.userId);
+    const sessionUserId = req.session.userId;
+
+    if (id === sessionUserId) {
+        return res.status(403).send("Cannot delete your own account.");
+    }
+
+    const employee = await db.getEmployeeById(sessionUserId);
 
     try {
         const result = await db.deleteEmployeeById(id);
         if (result) {
-            await db.createLogEntry(req.session.userId, `${employee.first_name} ${employee.last_name}`, `Obrisan je korisnički nalog za zaposlenog ${result.first_name} ${result.last_name}.`, 'INFO', 'INFO', req.ip, userAgent);
+            await db.createLogEntry(sessionUserId, `${employee.first_name} ${employee.last_name}`, `Obrisan je korisnički nalog za zaposlenog ${result.first_name} ${result.last_name}.`, 'INFO', 'INFO', req.ip, userAgent);
             res.status(200).send("Employee successfully deleted");
         } else {
-            await db.createLogEntry(req.session.userId, `${employee.first_name} ${employee.last_name}`, `Neuspešan pokusaj brisanja korisničkog naloga za zaposlenog sa ID ${id}.`, 'GREŠKA', 'INFO', req.ip, userAgent);
+            await db.createLogEntry(sessionUserId, `${employee.first_name} ${employee.last_name}`, `Neuspešan pokusaj brisanja korisničkog naloga za zaposlenog sa ID ${id}.`, 'GREŠKA', 'INFO', req.ip, userAgent);
             res.status(404).send("Employee not found");
         }
     } catch (error) {
-        await db.createLogEntry(req.session.userId, `${employee.first_name} ${employee.last_name}`, `Došlo je do greške prilikom pokušaja brisanja korisničkog naloga za zaposlenog sa ID ${id}.`, 'GREŠKA', 'INFO', req.ip, userAgent);
+        await db.createLogEntry(sessionUserId, `${employee.first_name} ${employee.last_name}`, `Došlo je do greške prilikom pokušaja brisanja korisničkog naloga za zaposlenog sa ID ${id}.`, 'GREŠKA', 'INFO', req.ip, userAgent);
         res.status(500).send("Error deleting employee");
     }
 });

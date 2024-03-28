@@ -74,6 +74,7 @@ function ManageEmployees() {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ search: searchString }),
+                credentials: 'include',
             });
             if (response.ok) {
                 const data = await response.json();
@@ -83,11 +84,11 @@ function ManageEmployees() {
                 }));
                 setSearchResults(employeesWithRoleName);
             } else {
-                toast.error("Failed to search employees.");
+                toast.error("Došlo je do neočekivane greške prilikom pretrage zaposlenih.");
             }
         } catch (error) {
             console.error("Error searching employees:", error);
-            toast.error("Error occurred while searching for employees.");
+            toast.error("Došlo je do neočekivane greške prilikom pretrage zaposlenih.");
         }
     };
 

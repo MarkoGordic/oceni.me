@@ -254,7 +254,10 @@ function NewSubjectModal({ isOpen, onClose, onSubmit, subjectData, onInputChange
             }
 
             try {
-                const response = await fetch(`http://localhost:8000/employees/search_professors?search=${professorSearchTerm}`);
+                const response = await fetch(`http://localhost:8000/employees/search_professors?search=${professorSearchTerm}`, {
+                    method: 'GET',
+                    credentials: 'include',
+                });
                 if (!response.ok) throw new Error('Network response was not ok');
                 const data = await response.json();
                 setProfessorResults(data.slice(0, 10));

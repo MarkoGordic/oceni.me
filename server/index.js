@@ -46,6 +46,8 @@ const SubjectsRoutes = require('./routes/subjects');
 app.use('/subjects', cors({origin: 'http://localhost:3000', credentials: true}), ensureAuthenticated, SubjectsRoutes);
 const LogRoutes = require('./routes/logs');
 app.use('/logs', cors({origin: 'http://localhost:3000', credentials: true}), ensureAuthenticated, LogRoutes);
+const TestRoutes = require('./routes/tests');
+app.use('/tests', cors({origin: 'http://localhost:3000', credentials: true}), ensureAuthenticated, TestRoutes);
 
 app.listen(8000, () => {
   console.log('Server is running on port: 8000');

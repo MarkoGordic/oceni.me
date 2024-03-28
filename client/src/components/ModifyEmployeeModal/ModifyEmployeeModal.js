@@ -17,7 +17,10 @@ function ModifyEmployeeModal({ isOpen, onClose, employeeId, onEmployeeDeleted })
         setIsLoading(true);
         setEmployeeData(null);
         try {
-            const response = await fetch(`http://localhost:8000/employees/get/${id}`);
+            const response = await fetch(`http://localhost:8000/employees/get/${id}`, {
+                method: 'GET',
+                credentials: 'include',
+            });
             if (!response.ok) {
                 throw new Error('Failed to fetch data');
             }
@@ -33,7 +36,10 @@ function ModifyEmployeeModal({ isOpen, onClose, employeeId, onEmployeeDeleted })
     const deleteEmployee = async () => {
         setIsLoading(true);
         try {
-            const response = await fetch(`http://localhost:8000/employees/delete/${employeeId}`);
+            const response = await fetch(`http://localhost:8000/employees/delete/${employeeId}`, {
+                method: 'GET',
+                credentials: 'include',
+            });
             if (response.ok) {
                 toast.success("Zaposleni je uspešno obrisan.");
                 onClose();

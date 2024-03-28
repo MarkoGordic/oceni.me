@@ -20,6 +20,15 @@ body, #root {
     text-align: center;
 }
 
+.content-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+}
+
 .newtest-wrap {
     display: flex;
     flex-direction: column;
@@ -38,4 +47,49 @@ body, #root {
     color: red;
     font-size: 14px;
     margin: 0;
+}
+
+.drop-zone {
+    margin-top: 20px;
+    border: 2px dashed #f7f7ff;
+    border-radius: 5px;
+    width: 80%;
+    height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.3s;
+}
+
+.drop-zone:hover {
+    border-color: #1e90ff;
+}
+
+.drop-zone p {
+    text-align: center;
+    color: #f7f7ff;
+    font-size: 16px;
+}
+
+.newtest-file-name-display {
+    margin-top: 20px;
+    font-size: 25px !important;
+}
+
+.confirm-upload-btn {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #f7f7ff;
+    background-color: #1e90ff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-family: "Jost", sans-serif;
+}
+
+.confirm-upload-btn:hover {
+    background-color: #007bff;
 }
