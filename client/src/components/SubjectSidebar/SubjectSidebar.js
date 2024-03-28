@@ -52,6 +52,7 @@ function SubjectSidebar() {
                 <SidebarRoute icon='fi fi-bs-home' text='Pregled predmeta' path={`${basePath}/overview`} />
                 <SidebarRoute icon='fi fi-rr-list-check' text='Kolokvijumi' path={`${basePath}/tests`} />
                 <SidebarRoute icon='fi fi-br-plus' text='Novi kolokvijum' path={`${basePath}/tests/new`} />
+                <SidebarRoute icon='fi fi-sr-settings' text='Kreiraj konfiguraciju' path={`${basePath}/tests/configure`} />
                 <SidebarRoute icon='fi fi-rs-users' text='Spisak studenata' path={`${basePath}/students`} />
             </div>
             

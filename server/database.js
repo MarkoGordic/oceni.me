@@ -248,6 +248,14 @@ class Database {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         `;
 
+        const createTestConfigurationsTable = `
+            CREATE TABLE IF NOT EXISTS test_configs (
+                id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+                employee_id INT,
+                FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        `;
+
         try {
             await this.pool.execute(createeemployeesTable);
             console.info("[INFO] : Employees table created successfully.");
@@ -265,6 +273,8 @@ class Database {
             console.info("[INFO] : System activity logs table created successfully.");
             await this.pool.execute(createTestsTable);
             console.info("[INFO] : Tests table created successfully.");
+            await this.pool.execute(createTestConfigurationsTable);
+            console.info("[INFO] : Test configurations table created successfully.");
         } catch (err) {
             console.error("[ERROR] : Error while running SQL.", err);
         }
@@ -773,6 +783,27 @@ class Database {
             return results;
         } catch (error) {
             console.error('Error retrieving students by indexes:', error);
+            throw error;
+        }
+    }
+
+    async addNewTestConfig(employee_id) {
+        try {
+            const insertQuery = `INSERT INTO test_configs (employee_id) VALUES (?)`;
+            await this.pool.query(insertQuery, [employee_id]);
+
+            const selectQuery = `SELECT id AS configId FROM test_configs WHERE employee_id = ? ORDER BY id DESC LIMIT 1`;
+            const [selectResult] = await this.pool.query(selectQuery, [employee_id]);
+
+            if (selectResult.length === 0) {
+                throw new Error("Failed to retrieve the last inserted test configuration ID.");
+            }
+
+            const configId = selectResult[0].configId;
+
+            return configId;
+        } catch (error) {
+            console.error('Error while adding test configuration:', error);
             throw error;
         }
     }

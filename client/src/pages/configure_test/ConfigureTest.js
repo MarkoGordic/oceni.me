@@ -1,13 +1,11 @@
-import React, { useState, useEffect } from "react";
-import { ToastContainer, toast } from 'react-toastify';
-import { useParams, useNavigate } from 'react-router-dom';
-import './newTestWizard.css';
+import React, { useState, useEffect } from 'react';
+import { toast, ToastContainer } from 'react-toastify';
 import SubjectSidebar from '../../components/SubjectSidebar/SubjectSidebar';
-import UploadTab from '../../components/NewTestTabs/UploadTab/UploadTab';
-import ConfigureTab from "../../components/NewTestTabs/ConfigureTab/ConfigureTab";
+import { useParams, useNavigate } from 'react-router-dom';
+import UploadTab from '../../components/ConfigureTestTabs/UploadTab/UploadTab';
 
-const NewTestWizard = () => {
-    const { id, testid } = useParams();
+function ConfigureTest() {
+    const { id, configid } = useParams();
     const [targetZIP, setTargetZIP] = useState(null);
     const [fileName, setFileName] = useState("");
     const [tabs, setTabs] = useState([]);
@@ -16,7 +14,7 @@ const NewTestWizard = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (testid) {
+        if (configid) {
             setActiveTab('configure');
         } else {
             setActiveTab('upload');
@@ -32,16 +30,9 @@ const NewTestWizard = () => {
                             confirmUpload={() => confirmUpload(targetZIP)}
                             isLoading={isLoading}
                         />
-            },
-            {
-                id: 'configure',
-                title: 'Configure Test',
-                content: <ConfigureTab
-                            isLoading={isLoading}
-                        />
             }
         ]);
-    }, [targetZIP, isLoading, testid]);
+    }, [targetZIP, isLoading, configid]);
 
     const uploadFile = (file) => {
         setIsLoading(true);
@@ -54,19 +45,17 @@ const NewTestWizard = () => {
 
         const formData = new FormData();
         formData.append('zipFile', file);
-        formData.append('subjectId', id);
 
-        fetch('http://localhost:8000/tests/new', {
+        fetch('http://localhost:8000/tests/configure/new', {
             method: 'POST',
             body: formData,
             credentials: 'include'
         })
-        .then(response => response.json())
         .then(data => {
             setIsLoading(false);
-            if (data.testId) {
+            if (data.configid) {
                 toast.success('Uspešno otpremljeno i otpakovano!');
-                navigate(`./${data.testId}`);
+                navigate(`./${data.configid}`);
             } else {
                 toast.error('Error: Invalid server response.');
             }
@@ -82,21 +71,21 @@ const NewTestWizard = () => {
         uploadFile(file); 
     }
 
-    return (
-        <div className='wrap'>
-            <ToastContainer theme="dark" />
-            <SubjectSidebar />
-            <div className='content'>
-                <div className="content-wrap">
+    return(
+    <div className='wrap'>
+        <ToastContainer theme="dark" />
+        <SubjectSidebar />
+        <div className='content'>
+            <div className="content-wrap">
                     {tabs.map(tab => (
-                        <div key={tab.id} style={{ display: activeTab === tab.id ? 'block' : 'none' }}>
+                        <div key={tab.id} style={{ display: activeTab === tab.id ? 'block' : 'none', width: '100%'}}>
                             {tab.content}
                         </div>
                     ))}
-                </div>
             </div>
         </div>
-    );
+    </div>
+    )
 };
 
-export default NewTestWizard;
+export default ConfigureTest;

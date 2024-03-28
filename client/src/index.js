@@ -16,6 +16,7 @@ import NewTestWizard from './pages/NewTestWizard/NewTestWizard';
 import SubjectStudents from './pages/subject_students/SubjectStudents';
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify';
+import ConfigureTest from './pages/configure_test/ConfigureTest';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -43,6 +44,21 @@ root.render(
           <Route path="/subjects/:id/tests/new" element={
             <ProtectedRoute>
               <NewTestWizard />
+            </ProtectedRoute>
+          } />
+          <Route path="/subjects/:id/tests/new/:testid" element={
+            <ProtectedRoute>
+              <NewTestWizard />
+            </ProtectedRoute>
+          } />
+          <Route path="/subjects/:id/tests/configure" element={
+            <ProtectedRoute>
+              <ConfigureTest />
+            </ProtectedRoute>
+          } />
+          <Route path="/subjects/:id/tests/configure/:configid" element={
+            <ProtectedRoute>
+              <ConfigureTest />
             </ProtectedRoute>
           } />
           <Route path="/subjects/:id/students" element={

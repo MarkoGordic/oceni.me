@@ -21,9 +21,44 @@ const storage = multer.diskStorage({
     filename: function (req, file, cb) {
       cb(null, file.originalname);
     },
-  });
-  
+});  
 const upload = multer({ storage: storage });
+
+const testConfigStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const configId = req.body.configId;
+    const dest = `uploads/test_configs/${configId}`;
+    if (!fs.existsSync(dest)){
+      fs.mkdirSync(dest, { recursive: true });
+    }
+    cb(null, dest);
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.originalname);
+  },
+});
+const uploadTestConfig = multer({ storage: testConfigStorage });
+
+router.post('/configure/new', uploadTestConfig.single('zipFile'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).send('No file uploaded.');
+  }
+
+  const configId = await db.addNewTestConfig(req.session.userId);
+  const zipPath = req.file.path;
+
+  try {
+    await fs.createReadStream(zipPath)
+      .pipe(unzipper.Extract({ path: `uploads/test_configs/${configId}` }))
+      .promise();
+
+    fs.unlinkSync(zipPath);
+    res.json({ configId });
+  } catch (error) {
+    console.error('Error extracting file:', error);
+    res.status(500).send('An error occurred while extracting the file.');
+  }
+});
 
 function convertIndexFormat(index) {
   const match = index.match(/([a-zA-Z]+)(\d+)-(\d+)/);
@@ -84,7 +119,7 @@ router.post('/new', upload.single('zipFile'), async (req, res) => {
       const studentList = await getStudentList(testId);
       
       console.log(studentList);
-      res.send('OK');
+      res.json({ testId, studentList });
     } catch (error) {
       console.error('Error reading student list:', error);
       res.status(500).send('Error processing student list.');
