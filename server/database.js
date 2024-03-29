@@ -251,9 +251,13 @@ class Database {
         const createTestConfigurationsTable = `
             CREATE TABLE IF NOT EXISTS test_configs (
                 id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+                name VARCHAR(255) NOT NULL,
                 employee_id INT,
+                subject_id INT NOT NULL,
                 test_configs TEXT NOT NULL,
                 status ENUM('KREIRAN', 'OBRADA', 'ZAVRSEN') NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
                 FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE SET NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         `;
@@ -789,10 +793,10 @@ class Database {
         }
     }
 
-    async addNewTestConfig(employee_id) {
+    async addNewTestConfig(employee_id, subject_id, name) {
         try {
-            const insertQuery = `INSERT INTO test_configs (employee_id, status, test_configs) VALUES (?, 'KREIRAN', '[]')`;
-            await this.pool.query(insertQuery, [employee_id]);
+            const insertQuery = `INSERT INTO test_configs (employee_id, subject_id, name, status, test_configs) VALUES (?, ?, ?, 'KREIRAN', '[]')`;
+            await this.pool.query(insertQuery, [employee_id, subject_id, name]);
 
             const selectQuery = `SELECT id AS configId FROM test_configs WHERE employee_id = ? ORDER BY id DESC LIMIT 1`;
             const [selectResult] = await this.pool.query(selectQuery, [employee_id]);
@@ -848,6 +852,30 @@ class Database {
             return result.affectedRows > 0;
         } catch (error) {
             console.error('Error updating test configuration status:', error);
+            throw error;
+        }
+    }
+
+    async deleteTestConfigById(configId) {
+        const deleteQuery = 'DELETE FROM test_configs WHERE id = ?';
+        try {
+            await this.pool.query(deleteQuery, [configId]);
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async getTestConfigsForSubject(subjectId) {
+        const query = `
+            SELECT * FROM test_configs
+            WHERE subject_id = ?
+            AND status = 'ZAVRSEN'
+        `;
+        try {
+            const [results] = await this.pool.query(query, [subjectId]);
+            return results;
+        } catch (error) {
+            console.error('Error retrieving test configurations for subject:', error);
             throw error;
         }
     }

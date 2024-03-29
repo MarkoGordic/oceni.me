@@ -9,6 +9,7 @@ const fs = require('fs');
 const fsp = fs.promises;
 const unzipper = require('unzipper');
 const readline = require('readline');
+const archiver = require('archiver');
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -43,12 +44,12 @@ const uploadTestConfig = multer({ storage: testConfigStorage });
 const asyncHandler = fn => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
 
-  router.post('/configure/new', uploadTestConfig.single('zipFile'), asyncHandler(async (req, res) => {
+router.post('/configure/new', uploadTestConfig.single('zipFile'), asyncHandler(async (req, res) => {
     if (!req.file) {
         return res.status(400).send('No file uploaded.');
     }
 
-    const configid = await db.addNewTestConfig(req.session.userId);
+    const configid = await db.addNewTestConfig(req.session.userId, req.body.subjectId, req.body.configName);
     const zipPath = req.file.path;
     const extractPath = `uploads/test_configs/${configid}`;
 
@@ -91,8 +92,8 @@ router.post('/configure/complete', uploadTestConfig.single('solutionFile'), asyn
 
   const configId = req.body.configid;
   const solutionPath = req.file.path;
-  const newPath = `uploads/test_configs/${configId}/output`;
-  
+  const outputPath = `uploads/test_configs/${configId}/output`;
+
   const testsConfig = JSON.parse(req.body.testsConfig);
 
   const testConfig = await db.getTestConfigById(configId);
@@ -101,23 +102,57 @@ router.post('/configure/complete', uploadTestConfig.single('solutionFile'), asyn
   }
 
   if (testConfig.status === 'ZAVRSEN') {
-    return res.status(403).json({
-      message: 'Konfiguracija je već završena.'
-    });
+    return res.status(403).json({ message: 'Konfiguracija je već završena.' });
   }
 
   try {
-    await fsp.access(newPath, fs.constants.F_OK);
+    await fsp.access(outputPath, fs.constants.F_OK);
   } catch (error) {
-    await fsp.mkdir(newPath, { recursive: true });
+    await fsp.mkdir(outputPath, { recursive: true });
   }
 
   try {
-    const newFilePath = path.join(newPath, req.file.originalname);
+    const newFilePath = path.join(outputPath, req.file.originalname);
     await fsp.rename(solutionPath, newFilePath);
 
-    const configFilePath = path.join(newPath, 'config.json');
+    const configFilePath = path.join(outputPath, 'config.json');
     await fsp.writeFile(configFilePath, JSON.stringify(testsConfig, null, 2), 'utf8');
+
+    const outputZipPath = path.join(outputPath, '..', 'config.zip');
+    const output = fs.createWriteStream(outputZipPath);
+    const archive = archiver('zip', { zlib: { level: 9 } });
+
+    archive.pipe(output);
+
+    archive.file(configFilePath, { name: 'config.json' });
+    archive.file(newFilePath, { name: req.file.originalname });
+
+    await new Promise((resolve, reject) => {
+      output.on('close', async () => {
+        try {
+          await fsp.rm(outputPath, { recursive: true, force: true });
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
+      });
+      archive.on('error', reject);
+      archive.finalize();
+    });
+
+    const directoryPath = path.join(outputPath, '..');
+    const files = await fsp.readdir(directoryPath);
+
+    for (const file of files) {
+        const filePath = path.join(directoryPath, file);
+        if (file !== 'config.zip') {
+            try {
+                await fsp.rm(filePath, { recursive: true, force: true });
+            } catch (error) {
+                console.error(`Error deleting ${filePath}:`, error);
+            }
+        }
+    }
 
     await db.updateTestConfigStatus(configId, 'ZAVRSEN');
 
@@ -157,7 +192,6 @@ router.get('/status', asyncHandler(async (req, res) => {
       res.status(500).send('An error occurred while retrieving the test configuration status.');
   }
 }));
-
 
 function convertIndexFormat(index) {
   const match = index.match(/([a-zA-Z]+)(\d+)-(\d+)/);
@@ -228,5 +262,79 @@ router.post('/new', upload.single('zipFile'), asyncHandler(async (req, res) => {
     res.status(500).send('An error occurred while extracting the file.');
   }
 }));
+
+router.post('/config/get_subject', asyncHandler(async (req, res) => {
+  const { subjectId } = req.body;
+
+  if (!subjectId) {
+    return res.status(400).send('Subject ID is required.');
+  }
+
+  try {
+    const testConfigs = await db.getTestConfigsForSubject(subjectId);
+    if (testConfigs.length === 0) {
+      return res.send({'message': '/'});
+    }
+    res.json(testConfigs);
+  } catch (error) {
+    console.error('Error retrieving test configurations:', error);
+    res.status(500).send('An error occurred while retrieving the test configurations.');
+  }
+}));
+
+router.get('/config/download/:configId', asyncHandler(async (req, res) => {
+  const { configId } = req.params;
+  const hasPermission = true;
+
+  if (!hasPermission) {
+      return res.status(403).send('You do not have permission to download this file.');
+  }
+
+  try {
+      const configPath = `uploads/test_configs/${configId}/config.zip`;
+
+      await fsp.access(configPath, fs.constants.F_OK);
+
+      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Disposition', `attachment; filename=config_${configId}.zip`);
+
+      fs.createReadStream(configPath).pipe(res);
+  } catch (error) {
+      if (error.code === 'ENOENT') {
+          console.error('Config file not found:', error);
+          res.status(404).send('Config file not found.');
+      } else {
+          console.error('Error during file download:', error);
+          res.status(500).send('An error occurred during the file download.');
+      }
+  }
+}));
+
+router.get('/config/delete/:configId', asyncHandler(async (req, res) => {
+  const { configId } = req.params;
+  const hasPermission = true;
+
+  if (!hasPermission) {
+    return res.status(403).send('You do not have permission to delete this test configuration.');
+  }
+
+  try {
+    await db.deleteTestConfigById(configId);
+    const configPath = path.join(__dirname, `../uploads/test_configs/${configId}`);
+
+    try {
+      await fsp.access(configPath, fs.constants.F_OK);
+      await fsp.rm(configPath, { recursive: true, force: true });
+      res.send({ success: true, message: 'Test configuration and related files successfully deleted.' });
+    } catch (err) {
+      console.error('Error deleting directory:', err);
+      res.status(404).send('Test configuration directory not found or already deleted.');
+    }
+  } catch (error) {
+    console.error('Error deleting test configuration:', error);
+    res.status(500).send('An error occurred while deleting the test configuration.');
+  }
+}));
+
 
 module.exports = router;

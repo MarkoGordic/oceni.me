@@ -20,6 +20,7 @@ function ConfigureTest() {
     const [testsConfig, setTestsConfig] = useState([]);
     const [configCompleted, setConfigCompleted] = useState(false);
     const [configStatus, setConfigStatus] = useState(false);
+    const [configName, setConfigName] = useState("");
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -32,6 +33,8 @@ function ConfigureTest() {
                             setTargetZIP={setTargetZIP}
                             confirmUpload={() => confirmUpload(targetZIP)}
                             isLoading={isLoading}
+                            setConfigName={setConfigName}
+                            configName={configName}
                         />
             },
             {
@@ -60,7 +63,7 @@ function ConfigureTest() {
                 content: <div>Configuration is complete.</div>
             }
         ]);
-    }, [targetZIP, isLoading, configid, testFiles, csTargetFile, testsConfig, configCompleted]);
+    }, [targetZIP, isLoading, configid, testFiles, csTargetFile, testsConfig, configCompleted, configName]);
 
     useEffect(() => {
         console.log(configid, configStatus);
@@ -111,6 +114,8 @@ function ConfigureTest() {
 
         const formData = new FormData();
         formData.append('zipFile', file);
+        formData.append('subjectId', id);
+        formData.append('configName', configName); 
 
         fetch('http://localhost:8000/tests/configure/new', {
             method: 'POST',

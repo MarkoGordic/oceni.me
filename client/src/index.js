@@ -14,6 +14,7 @@ import UserProfile from './pages/user_profile/UserProfile';
 import SubjectOverview from './pages/subject_overview/SubjectOverview';
 import NewTestWizard from './pages/NewTestWizard/NewTestWizard';
 import SubjectStudents from './pages/subject_students/SubjectStudents';
+import ManageTestConfigurations from './pages/manage_test_configurations/ManageTestConfigurations';
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify';
 import ConfigureTest from './pages/configure_test/ConfigureTest';
@@ -32,6 +33,7 @@ root.render(
           <Route path="/subjects/:id/overview" element={<ProtectedRoute><UserProvider><SubjectOverview /></UserProvider></ProtectedRoute>} />
           <Route path="/subjects/:id/tests/new" element={<ProtectedRoute><UserProvider><NewTestWizard /></UserProvider></ProtectedRoute>} />
           <Route path="/subjects/:id/tests/new/:testid" element={<ProtectedRoute><UserProvider><NewTestWizard /></UserProvider></ProtectedRoute>} />
+          <Route path="/subjects/:id/tests/configurations" element={<ProtectedRoute><UserProvider><ManageTestConfigurations /></UserProvider></ProtectedRoute>} />
           <Route path="/subjects/:id/tests/configure" element={<ProtectedRoute><UserProvider><ConfigureTest /></UserProvider></ProtectedRoute>} />
           <Route path="/subjects/:id/tests/configure/:configid" element={<ProtectedRoute><UserProvider><ConfigureTest /></UserProvider></ProtectedRoute>} />
           <Route path="/subjects/:id/students" element={<ProtectedRoute><UserProvider><SubjectStudents /></UserProvider></ProtectedRoute>} />

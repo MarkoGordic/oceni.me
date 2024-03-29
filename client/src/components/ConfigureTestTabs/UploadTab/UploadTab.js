@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { toast } from 'react-toastify';
 
-const UploadTab = ({ setFileName, setTargetZIP, confirmUpload, isLoading }) => {
+const UploadTab = ({ setFileName, setTargetZIP, confirmUpload, isLoading, setConfigName, configName }) => {
     const [localFileName, setLocalFileName] = useState("");
     const fileInputRef = useRef(null);
 
@@ -26,29 +26,43 @@ const UploadTab = ({ setFileName, setTargetZIP, confirmUpload, isLoading }) => {
         }
     };
 
+    const handleConfigNameChange = (e) => {
+        setConfigName(e.target.value);
+    };
+
     return (
         isLoading ? (
             <div className="loader"></div>
         ) : (
             <div className="newtest-wrap">
                 <h1>Kreiranje nove konfiguracije</h1>
-
-                    <p className="newtest-info">Kako bi kreirali konfiguraciju za novi kolokvijum, molimo vas da otpremite ZIP datoteku koja sadrži test primere.</p>
-                    <div className="drop-zone" onClick={openFileDialog}>
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            hidden
-                            onChange={handleFileSelect}
-                            accept=".zip"
-                        />
-                        {localFileName ? (
-                            <p className="newtest-file-name-display">Izabrana datoteka: {localFileName}</p>
-                        ) : (
-                            <p className="newtest-file-name-display">Prevucite ZIP datoteku ovde ili kliknite za izbor</p>
-                        )}
-                    </div>
-                    <button className="confirm-upload-btn" onClick={confirmUpload}>POTVRDI UČITAVANJE</button>
+                <p className="newtest-info">Kako bi kreirali konfiguraciju za novi kolokvijum, molimo vas da unesete naziv ove konfiguracije i otpremite ZIP datoteku koja sadrži test primere.</p>
+                
+                <label className="newtest-config-name-label">Naziv konfiguracije</label>
+                <input
+                    type="text"
+                    placeholder="Unesite naziv konfiguracije"
+                    value={configName}
+                    onChange={handleConfigNameChange}
+                    className="newtest-config-name-input"
+                    style={{ marginTop: "30px" }}
+                />
+                
+                <div className="drop-zone" onClick={openFileDialog}>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        hidden
+                        onChange={handleFileSelect}
+                        accept=".zip"
+                    />
+                    {localFileName ? (
+                        <p className="newtest-file-name-display">Izabrana datoteka: {localFileName}</p>
+                    ) : (
+                        <p className="newtest-file-name-display">Prevucite ZIP datoteku ovde ili kliknite za izbor</p>
+                    )}
+                </div>
+                <button className="confirm-upload-btn" onClick={confirmUpload}>POTVRDI UČITAVANJE</button>
             </div> 
         )
     );
