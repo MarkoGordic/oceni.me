@@ -1,39 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import './sidebar.css';
 import SidebarRoute from '../SidebarRoute/SidebarRoute';
+import { useUser } from '../../contexts/UserContext';
 
 function Sidebar() {
-    const [user, setUser] = useState({
-        name: '',
-        email: '',
-        avatar: '',
-        role: null,
-    });
-
-    useEffect(() => {
-        const fetchUserData = async () => {
-            try {
-                const response = await fetch('http://localhost:8000/employees/me', {
-                    credentials: 'include',
-                });
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                const userData = await response.json();
-                setUser({
-                    name: userData.first_name + ' ' + userData.last_name,
-                    email: userData.email,
-                    avatar: userData.avatar,
-                    id: userData.id,
-                    role: userData.role,
-                });
-            } catch (error) {
-                console.error('There was a problem fetching user data:', error);
-            }
-        };
-
-        fetchUserData();
-    }, []);
+    const { user } = useUser();
 
     return (
         <div className="sidebar">
@@ -66,7 +37,7 @@ function Sidebar() {
             <div className='sidebar-user-wrap'>
 
                 <div className='sidebar-user'>
-                    <img src={'http://localhost:8000/user_pfp/' + user.id + '.jpg'} alt="User Avatar" className='sidebar-user-avatar'></img>
+                    <img src={user.avatar} alt="User Avatar" className='sidebar-user-avatar'></img>
                     <div className='sidebar-user-details'>
                         <p className='sidebar-user-name'>{user.name}</p>
                         <p className='sidebar-user-email'>{user.email}</p>

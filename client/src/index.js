@@ -17,82 +17,34 @@ import SubjectStudents from './pages/subject_students/SubjectStudents';
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify';
 import ConfigureTest from './pages/configure_test/ConfigureTest';
+import { UserProvider } from './contexts/UserContext';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <AuthProvider>
-      <BrowserRouter>
-        <ToastContainer theme="dark" />
+    <BrowserRouter>
+      <AuthProvider>
         <Routes>
           <Route path="/" element={<Login />} />
-          <Route path="/app" element={
-            <ProtectedRoute>
-              <App />
-            </ProtectedRoute>
-          } />
-          <Route path="subjects" element={
-            <ProtectedRoute>
-              <MySubjects />
-            </ProtectedRoute>
-          } />
-          <Route path="/subjects/:id/overview" element={
-            <ProtectedRoute>
-              <SubjectOverview />
-            </ProtectedRoute>
-          } />
-          <Route path="/subjects/:id/tests/new" element={
-            <ProtectedRoute>
-              <NewTestWizard />
-            </ProtectedRoute>
-          } />
-          <Route path="/subjects/:id/tests/new/:testid" element={
-            <ProtectedRoute>
-              <NewTestWizard />
-            </ProtectedRoute>
-          } />
-          <Route path="/subjects/:id/tests/configure" element={
-            <ProtectedRoute>
-              <ConfigureTest />
-            </ProtectedRoute>
-          } />
-          <Route path="/subjects/:id/tests/configure/:configid" element={
-            <ProtectedRoute>
-              <ConfigureTest />
-            </ProtectedRoute>
-          } />
-          <Route path="/subjects/:id/students" element={
-            <ProtectedRoute>
-              <SubjectStudents />
-            </ProtectedRoute>
-          } />
-          <Route path="/profile" element={
-            <ProtectedRoute>
-              <UserProfile />
-            </ProtectedRoute>
-          } />
-          <Route path="/manage_students" element={
-            <ProtectedRoute>
-              <ManageStudents />
-            </ProtectedRoute> 
-          } />
-          <Route path="/admin/subjects" element={
-            <ProtectedRoute>
-              <ManageSubjects />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/users" element={
-            <ProtectedRoute>
-              <ManageEmployees />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/logs" element={
-            <ProtectedRoute>
-              <SystemLogs />
-            </ProtectedRoute>
-          } />
+          <Route path="/app" element={<ProtectedRoute><UserProvider><App /></UserProvider></ProtectedRoute>} />
+
+          <Route path="/subjects" element={<ProtectedRoute><UserProvider><MySubjects /></UserProvider></ProtectedRoute>} />
+          <Route path="/subjects/:id/overview" element={<ProtectedRoute><UserProvider><SubjectOverview /></UserProvider></ProtectedRoute>} />
+          <Route path="/subjects/:id/tests/new" element={<ProtectedRoute><UserProvider><NewTestWizard /></UserProvider></ProtectedRoute>} />
+          <Route path="/subjects/:id/tests/new/:testid" element={<ProtectedRoute><UserProvider><NewTestWizard /></UserProvider></ProtectedRoute>} />
+          <Route path="/subjects/:id/tests/configure" element={<ProtectedRoute><UserProvider><ConfigureTest /></UserProvider></ProtectedRoute>} />
+          <Route path="/subjects/:id/tests/configure/:configid" element={<ProtectedRoute><UserProvider><ConfigureTest /></UserProvider></ProtectedRoute>} />
+          <Route path="/subjects/:id/students" element={<ProtectedRoute><UserProvider><SubjectStudents /></UserProvider></ProtectedRoute>} />
+
+          <Route path="/profile" element={<ProtectedRoute><UserProvider><UserProfile /></UserProvider></ProtectedRoute>} />
+          <Route path="/manage_students" element={<ProtectedRoute><UserProvider><ManageStudents /></UserProvider></ProtectedRoute>} />
+          
+          <Route path="/admin/subjects" element={<ProtectedRoute><UserProvider><ManageSubjects /></UserProvider></ProtectedRoute>} />
+          <Route path="/admin/users" element={<ProtectedRoute><UserProvider><ManageEmployees /></UserProvider></ProtectedRoute>} />
+          <Route path="/admin/logs" element={<ProtectedRoute><UserProvider><SystemLogs /></UserProvider></ProtectedRoute>} />
         </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+        <ToastContainer theme="dark" />
+      </AuthProvider>
+    </BrowserRouter>
   </React.StrictMode>
 );

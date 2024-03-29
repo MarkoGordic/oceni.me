@@ -3,40 +3,13 @@ import './subjectSidebar.css';
 import SidebarRoute from '../SidebarRoute/SidebarRoute';
 import { toast } from 'react-toastify';
 import { useLocation } from 'react-router-dom';
+import { useUser } from '../../contexts/UserContext';
 
 function SubjectSidebar() {
-    const [user, setUser] = useState({
-        name: '',
-        email: '',
-        avatar: ''
-    });
+    const { user } = useUser();
 
     const location = useLocation();
     const subjectId = location.pathname.split('/')[2] || 'defaultSubjectId';
-
-    useEffect(() => {
-        const fetchUserData = async () => {
-            try {
-                const response = await fetch('http://localhost:8000/employees/me', {
-                    credentials: 'include',
-                });
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                const userData = await response.json();
-                setUser({
-                    name: userData.first_name + ' ' + userData.last_name,
-                    email: userData.email,
-                    avatar: userData.avatar,
-                    id: userData.id
-                });
-            } catch (error) {
-                console.error('There was a problem fetching user data:', error);
-            }
-        };
-
-        fetchUserData();
-    }, []);
 
     const basePath = `/subjects/${subjectId}`;
 
@@ -73,7 +46,7 @@ function SubjectSidebar() {
             <div className='sidebar-user-wrap'>
 
                 <div className='sidebar-user'>
-                    <img src={'http://localhost:8000/user_pfp/' + user.id + '.jpg'} alt="User Avatar" className='sidebar-user-avatar'></img>
+                    <img src={user.avatar} alt="User Avatar" className='sidebar-user-avatar'></img>
                     <div className='sidebar-user-details'>
                         <p className='sidebar-user-name'>{user.name}</p>
                         <p className='sidebar-user-email'>{user.email}</p>

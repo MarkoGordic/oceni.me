@@ -2,14 +2,10 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/Sidebar/Sidebar';
 import { toast, ToastContainer } from 'react-toastify';
 import './userProfile.css';
+import { useUser } from '../../contexts/UserContext';
 
 const UserProfile = () => {
-    const [user, setUser] = useState({
-        firstName: '',
-        lastName: '',
-        email: '',
-        id: ''
-    });
+    const { user, setUser } = useUser();
 
     const [changes, setChanges] = useState({});
     const [newPassword, setNewPassword] = useState('');
@@ -25,23 +21,6 @@ const UserProfile = () => {
         if (passwordType === 'new') setIsNewPasswordVisible(!isNewPasswordVisible);
         if (passwordType === 'confirmNew') setIsConfirmNewPasswordVisible(!isConfirmNewPasswordVisible);
     };
-
-    useEffect(() => {
-        fetch('http://localhost:8000/employees/me', { credentials: 'include' })
-            .then(response => response.json())
-            .then(data => {
-                setUser({
-                    firstName: data.first_name,
-                    lastName: data.last_name,
-                    email: data.email,
-                    id: data.id
-                });
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                toast.error('Došlo je do greške prilikom učitavanja podataka.');
-            });
-    }, []);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -108,6 +87,41 @@ const UserProfile = () => {
         });
     };
 
+    const triggerProfileImageUpload = () => {
+        document.getElementById('profileImageInput').click();
+    };
+    
+    const handleProfileImageChange = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            const formData = new FormData();
+            formData.append('profile_image', file);
+    
+            fetch('http://localhost:8000/employees/me/update_pfp', {
+                method: 'POST',
+                body: formData,
+                credentials: 'include',
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error('Problem with response');
+            })
+            .then(data => {
+                toast.success("Vaša profilna slika je uspešno ažurirana.");
+                setUser(prevUser => ({
+                    ...prevUser,
+                    avatar: `http://localhost:8000/user_pfp/${prevUser.id}.jpg?${Date.now()}`
+                }));
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                toast.error("Neuspešno ažuriranje profilne slike.");
+            });
+        }
+    };
+
     return (
         <div className='wrap'>
             <ToastContainer theme="dark" />
@@ -115,10 +129,12 @@ const UserProfile = () => {
             <div className='content'>
                 <h1>Korisnička Zona</h1>
                 <div className='userinfo-wrap1'>
-                    <img src={'http://localhost:8000/user_pfp/' + user.id + '.jpg'} alt="User Avatar" />
+                    <img src={user.avatar} alt="User Avatar" />
                     <div className='userinfo-details'>
                         <p className='userinfo-fullname'>{user.firstName} {user.lastName}</p>
                         <p className='userinfo-email'>{user.email}</p>
+                        <input type="file" id="profileImageInput" hidden onChange={handleProfileImageChange} accept="image/*" />
+                        <button className='userinfo-updateimage' onClick={triggerProfileImageUpload}>PROMENI SLIKU</button>
                     </div>
                 </div>
                 <div className='userinfo-edit'>

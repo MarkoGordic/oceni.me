@@ -95,6 +95,43 @@ router.post('/me/update', async (req, res) => {
     }
 });
 
+router.post('/me/update_pfp', upload.single('profile_image'), async (req, res) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const userId = req.session.userId;
+    const originalFilePath = req.file.path;
+
+    try {
+        const userExists = await db.getEmployeeById(userId);
+        if (!userExists) {
+            fs.unlinkSync(originalFilePath);
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const targetDir = path.join(__dirname, '../static/user_pfp');
+        fs.mkdirSync(targetDir, { recursive: true });
+
+        const newFileName = `${userId}.jpg`;
+        const targetFilePath = path.join(targetDir, newFileName);
+
+        fs.renameSync(originalFilePath, targetFilePath);
+
+        res.status(200).json({ message: 'Profile picture updated successfully' });
+    } catch (error) {
+        console.error("[ERROR] : Error updating profile picture:", error);
+        if (fs.existsSync(originalFilePath)) {
+            fs.unlinkSync(originalFilePath);
+        }
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 router.post('/reset_password', async (req, res) => {
     if (!req.session.userId) {
         return res.status(401).json({ error: 'Unauthorized' });

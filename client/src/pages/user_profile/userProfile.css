@@ -123,3 +123,23 @@ body, #root {
     top: 15px;
     cursor: pointer;
 }
+
+.userinfo-updateimage {
+    padding: 10px 10px;
+    background-color: #1993F0;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-family: "Jost", sans-serif;
+    margin-top: 35px;
+}
+
+.userinfo-updateimage:hover {
+    background-color: #1476d2;
+}
