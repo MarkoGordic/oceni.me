@@ -43,37 +43,40 @@ const uploadTestConfig = multer({ storage: testConfigStorage });
 const asyncHandler = fn => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
 
-router.post('/configure/new', uploadTestConfig.single('zipFile'), asyncHandler(async (req, res) => {
-  if (!req.file) {
-    return res.status(400).send('No file uploaded.');
-  }
+  router.post('/configure/new', uploadTestConfig.single('zipFile'), asyncHandler(async (req, res) => {
+    if (!req.file) {
+        return res.status(400).send('No file uploaded.');
+    }
 
-  const configid = await db.addNewTestConfig(req.session.userId);
-  const zipPath = req.file.path;
-  const extractPath = `uploads/test_configs/${configid}`;
+    const configid = await db.addNewTestConfig(req.session.userId);
+    const zipPath = req.file.path;
+    const extractPath = `uploads/test_configs/${configid}`;
 
-  try {
-    fs.createReadStream(zipPath)
-      .pipe(unzipper.Extract({ path: extractPath }))
-      .promise()
-      .then(async () => {
-        await fsp.unlink(zipPath);
+    try {
+        fs.createReadStream(zipPath)
+        .pipe(unzipper.Extract({ path: extractPath }))
+        .promise()
+        .then(async () => {
+            await fsp.unlink(zipPath);
 
-        const filenames = await fsp.readdir(extractPath);
-        const testFiles = filenames.filter(name => /^t\d{2}/.test(name));
-        const filesDetails = [];
+            const filenames = await fsp.readdir(extractPath);
+            const testFiles = filenames.filter(name => /^t\d{2}/.test(name));
+            const filesDetails = [];
 
-        for (const filename of testFiles) {
-          const content = await fsp.readFile(`${extractPath}/${filename}`, 'utf-8');
-          filesDetails.push({ name: filename, content: content.trimEnd() });
-        }
+            for (const filename of testFiles) {
+                const content = await fsp.readFile(`${extractPath}/${filename}`, 'utf-8');
+                filesDetails.push({ name: filename, content: content.trimEnd() });
+            }
 
-        res.json({ configid, files: filesDetails });
-      });
-  } catch (error) {
-    console.error('Error during file processing:', error);
-    res.status(500).send('An error occurred during file processing.');
-  }
+            await db.updateTestConfigStatus(configid, 'OBRADA');
+            await db.updateTestConfigs(configid, JSON.stringify(filesDetails));
+            
+            res.json({ configid, files: filesDetails });
+        });
+    } catch (error) {
+        console.error('Error during file processing:', error);
+        res.status(500).send('An error occurred during file processing.');
+    }
 }));
 
 router.post('/configure/complete', uploadTestConfig.single('solutionFile'), asyncHandler(async (req, res) => {
@@ -92,6 +95,17 @@ router.post('/configure/complete', uploadTestConfig.single('solutionFile'), asyn
   
   const testsConfig = JSON.parse(req.body.testsConfig);
 
+  const testConfig = await db.getTestConfigById(configId);
+  if (!testConfig) {
+    return res.status(404).send('Test configuration not found.');
+  }
+
+  if (testConfig.status === 'ZAVRSEN') {
+    return res.status(403).json({
+      message: 'Konfiguracija je već završena.'
+    });
+  }
+
   try {
     await fsp.access(newPath, fs.constants.F_OK);
   } catch (error) {
@@ -105,10 +119,42 @@ router.post('/configure/complete', uploadTestConfig.single('solutionFile'), asyn
     const configFilePath = path.join(newPath, 'config.json');
     await fsp.writeFile(configFilePath, JSON.stringify(testsConfig, null, 2), 'utf8');
 
+    await db.updateTestConfigStatus(configId, 'ZAVRSEN');
+
     res.send({ success: true });
   } catch (error) {
     console.error('Error moving solution file or writing config:', error);
     res.status(500).send('An error occurred while processing the solution file or writing the config.');
+  }
+}));
+
+router.get('/status', asyncHandler(async (req, res) => {
+  const { configId } = req.query;
+
+  if (!configId) {
+      return res.status(400).send('Config ID is required.');
+  }
+
+  try {
+      const testConfig = await db.getTestConfigById(configId);
+
+      if (!testConfig) {
+          return res.status(404).send('Test configuration not found.');
+      }
+
+      const response = {
+          configId: testConfig.id,
+          status: testConfig.status
+      };
+
+      if (testConfig.status === 'OBRADA') {
+          response.testConfigs = JSON.parse(testConfig.test_configs);
+      }
+
+      res.json(response);
+  } catch (error) {
+      console.error('Error retrieving test configuration status:', error);
+      res.status(500).send('An error occurred while retrieving the test configuration status.');
   }
 }));
 

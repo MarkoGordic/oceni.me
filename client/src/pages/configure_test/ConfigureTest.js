@@ -17,22 +17,12 @@ function ConfigureTest() {
     const [testFiles, setTestFiles] = useState([]);
     const [csTargetFile, setCsTargetFile] = useState(null);
     const [csFileName, setCsFileName] = useState("");
-    const [testsConfig, setTestsConfig] = useState(false);
-    const [testsConfigStatus, setTestsConfigStatus] = useState(false);
+    const [testsConfig, setTestsConfig] = useState([]);
     const [configCompleted, setConfigCompleted] = useState(false);
+    const [configStatus, setConfigStatus] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (configid && !testsConfigStatus && !configCompleted) {
-            setActiveTab('configure');
-        } else if (configid && testsConfigStatus && !configCompleted) {
-            setActiveTab('correct-solution');
-        } else if (configCompleted) {
-            setActiveTab('completed');
-        } else {
-            setActiveTab('upload');
-        }
-
         setTabs([
             {
                 id: 'upload',
@@ -51,7 +41,7 @@ function ConfigureTest() {
                             isLoading={isLoading}
                             testFiles={testFiles}
                             setTestsConfig={setTestsConfig}
-                            setConfigStatus={setTestsConfigStatus}
+                            setConfigStatus={setConfigStatus}
                         />
             },
             {
@@ -67,10 +57,48 @@ function ConfigureTest() {
             {
                 id: 'completed',
                 title: 'Completed',
-                content: <div>Konfiguracija je završena.</div>
+                content: <div>Configuration is complete.</div>
             }
         ]);
-    }, [targetZIP, isLoading, configid, testsConfigStatus]);
+    }, [targetZIP, isLoading, configid, testFiles, csTargetFile, testsConfig, configCompleted]);
+
+    useEffect(() => {
+        console.log(configid, configStatus);
+        if (configid && configStatus === false) {
+            fetchTestConfigStatus();
+        }
+
+        if(configStatus === true) {
+            setActiveTab('correct-solution');
+        }
+    }, [configid, configStatus]);
+
+    const fetchTestConfigStatus = () => {
+        setIsLoading(true);
+        console.log(configid);
+        fetch(`http://localhost:8000/tests/status?configId=${configid}`, {
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data);
+            setIsLoading(false);
+            if (data.status === 'OBRADA') {
+                setTestFiles(data.testConfigs || []);
+                setActiveTab('configure');
+            } else if (data.status === 'ZAVRSEN') {
+                setConfigCompleted(true);
+                setActiveTab('completed');
+            } else {
+                setActiveTab('upload');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            toast.error('Došlo je do greške prilikom komunikacije sa serverom. Tražena konfiguracija nije pronađena.');
+            setIsLoading(false);
+        });
+    };
 
     const uploadFile = (file) => {
         setIsLoading(true);
@@ -131,7 +159,15 @@ function ConfigureTest() {
             body: formData,
             credentials: 'include'
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log(response);
+            if (!response.ok) {
+                if (response.status === 403) {
+                    toast.error('Konfiguracija je već završena.');
+                }
+            }
+            return response.json();
+        })
         .then(data => {
             setIsLoading(false);
             if (data.success) {
@@ -141,11 +177,6 @@ function ConfigureTest() {
                 toast.error('Došlo je do greške prilikom otpremanja .S datoteke.');
             }
         })
-        .catch(error => {
-            console.error('Error:', error);
-            toast.error('Došlo je do greške prilikom komunikacije sa serverom.');
-            setIsLoading(false);
-        });
     };
 
     return(

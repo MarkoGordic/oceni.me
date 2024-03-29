@@ -252,6 +252,8 @@ class Database {
             CREATE TABLE IF NOT EXISTS test_configs (
                 id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
                 employee_id INT,
+                test_configs TEXT NOT NULL,
+                status ENUM('KREIRAN', 'OBRADA', 'ZAVRSEN') NOT NULL,
                 FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE SET NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         `;
@@ -789,7 +791,7 @@ class Database {
 
     async addNewTestConfig(employee_id) {
         try {
-            const insertQuery = `INSERT INTO test_configs (employee_id) VALUES (?)`;
+            const insertQuery = `INSERT INTO test_configs (employee_id, status, test_configs) VALUES (?, 'KREIRAN', '[]')`;
             await this.pool.query(insertQuery, [employee_id]);
 
             const selectQuery = `SELECT id AS configId FROM test_configs WHERE employee_id = ? ORDER BY id DESC LIMIT 1`;
@@ -807,7 +809,48 @@ class Database {
             throw error;
         }
     }
+
+    async getTestConfigById(configId) {
+        const query = `
+            SELECT id, employee_id, test_configs, status
+            FROM test_configs
+            WHERE id = ?
+        `;
+        try {
+            const [results] = await this.pool.query(query, [configId]);
+            if (results.length > 0) {
+                return results[0];
+            } else {
+                return null;
+            }
+        } catch (error) {
+            console.error('Error retrieving test configuration by ID:', error);
+            throw error;
+        }
+    }
     
+
+    async updateTestConfigStatus(configId, newStatus) {
+        const query = 'UPDATE test_configs SET status = ? WHERE id = ?';
+        try {
+            const [result] = await this.pool.query(query, [newStatus, configId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('Error updating test configuration status:', error);
+            throw error;
+        }
+    }
+    
+    async updateTestConfigs(configId, updateData) {
+        const query = 'UPDATE test_configs SET test_configs = ? WHERE id = ?';
+        try {
+            const [result] = await this.pool.query(query, [updateData, configId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('Error updating test configuration status:', error);
+            throw error;
+        }
+    }
 }
 
 module.exports = Database;
