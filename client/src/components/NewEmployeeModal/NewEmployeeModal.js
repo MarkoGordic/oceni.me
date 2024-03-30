@@ -63,7 +63,7 @@ const customSelectStyles = {
     }),
 };
 
-function NewEmployeeModal({ isOpen, onClose, onSubmit, employeeData, onInputChange, onSelectRoleChange }) {
+function NewEmployeeModal({ isOpen, onClose, onSubmit, employeeData, onInputChange, onSelectRoleChange, onSelectGenderChange }) {
     const animatedComponents = makeAnimated();
     const wrapperRef = useRef(null);
 
@@ -74,6 +74,12 @@ function NewEmployeeModal({ isOpen, onClose, onSubmit, employeeData, onInputChan
         { value: 2, label: 'Asistent' },
         { value: 3, label: 'Demonstrator' },
     ];
+
+    const genderOptions = [
+        { value: 'M', label: 'MUŠKO' },
+        { value: 'F', label: 'ŽENSKO' },
+    ];
+
     return (
         <div className="new-employee-modal-overlay" onClick={onClose}>
             <div className="new-employee-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -100,14 +106,27 @@ function NewEmployeeModal({ isOpen, onClose, onSubmit, employeeData, onInputChan
                         <div className="select-employee-role">
                             <label htmlFor="course">Odabir pozicije</label>
                             <Select
-                                    id="course"
-                                    components={animatedComponents}
-                                    options={roleOptions}
-                                    styles={customSelectStyles}
-                                    placeholder="Pozicija"
-                                    isClearable={true}
-                                    className="employee-role-select"
-                                    onChange={onSelectRoleChange}
+                                id="course"
+                                components={animatedComponents}
+                                options={roleOptions}
+                                styles={customSelectStyles}
+                                placeholder="Pozicija"
+                                isClearable={true}
+                                className="employee-role-select"
+                                onChange={onSelectRoleChange}
+                            />
+                        </div>
+                        <div className="select-gender">
+                            <label htmlFor="gender">Pol</label>
+                            <Select
+                                id="gender"
+                                components={animatedComponents}
+                                options={genderOptions}
+                                styles={customSelectStyles}
+                                placeholder="Pol"
+                                isClearable={true}
+                                className="gender-select"
+                                onChange={onSelectGenderChange}
                             />
                         </div>
                     </div>

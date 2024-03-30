@@ -10,6 +10,7 @@ const fsp = fs.promises;
 const unzipper = require('unzipper');
 const readline = require('readline');
 const archiver = require('archiver');
+const { generateTestirajSH } = require('../util/student_autotest');
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -111,12 +112,16 @@ router.post('/configure/complete', uploadTestConfig.single('solutionFile'), asyn
     await fsp.mkdir(outputPath, { recursive: true });
   }
 
+  generateTestirajSH(testsConfig, path.join(outputPath, 'testiraj.sh'));
+
   try {
     const newFilePath = path.join(outputPath, req.file.originalname);
     await fsp.rename(solutionPath, newFilePath);
 
     const configFilePath = path.join(outputPath, 'config.json');
     await fsp.writeFile(configFilePath, JSON.stringify(testsConfig, null, 2), 'utf8');
+
+    const testirajFilePath = path.join(outputPath, 'testiraj.sh');
 
     const outputZipPath = path.join(outputPath, '..', 'config.zip');
     const output = fs.createWriteStream(outputZipPath);
@@ -126,6 +131,7 @@ router.post('/configure/complete', uploadTestConfig.single('solutionFile'), asyn
 
     archive.file(configFilePath, { name: 'config.json' });
     archive.file(newFilePath, { name: req.file.originalname });
+    archive.file(testirajFilePath, { name: 'testiraj.sh' });
 
     await new Promise((resolve, reject) => {
       output.on('close', async () => {

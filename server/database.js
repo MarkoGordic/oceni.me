@@ -29,7 +29,8 @@ class Database {
                 password        VARCHAR(100) NOT NULL,
                 email           VARCHAR(100) NOT NULL UNIQUE,
                 last_login_ip   VARCHAR(15),
-                role            TINYINT
+                role            TINYINT,
+                gender          ENUM('M', 'F')
             );
         `;
 
@@ -38,6 +39,7 @@ class Database {
                 id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
                 first_name VARCHAR(100) NOT NULL,
                 last_name VARCHAR(100) NOT NULL,
+                gender ENUM('M', 'F'),
                 year YEAR NOT NULL,
                 index_number VARCHAR(20) NOT NULL UNIQUE,
                 email VARCHAR(100) NOT NULL UNIQUE,
@@ -317,10 +319,10 @@ class Database {
         }
     }
 
-    async registerNewEmployee(firstName, lastName, email, hashedPassword, role) {
-        const query = 'INSERT INTO employees (first_name, last_name, email, password, role) VALUES (?, ?, ?, ?, ?)';
+    async registerNewEmployee(firstName, lastName, email, hashedPassword, role, gender) {
+        const query = 'INSERT INTO employees (first_name, last_name, email, password, role, gender) VALUES (?, ?, ?, ?, ?, ?)';
         try {
-            const [result] = await this.pool.query(query, [firstName, lastName, email, hashedPassword, role]);
+            const [result] = await this.pool.query(query, [firstName, lastName, email, hashedPassword, role, gender]);
             const selectQuery = `SELECT id FROM employees WHERE email = ? LIMIT 1`;
             const [rows] = await this.pool.query(selectQuery, [email]);
             if (rows.length > 0) {
@@ -332,7 +334,15 @@ class Database {
             throw error;
         }
     }
-    
+
+    async getUserGenderById(userId) {
+        const [rows] = await this.pool.query('SELECT gender FROM employees WHERE id = ?', [userId]);
+        if (rows.length > 0) {
+            return rows[0].gender;
+        } else {
+            throw new Error('Employee not found');
+        }
+    }
 
     async updateEmployeeInfo(userId, updateFields) {
         let query = `UPDATE employees SET `;
@@ -378,13 +388,13 @@ class Database {
         }
     }
 
-    async addStudent(first_name, last_name, index_number, year, email, password, course_code) {
+    async addStudent(first_name, last_name, index_number, year, email, password, course_code, gender) {
         const insertQuery = `
-            INSERT INTO students (first_name, last_name, index_number, year, email, password, course_code)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO students (first_name, last_name, index_number, year, email, password, course_code, gender)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `;
         try {
-            await this.pool.query(insertQuery, [first_name, last_name, index_number, year, email, password, course_code]);
+            await this.pool.query(insertQuery, [first_name, last_name, index_number, year, email, password, course_code, gender]);
             const selectQuery = `SELECT id FROM students WHERE email = ? LIMIT 1`;
             const [rows] = await this.pool.query(selectQuery, [email]);
             if (rows.length > 0) {
@@ -424,7 +434,7 @@ class Database {
     
 
     async getStudentById(id) {
-        const query = 'SELECT first_name, last_name, email, index_number, year, course_code, id FROM students WHERE id = ?';
+        const query = 'SELECT first_name, last_name, email, index_number, year, course_code, id, gender FROM students WHERE id = ?';
         try {
             const [results] = await this.pool.query(query, [id]);
             return results.length > 0 ? results[0] : null;
@@ -540,7 +550,7 @@ class Database {
 
     async searchProfessors(searchString) {
         let query = `
-            SELECT id, first_name, last_name, email, role
+            SELECT id, first_name, last_name, email, role, gender
             FROM employees
             WHERE (role = 0 OR role = 1)
             AND (

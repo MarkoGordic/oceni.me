@@ -20,6 +20,7 @@ function ManageEmployees() {
         password: '',
         profile_image: null,
         role: '',
+        gender: '',
     });
 
     const handleOpenModal = () => setModalOpen(true);
@@ -52,8 +53,12 @@ function ManageEmployees() {
         }
     };
 
-    const handleSelectChange = selectedOption => {
+    const handleRoleSelectChange = selectedOption => {
         setEmployeeData({ ...employeeData, role: selectedOption ? selectedOption.value : '' });
+    };
+
+    const handleGenderSelectChange = selectedOption => {
+        setEmployeeData({ ...employeeData, gender: selectedOption ? selectedOption.value : '' });
     };
 
     const handleSearchChange = (event) => {
@@ -119,6 +124,7 @@ function ManageEmployees() {
         formData.append('email', employeeData.email);
         formData.append('password', employeeData.password);
         formData.append('role', employeeData.role);
+        formData.append('gender', employeeData.gender);
         
         if (employeeData.profile_image) {
             formData.append('profile_image', employeeData.profile_image);
@@ -157,7 +163,8 @@ function ManageEmployees() {
                   onSubmit={handleSubmit} 
                   employeeData={employeeData} 
                   onInputChange={handleInputChange} 
-                  onSelectRoleChange={handleSelectChange} 
+                  onSelectRoleChange={handleRoleSelectChange}
+                  onSelectGenderChange={handleGenderSelectChange} 
                 />
                 <button className='new-employee-button' onClick={handleOpenModal}><div className='new-button-content'><i className="fi fi-rs-add"></i> DODAJ ZAPOSLENOG</div></button>
 
