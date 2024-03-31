@@ -94,12 +94,13 @@ router.post('/configure/complete', uploadTestConfig.single('solutionFile'), asyn
   const configId = req.body.configid;
   const solutionPath = req.file.path;
   const outputPath = `uploads/test_configs/${configId}/output`;
+  const absoluteOutputPath = path.resolve(`uploads/test_configs/${configId}/output`);
 
   const testsConfig = JSON.parse(req.body.testsConfig);
 
   const testConfig = await db.getTestConfigById(configId);
   if (!testConfig) {
-    return res.status(404).send('Test configuration not found.');
+    return res.status(404).send('Konfiguracija nije pronađena.');
   }
 
   if (testConfig.status === 'ZAVRSEN') {
@@ -112,16 +113,23 @@ router.post('/configure/complete', uploadTestConfig.single('solutionFile'), asyn
     await fsp.mkdir(outputPath, { recursive: true });
   }
 
-  generateTestirajSH(testsConfig, path.join(outputPath, 'testiraj.sh'));
+  const newFilePath = path.join(outputPath, req.file.originalname);
+  await fsp.rename(solutionPath, newFilePath);
+
+  console.log(testsConfig, absoluteOutputPath, newFilePath, configId);
+  try {
+    await generateTestirajSH(testsConfig, absoluteOutputPath, newFilePath);
+  } catch (error) {
+      return res.status(500).send('An error occurred while generating test configurations.');
+  }
 
   try {
-    const newFilePath = path.join(outputPath, req.file.originalname);
-    await fsp.rename(solutionPath, newFilePath);
-
     const configFilePath = path.join(outputPath, 'config.json');
     await fsp.writeFile(configFilePath, JSON.stringify(testsConfig, null, 2), 'utf8');
 
     const testirajFilePath = path.join(outputPath, 'testiraj.sh');
+    const getResultsFilePath = path.join(outputPath, 'get_results.sh');
+    const resultsFilePath = path.join(outputPath, 'results.json');
 
     const outputZipPath = path.join(outputPath, '..', 'config.zip');
     const output = fs.createWriteStream(outputZipPath);
@@ -132,6 +140,8 @@ router.post('/configure/complete', uploadTestConfig.single('solutionFile'), asyn
     archive.file(configFilePath, { name: 'config.json' });
     archive.file(newFilePath, { name: req.file.originalname });
     archive.file(testirajFilePath, { name: 'testiraj.sh' });
+    archive.file(getResultsFilePath, { name: 'get_results.sh' });
+    archive.file(resultsFilePath, { name: 'results.json' });
 
     await new Promise((resolve, reject) => {
       output.on('close', async () => {
