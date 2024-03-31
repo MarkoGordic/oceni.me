@@ -1,25 +1,47 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from 'react-toastify';
 import SingleTestConfig from "../SingleTestConfig/SingleTestConfig";
 
 const ConfigureTab = ({ isLoading, testFiles, setTestsConfig, setConfigStatus }) => {
-    const [testPoints, setTestPoints] = useState(testFiles.map(() => 0));
+    // Adjusting the initial state to account for the nested structure of testFiles
+    const [testPoints, setTestPoints] = useState([]);
 
-    const handlePointsChange = (points, index) => {
-        setTestPoints(currentPoints => currentPoints.map((p, i) => i === index ? points : p));
+    useEffect(() => {
+        // Initialize testPoints based on the new structure of testFiles
+        const initialTestPoints = testFiles.flatMap(folder => folder.files.map(() => 0));
+        setTestPoints(initialTestPoints);
+    }, [testFiles]);
+
+    const handlePointsChange = (points, globalIndex) => {
+        setTestPoints(currentPoints => currentPoints.map((p, i) => i === globalIndex ? points : p));
     };
 
     function confirmTests() {
-        const testsConfig = testFiles.map((file, index) => ({
-            name: file.name,
-            content: file.content,
-            points: testPoints[index]
+        const updatedTestFiles = testFiles.map((folder, folderIndex) => ({
+            ...folder,
+            files: folder.files.map((file, fileIndex) => {
+                const globalIndex = calculateGlobalIndex(folderIndex, fileIndex);
+                const points = testPoints[globalIndex];
+                return {
+                    ...file,
+                    points,
+                };
+            }),
         }));
-
-        setTestsConfig(testsConfig);
+    
+        setTestsConfig(updatedTestFiles);
         setConfigStatus(true);
         toast.success("Test primeri uspešno konfigurisani!");
     }
+
+    // Helper function to calculate the global index of a file across all folders
+    const calculateGlobalIndex = (folderIndex, fileIndex) => {
+        let count = 0;
+        for (let i = 0; i < folderIndex; i++) {
+            count += testFiles[i].files.length;
+        }
+        return count + fileIndex;
+    };
 
     return (
         isLoading ? (
@@ -28,17 +50,25 @@ const ConfigureTab = ({ isLoading, testFiles, setTestsConfig, setConfigStatus })
             <div className="newtest-wrap">
                 <h1>Konfiguracija test primera</h1>
                 <p className="newtest-info">U nastavku je potrebno da postavite bodovnu vrednost za svaki test primer koji je učitan.</p>
-                <p className="newtest-info">Učitano testova: {testFiles.length}</p>
                 
-                <div className="newtest-configs">
-                    {testFiles.map((file, index) => (
-                        <SingleTestConfig
-                            key={index}
-                            testId={index + 1}
-                            input={file.content}
-                            filename={file.name}
-                            onPointsChange={(points) => handlePointsChange(points, index)}
-                        />
+                <div className="newtest-all-configurations">
+                    {testFiles.map((folder, folderIndex) => (
+                        <div key={folder.folder}>
+                            <h2 style={{marginBottom: '0px'}}>{`Zadatak ${folder.folder[1]}`}</h2>
+
+                            <div className="newtest-config-delim-wrap"><div className="newtest-config-delimeter"></div></div>
+                            <div className="newtest-configs">
+                                {folder.files.map((file, fileIndex) => (
+                                    <SingleTestConfig
+                                        key={file.name}
+                                        testId={calculateGlobalIndex(folderIndex, fileIndex) + 1}
+                                        input={file.content}
+                                        filename={file.name}
+                                        onPointsChange={(points) => handlePointsChange(points, calculateGlobalIndex(folderIndex, fileIndex))}
+                                    />
+                                ))}
+                            </div>
+                        </div>
                     ))}
                 </div>
 

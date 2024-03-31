@@ -46,136 +46,195 @@ const asyncHandler = fn => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
 
 router.post('/configure/new', uploadTestConfig.single('zipFile'), asyncHandler(async (req, res) => {
-    if (!req.file) {
-        return res.status(400).send('No file uploaded.');
-    }
+  if (!req.file) {
+      return res.status(400).send('No file uploaded.');
+  }
 
-    const configid = await db.addNewTestConfig(req.session.userId, req.body.subjectId, req.body.configName);
-    const zipPath = req.file.path;
-    const extractPath = `uploads/test_configs/${configid}`;
+  const configid = await db.addNewTestConfig(req.session.userId, req.body.subjectId, req.body.configName);
+  const zipPath = req.file.path;
+  const extractPath = `uploads/test_configs/${configid}`;
 
-    try {
-        fs.createReadStream(zipPath)
-        .pipe(unzipper.Extract({ path: extractPath }))
-        .promise()
-        .then(async () => {
-            await fsp.unlink(zipPath);
+  try {
+      await fs.createReadStream(zipPath)
+          .pipe(unzipper.Extract({ path: extractPath }))
+          .promise();
 
-            const filenames = await fsp.readdir(extractPath);
-            const testFiles = filenames.filter(name => /^t\d{2}/.test(name));
-            const filesDetails = [];
+      await fsp.unlink(zipPath);
 
-            for (const filename of testFiles) {
-                const content = await fsp.readFile(`${extractPath}/${filename}`, 'utf-8');
-                filesDetails.push({ name: filename, content: content.trimEnd() });
-            }
+      const directories = await fsp.readdir(extractPath, { withFileTypes: true });
+      const folders = directories
+          .filter(dirent => dirent.isDirectory() && /^z\d+$/.test(dirent.name))
+          .map(dirent => dirent.name);
 
-            await db.updateTestConfigStatus(configid, 'OBRADA');
-            await db.updateTestConfigs(configid, JSON.stringify(filesDetails));
-            
-            res.json({ configid, files: filesDetails });
+      let testConfigData = [];
+
+      for (const folder of folders) {
+        const folderPath = `${extractPath}/${folder}`;
+        const filenames = await fsp.readdir(folderPath);
+        const testFiles = filenames.filter(name => /^t\d{2}/.test(name));
+        const filesDetails = [];
+
+        for (const filename of testFiles) {
+            const content = await fsp.readFile(`${folderPath}/${filename}`, 'utf-8');
+            filesDetails.push({ name: filename, content: content.trimEnd() });
+        }
+
+        testConfigData.push({
+            folder: folder,
+            files: filesDetails
         });
-    } catch (error) {
-        console.error('Error during file processing:', error);
-        res.status(500).send('An error occurred during file processing.');
-    }
+      }
+
+      console.log(testConfigData);
+      await db.updateTestConfigStatus(configid, 'OBRADA');
+      await db.updateTestConfigs(configid, JSON.stringify(testConfigData));
+        
+      res.json({ configid, data: testConfigData });
+  } catch (error) {
+      console.error('Error during file processing:', error);
+      res.status(500).send('An error occurred during file processing.');
+  }
 }));
 
-router.post('/configure/complete', uploadTestConfig.single('solutionFile'), asyncHandler(async (req, res) => {
+router.post('/configure/complete', uploadTestConfig.single('solutionZIP'), asyncHandler(async (req, res) => {
   if (!req.file) {
     return res.status(400).send('No file uploaded.');
   }
 
-  if (path.extname(req.file.originalname).toLowerCase() !== '.s') {
+  if (path.extname(req.file.originalname).toLowerCase() !== '.zip') {
     await fsp.unlink(req.file.path);
-    return res.status(400).send('File must have the .S extension.');
+    return res.status(400).send('File must have the .zip extension.');
   }
 
   const configId = req.body.configid;
   const solutionPath = req.file.path;
   const outputPath = `uploads/test_configs/${configId}/output`;
-  const absoluteOutputPath = path.resolve(`uploads/test_configs/${configId}/output`);
-
-  const testsConfig = JSON.parse(req.body.testsConfig);
-
-  const testConfig = await db.getTestConfigById(configId);
-  if (!testConfig) {
-    return res.status(404).send('Konfiguracija nije pronađena.');
-  }
-
-  if (testConfig.status === 'ZAVRSEN') {
-    return res.status(403).json({ message: 'Konfiguracija je već završena.' });
-  }
+  const absoluteOutputPath = path.resolve(outputPath);
 
   try {
-    await fsp.access(outputPath, fs.constants.F_OK);
-  } catch (error) {
-    await fsp.mkdir(outputPath, { recursive: true });
-  }
+    fs.createReadStream(solutionPath)
+      .pipe(unzipper.Extract({ path: outputPath }))
+      .promise()
+      .then(async () => {
+        await fsp.unlink(solutionPath);
 
-  const newFilePath = path.join(outputPath, req.file.originalname);
-  await fsp.rename(solutionPath, newFilePath);
+        const directories = await fsp.readdir(outputPath, { withFileTypes: true });
 
-  console.log(testsConfig, absoluteOutputPath, newFilePath, configId);
-  try {
-    await generateTestirajSH(testsConfig, absoluteOutputPath, newFilePath);
-  } catch (error) {
-      return res.status(500).send('An error occurred while generating test configurations.');
-  }
+        for (const dirent of directories.filter(dirent => dirent.isDirectory() && /^z\d+r$/.test(dirent.name))) {
+          const originalDirPath = path.join(outputPath, dirent.name);
+          const targetDirName = dirent.name.replace('r', '');
+          const targetDirPath = path.join(outputPath, targetDirName);
 
-  try {
-    const configFilePath = path.join(outputPath, 'config.json');
-    await fsp.writeFile(configFilePath, JSON.stringify(testsConfig, null, 2), 'utf8');
+          await fsp.mkdir(targetDirPath, { recursive: true });
 
-    const testirajFilePath = path.join(outputPath, 'testiraj.sh');
-    const getResultsFilePath = path.join(outputPath, 'get_results.sh');
-    const resultsFilePath = path.join(outputPath, 'results.json');
+          const filesToMove = await fsp.readdir(originalDirPath);
+          for (const fileName of filesToMove) {
+            const srcFilePath = path.join(originalDirPath, fileName);
+            const destFilePath = path.join(targetDirPath, fileName);
+            await fsp.rename(srcFilePath, destFilePath);
+          }
 
-    const outputZipPath = path.join(outputPath, '..', 'config.zip');
-    const output = fs.createWriteStream(outputZipPath);
-    const archive = archiver('zip', { zlib: { level: 9 } });
-
-    archive.pipe(output);
-
-    archive.file(configFilePath, { name: 'config.json' });
-    archive.file(newFilePath, { name: req.file.originalname });
-    archive.file(testirajFilePath, { name: 'testiraj.sh' });
-    archive.file(getResultsFilePath, { name: 'get_results.sh' });
-    archive.file(resultsFilePath, { name: 'results.json' });
-
-    await new Promise((resolve, reject) => {
-      output.on('close', async () => {
-        try {
-          await fsp.rm(outputPath, { recursive: true, force: true });
-          resolve();
-        } catch (err) {
-          reject(err);
+          await fsp.rm(originalDirPath, { recursive: true, force: true });
         }
-      });
-      archive.on('error', reject);
-      archive.finalize();
-    });
 
-    const directoryPath = path.join(outputPath, '..');
-    const files = await fsp.readdir(directoryPath);
+        const testsConfig = JSON.parse(req.body.testsConfig);
 
-    for (const file of files) {
-        const filePath = path.join(directoryPath, file);
-        if (file !== 'config.zip') {
-            try {
-                await fsp.rm(filePath, { recursive: true, force: true });
-            } catch (error) {
-                console.error(`Error deleting ${filePath}:`, error);
+        const testConfig = await db.getTestConfigById(configId);
+        if (!testConfig) {
+          return res.status(404).send('Konfiguracija nije pronađena.');
+        }
+      
+        if (testConfig.status === 'ZAVRSEN') {
+          return res.status(403).json({ message: 'Konfiguracija je već završena.' });
+        }
+
+        for (let i = 0; i < testsConfig.length; i++) {
+          let currentTestAbsolutePath = path.join(absoluteOutputPath, testsConfig[i].folder);
+      
+          try {
+              await fsp.access(currentTestAbsolutePath, fs.constants.F_OK);
+          } catch (error) {
+              await fsp.mkdir(currentTestAbsolutePath, { recursive: true });
+          }
+      
+          try {
+              let currentSolutionPath = path.join(currentTestAbsolutePath, testsConfig[i].folder + ".S");
+              await generateTestirajSH(testsConfig[i].files, currentTestAbsolutePath, currentSolutionPath, i);
+      
+              let resultsPath = path.join(currentTestAbsolutePath, 'results.json');
+              let resultsData = await fsp.readFile(resultsPath, 'utf-8');
+              let results = JSON.parse(resultsData);
+      
+              for (let j = 0; j < results.length; j++) {
+                testsConfig[i].files[j].result = results[j].output;
+                testsConfig[i].files[j].code = results[j].code;
+              }
+          } catch (error) {
+              console.error('An error occurred while generating test configurations or reading results:', error);
+              return res.status(500).send('An error occurred while generating test configurations or reading results.');
+          }
+        }
+
+        try {
+          const configFilePath = path.join(outputPath, 'config.json');
+          await fsp.writeFile(configFilePath, JSON.stringify(testsConfig, null, 2), 'utf8');
+      
+          const outputZipPath = path.join(outputPath, '..', 'config.zip');
+          const output = fs.createWriteStream(outputZipPath);
+          const archive = archiver('zip', { zlib: { level: 9 } });
+      
+          archive.pipe(output);
+
+          archive.file(configFilePath, { name: 'config.json' });
+      
+          const archivePromises = testsConfig.map(async (config) => {
+              let currentTestAbsolutePath = path.join(absoluteOutputPath, config.folder);
+              const filesToDelete = ['get_results.sh', 'results.json'];
+              await Promise.all(filesToDelete.map(file => 
+                  fsp.unlink(path.join(currentTestAbsolutePath, file)).catch(err => console.error(err))
+              ));
+      
+              archive.directory(currentTestAbsolutePath, config.folder);
+          });
+      
+          await Promise.all(archivePromises);
+
+          output.on('error', (err) => {
+              console.log(err);
+          });
+      
+          await archive.finalize();
+        } catch (error) {
+            console.error('Error processing the solution file or writing the config:', error);
+            res.status(500).send('An error occurred while processing the solution file or writing the config.');
+        }
+
+        const directoryPath = path.join(outputPath, '..');
+        const files = await fsp.readdir(directoryPath);
+
+        for (const file of files) {
+            const filePath = path.join(directoryPath, file);
+            if (file !== 'config.zip') {
+                try {
+                    await fsp.rm(filePath, { recursive: true, force: true });
+                } catch (error) {
+                    console.error(`Error deleting ${filePath}:`, error);
+                }
             }
         }
-    }
 
-    await db.updateTestConfigStatus(configId, 'ZAVRSEN');
+        await db.updateTestConfigs(configId, JSON.stringify(testsConfig));
+        await db.updateTestConfigStatus(configId, 'ZAVRSEN');
 
-    res.send({ success: true });
+        res.send({ success: true, message: 'Processing complete.' });
+      })
+      .catch((error) => {
+        console.error('Error processing the solution ZIP:', error);
+        res.status(500).send('An error occurred while processing the solution ZIP.');
+      });
   } catch (error) {
-    console.error('Error moving solution file or writing config:', error);
-    res.status(500).send('An error occurred while processing the solution file or writing the config.');
+    console.error('Error setting up the processing:', error);
+    res.status(500).send('An initial setup error occurred.');
   }
 }));
 

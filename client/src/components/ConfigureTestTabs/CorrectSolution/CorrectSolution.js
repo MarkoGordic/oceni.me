@@ -17,13 +17,13 @@ const CorrectSolution = ({ setFileName, setTargetZIP, confirmUpload, isLoading }
     };
 
     const validateAndSetFile = (file) => {
-        if (file && /\.(S)$/i.test(file.name)) {
+        if (file && /\.(zip)$/i.test(file.name)) {
             setTargetZIP(file);
             setFileName(file.name);
             setLocalFileName(file.name);
             toast.success("Datoteka uspešno učitana!");
         } else {
-            toast.error("Molimo vas da izaberete .S datoteku.");
+            toast.error("Molimo vas da izaberete .zip datoteku.");
             setLocalFileName("");
         }
     };
@@ -34,8 +34,8 @@ const CorrectSolution = ({ setFileName, setTargetZIP, confirmUpload, isLoading }
         ) : (
             <div className="newtest-wrap">
                 <h1>Dodavanje tačnog rešenja</h1>
-                <p className="newtest-info">Kako bi dodali tačno rešenje za kolokvijum, molimo vas da otpremite .S datoteku koja sadrži rešenje.</p>
-                <p className="newtest-warning">Napomena: Nemojte napuštati ovu stranicu dok ne završite konfiguraciju tačnog rešenja.</p>
+                <p className="newtest-info">Kako bi dodali tačno rešenje za kolokvijum, molimo vas da otpremite .zip datoteku koja sadrži rešenja zadataka.</p>
+                <p className="newtest-warning">Napomena: Nemojte napuštati ovu stranicu dok ne završite konfiguraciju rešenja.</p>
 
                 <div className="drop-zone" onClick={openFileDialog}>
                         <input
@@ -43,12 +43,12 @@ const CorrectSolution = ({ setFileName, setTargetZIP, confirmUpload, isLoading }
                             type="file"
                             hidden
                             onChange={handleFileSelect}
-                            accept=".S"
+                            accept=".zip"
                         />
                         {localFileName ? (
                             <p className="newtest-file-name-display">Izabrana datoteka: {localFileName}</p>
                         ) : (
-                            <p className="newtest-file-name-display">Prevucite .S datoteku ovde ili kliknite za izbor</p>
+                            <p className="newtest-file-name-display">Prevucite .zip datoteku ovde ili kliknite za izbor</p>
                         )}
                 </div>
 

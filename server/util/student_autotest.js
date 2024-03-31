@@ -1,11 +1,10 @@
 const fs = require('fs').promises;
+const fsp = require('fs').promises;
 const path = require('path');
 const { spawn } = require('child_process');
 
-function generateTestirajSH(test_data, destinationPath, solutionFilePath) {
-    return new Promise(async (resolve, reject) => {
-        console.log(test_data);
-        
+function generateTestirajSH(test_data, destinationPath, solutionFilePath, currIndex) {
+    return new Promise(async (resolve, reject) => {    
         let TESTS_FINAL = "(";
         for (let i = 0; i < test_data.length; i++) {
             if(i == test_data.length - 1)
@@ -16,25 +15,20 @@ function generateTestirajSH(test_data, destinationPath, solutionFilePath) {
         TESTS_FINAL += ")";
 
         let TESTS_INPUTS = "";
-        let TESTS_INPUTS_OUTPUTS = "";
         
         for (let i = 0; i < test_data.length; i++) {
             const prefix = i < 9 ? "TEST0" + (i + 1) : "TEST" + (i + 1);
             TESTS_INPUTS += prefix + '=$(cat <<EOL\n';
-            TESTS_INPUTS_OUTPUTS += prefix + '_OUTPUT=$(cat <<EOL\n';
         
             const lines = test_data[i].content.split('\n');
             for (const line of lines) {
                 if (line.startsWith('@')) {
                     const input = line.slice(1);
                     TESTS_INPUTS += input + '\n';
-                } else {
-                    TESTS_INPUTS_OUTPUTS += line + '\n';
                 }
             }
 
             TESTS_INPUTS += 'EOL\n)\n\n';
-            TESTS_INPUTS_OUTPUTS += 'EOL\n)\n\n';
         }
 
         try {
@@ -49,9 +43,44 @@ function generateTestirajSH(test_data, destinationPath, solutionFilePath) {
                 console.error('Script execution failed:', error);
             }
 
+            let resultsPath = path.join(destinationPath, 'results.json');
+            let resultsData = await fsp.readFile(resultsPath, 'utf-8');
+            let results = JSON.parse(resultsData);
+
+            let TESTS_INPUTS_OUTPUTS = "";
+            for (let i = 0; i < test_data.length; i++) {
+                const prefix = i < 9 ? "TEST0" + (i + 1) : "TEST" + (i + 1);
+                TESTS_INPUTS_OUTPUTS += prefix + '=$(cat <<EOL\n';
+            
+                const lines = test_data[i].content.split('\n');
+                for (const line of lines) {
+                    if (line.startsWith('@')) {
+                        const input = line.slice(1);
+                        TESTS_INPUTS_OUTPUTS += input + '\n';
+                    }
+                }
+    
+                TESTS_INPUTS_OUTPUTS += 'EOL\n)\n\n';
+
+                const prefix2 = i < 9 ? "OUTP0" + (i + 1) : "OUTP" + (i + 1);
+                TESTS_INPUTS_OUTPUTS += prefix2 + '=$(cat <<EOL\n';
+                TESTS_INPUTS_OUTPUTS += results[i].output + '\n';
+                TESTS_INPUTS_OUTPUTS += 'EOL\n)\n\n';
+            }
+
+            let EXITS_FINAL = "(";
+            for (let i = 0; i < results.length; i++) {
+                if(i == results.length - 1)
+                    EXITS_FINAL += results[i].code;
+                else
+                    EXITS_FINAL += results[i].code + " ";
+            }
+            EXITS_FINAL += ")";
+
             const templateData = await fs.readFile('./util/template.sh', 'utf8');
             outputData = templateData.replace('<TESTS_PLACEHOLDER>', TESTS_FINAL);
             outputData = outputData.replace('<TESTS_INPUTS_OUTPUTS_PLACEHOLDER>', TESTS_INPUTS_OUTPUTS);
+            outputData = outputData.replace('<EXITS_PLACEHOLDER>', EXITS_FINAL);
             await fs.writeFile(path.join(destinationPath, 'testiraj.sh'), outputData);
             
             resolve();

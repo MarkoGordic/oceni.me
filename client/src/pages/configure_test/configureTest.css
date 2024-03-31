@@ -67,12 +67,10 @@ body, #root {
 }
 
 .newtest-configs {
-    height: 550px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    margin-top: 20px;
 }
 
 .newtest-warning {
@@ -121,4 +119,23 @@ body, #root {
 .newtest-config-name-input:focus {
     outline: none;
     border-color: #1e90ff;
+}
+
+.newtest-config-delim-wrap {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.newtest-config-delimeter {
+    height: 2px;
+    width: 400px;
+    background-color: #f7f7ff;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.newtest-all-configurations {
+    max-height: 550px;
 }

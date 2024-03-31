@@ -149,13 +149,13 @@ function ConfigureTest() {
 
         console.log(csFileName, csTargetFile, file);
         if (!file) {
-            toast.error("Nema datoteke za učitavanje. Molimo odaberite .S datoteku.");
+            toast.error("Nema datoteke za učitavanje. Molimo odaberite .zip datoteku.");
             setIsLoading(false);
             return;
         }
 
         const formData = new FormData();
-        formData.append('solutionFile', file);
+        formData.append('solutionZIP', file);
         formData.append('configid', configid);
         formData.append('testsConfig', JSON.stringify(testsConfig));
 
