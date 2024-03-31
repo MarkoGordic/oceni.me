@@ -5,6 +5,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import UploadTab from '../../components/ConfigureTestTabs/UploadTab/UploadTab';
 import ConfigureTab from '../../components/ConfigureTestTabs/ConfigureTab/ConfigureTab';
 import CorrectSolution from '../../components/ConfigureTestTabs/CorrectSolution/CorrectSolution';
+import ConfigComplete from '../../components/ConfigureTestTabs/ConfigComplete/ConfigComplete';
 import './configureTest.css';
 
 function ConfigureTest() {
@@ -60,38 +61,41 @@ function ConfigureTest() {
             {
                 id: 'completed',
                 title: 'Completed',
-                content: <div>Configuration is complete.</div>
+                content: <ConfigComplete
+                            isLoading={isLoading}
+                            setIsLoading={setIsLoading}
+                            isCompleted={configCompleted}
+                        />
             }
         ]);
     }, [targetZIP, isLoading, configid, testFiles, csTargetFile, testsConfig, configCompleted, configName]);
 
     useEffect(() => {
-        console.log(configid, configStatus);
-        if (configid && configStatus === false) {
+        if (configid && configStatus === false && configCompleted === false) {
             fetchTestConfigStatus();
         }
 
-        if(configStatus === true) {
+        if(configStatus === true && configCompleted === false) {
             setActiveTab('correct-solution');
         }
-    }, [configid, configStatus]);
+
+        if(configCompleted === true) {
+            setActiveTab('completed');
+        }
+    }, [configid, configStatus, configCompleted, testFiles]);
 
     const fetchTestConfigStatus = () => {
         setIsLoading(true);
-        console.log(configid);
         fetch(`http://localhost:8000/tests/status?configId=${configid}`, {
             credentials: 'include'
         })
         .then(response => response.json())
         .then(data => {
-            console.log(data);
             setIsLoading(false);
             if (data.status === 'OBRADA') {
                 setTestFiles(data.testConfigs || []);
-                setActiveTab('configure');
             } else if (data.status === 'ZAVRSEN') {
                 setConfigCompleted(true);
-                setActiveTab('completed');
             } else {
                 setActiveTab('upload');
             }
@@ -169,6 +173,7 @@ function ConfigureTest() {
             if (!response.ok) {
                 if (response.status === 403) {
                     toast.error('Konfiguracija je već završena.');
+                    setConfigCompleted(true);
                 }
             }
             return response.json();

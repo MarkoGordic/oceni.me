@@ -3,11 +3,9 @@ import { toast } from 'react-toastify';
 import SingleTestConfig from "../SingleTestConfig/SingleTestConfig";
 
 const ConfigureTab = ({ isLoading, testFiles, setTestsConfig, setConfigStatus }) => {
-    // Adjusting the initial state to account for the nested structure of testFiles
     const [testPoints, setTestPoints] = useState([]);
 
     useEffect(() => {
-        // Initialize testPoints based on the new structure of testFiles
         const initialTestPoints = testFiles.flatMap(folder => folder.files.map(() => 0));
         setTestPoints(initialTestPoints);
     }, [testFiles]);
@@ -34,7 +32,6 @@ const ConfigureTab = ({ isLoading, testFiles, setTestsConfig, setConfigStatus })
         toast.success("Test primeri uspešno konfigurisani!");
     }
 
-    // Helper function to calculate the global index of a file across all folders
     const calculateGlobalIndex = (folderIndex, fileIndex) => {
         let count = 0;
         for (let i = 0; i < folderIndex; i++) {

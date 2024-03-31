@@ -254,7 +254,7 @@ router.get('/status', asyncHandler(async (req, res) => {
 
       const response = {
           configId: testConfig.id,
-          status: testConfig.status
+          status: testConfig.status,
       };
 
       if (testConfig.status === 'OBRADA') {
@@ -262,6 +262,27 @@ router.get('/status', asyncHandler(async (req, res) => {
       }
 
       res.json(response);
+  } catch (error) {
+      console.error('Error retrieving test configuration status:', error);
+      res.status(500).send('An error occurred while retrieving the test configuration status.');
+  }
+}));
+
+router.get('/config/get', asyncHandler(async (req, res) => {
+  const { configId } = req.query;
+
+  if (!configId) {
+      return res.status(400).send('Config ID is required.');
+  }
+
+  try {
+      const testConfig = await db.getTestConfigById(configId);
+
+      if (!testConfig) {
+          return res.status(404).send('Test configuration not found.');
+      }
+
+      res.json(testConfig);
   } catch (error) {
       console.error('Error retrieving test configuration status:', error);
       res.status(500).send('An error occurred while retrieving the test configuration status.');

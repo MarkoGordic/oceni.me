@@ -66,7 +66,7 @@ const ManageTestConfigurations = () => {
                             <TestConfigurationCard key={config.id} testConfig={config} onDeleteSuccess={handleDeleteSuccess} />
                         ))
                     ) : (
-                        <p>No test configurations available.</p>
+                        <p>Nema konfiguracija testova za ovaj predmet.</p>
                     )}
                 </div>
             </div>

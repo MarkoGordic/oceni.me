@@ -1,10 +1,11 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 function TestConfigurationCard({ testConfig, onDeleteSuccess }) {
     const { id, name, test_configs, created_at, employee_id } = testConfig;
     const testsConfigParsed = JSON.parse(test_configs);
-    console.log(testsConfigParsed);
+    const navigate = useNavigate();
 
     let folderCount = 0;
     let fileCount = 0;
@@ -45,16 +46,21 @@ function TestConfigurationCard({ testConfig, onDeleteSuccess }) {
         }
     };
 
+    const handlePreview = (configId) => {
+        navigate('./../configure/' + configId);
+    };
+
     return (
         <div className='test-configuration-card'>
             <img src={`http://localhost:8000/user_pfp/${employee_id}.jpg`} alt='User' />
             <div className='test-configuration-card-info'>
                 <p className='test-configuration-card-name'>{name}</p>
-                <p className='test-configuration-card-total'>Ukupan broj zadataka / testova: {folderCount} / {fileCount}</p>
+                <p className='test-configuration-card-total'>Ukupan broj zadataka (testova): {folderCount} ({fileCount})</p>
                 <p className='test-configuration-card-date'>Kreirano: {formattedDate} {formattedTime}</p>
             </div>
             
             <div className='test-configuration-card-actions'>
+                <button className='test-configuration-card-action' onClick={() => handlePreview(id)}><i className="fi fi-rr-eye"></i></button>
                 <button className='test-configuration-card-action' onClick={handleDownloadClick}><i className="fi fi-rr-download"></i></button>
                 <button className='test-configuration-card-action' onClick={handleDeleteClick}><i className="fi fi-rr-trash"></i></button>
             </div>

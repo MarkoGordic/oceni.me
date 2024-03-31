@@ -139,3 +139,47 @@ body, #root {
 .newtest-all-configurations {
     max-height: 550px;
 }
+
+.config-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+}
+
+.config-table {
+    width: 90%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #252525;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.config-table th, .config-table td {
+    text-align: left;
+    padding: 12px;
+    color: #f7f7ff;
+    border-bottom: 1px solid #383838;
+}
+
+.config-table th {
+    background-color: #1e90ff;
+    color: #ffffff;
+}
+
+.config-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.config-table tbody tr:hover {
+    background-color: #383838;
+}
+
+.config-finish-buttons {
+    display: inline-flex;
+}
+
+.config-finish-buttons button {
+    margin: 10px;
+}
