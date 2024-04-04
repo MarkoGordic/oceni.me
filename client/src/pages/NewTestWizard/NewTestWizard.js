@@ -16,12 +16,6 @@ const NewTestWizard = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (testid) {
-            setActiveTab('configure');
-        } else {
-            setActiveTab('upload');
-        }
-
         setTabs([
             {
                 id: 'upload',
@@ -42,6 +36,14 @@ const NewTestWizard = () => {
             }
         ]);
     }, [targetZIP, isLoading, testid]);
+
+    useEffect(() => {
+        if (testid) {
+            setActiveTab('configure');
+        } else {
+            setActiveTab('upload');
+        }
+    }, [testid]);
 
     const uploadFile = (file) => {
         setIsLoading(true);

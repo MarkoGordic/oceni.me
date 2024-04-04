@@ -289,76 +289,6 @@ router.get('/config/get', asyncHandler(async (req, res) => {
   }
 }));
 
-function convertIndexFormat(index) {
-  const match = index.match(/([a-zA-Z]+)(\d+)-(\d+)/);
-  if (!match) {
-      throw new Error('Invalid index format');
-  }
-  const [, letters, number, year] = match;
-
-  const paddedNumber = number.padStart(3, '0');
-
-  return `${letters.toUpperCase()} ${paddedNumber}/${year}`;
-}
-
-async function getStudentList(testId) {
-  const filePath = path.join(__dirname, `../uploads/tests/${testId}/provera/spisak_stud_koji_trenutno_rade_proveru.txt`);
-
-  try {
-    await fs.access(filePath);
-
-    const fileStream = fs.createReadStream(filePath);
-    const rl = readline.createInterface({
-      input: fileStream,
-      crlfDelay: Infinity
-    });
-
-    const students = [];
-    for await (const line of rl) {
-      const parts = line.split(',').map(part => part.trim());
-      if (parts.length > 1 && parts[1] !== '') {
-        parts[1] = convertIndexFormat(parts[1]);
-        students.push([parts[0], parts[1]]);
-      }
-    }
-
-    return students;
-  } catch (error) {
-    console.error(`Error accessing or reading the student list file: ${filePath}`, error);
-    throw new Error("File does not exist or cannot be accessed.");
-  }
-}
-
-router.post('/new', upload.single('zipFile'), asyncHandler(async (req, res) => {
-  if (!req.file) {
-    return res.status(400).send('No file uploaded.');
-  }
-
-  const subjectId = req.body.subjectId;
-  const testId = await db.addNewTest(subjectId);
-  const zipPath = req.file.path;
-
-  try {
-    fs.createReadStream(zipPath)
-      .pipe(unzipper.Extract({ path: `uploads/tests/${testId}` }))
-      .promise()
-      .then(async () => {
-        await fsp.unlink(zipPath);
-
-        try {
-          const studentList = await getStudentList(testId);
-          res.json({ testId, studentList });
-        } catch (error) {
-          console.error('Error reading student list:', error);
-          res.status(500).send('Error processing student list.');
-        }
-      });
-  } catch (error) {
-    console.error('Error extracting file:', error);
-    res.status(500).send('An error occurred while extracting the file.');
-  }
-}));
-
 router.post('/config/get_subject', asyncHandler(async (req, res) => {
   const { subjectId } = req.body;
 
@@ -432,5 +362,75 @@ router.get('/config/delete/:configId', asyncHandler(async (req, res) => {
   }
 }));
 
+
+function convertIndexFormat(index) {
+  const match = index.match(/([a-zA-Z]+)(\d+)-(\d+)/);
+  if (!match) {
+      throw new Error('Invalid index format');
+  }
+  const [, letters, number, year] = match;
+
+  const paddedNumber = number.padStart(3, '0');
+
+  return `${letters.toUpperCase()} ${paddedNumber}/${year}`;
+}
+
+async function getStudentList(testId) {
+  const filePath = path.join(__dirname, `../uploads/tests/${testId}/provera/spisak_stud_koji_trenutno_rade_proveru.txt`);
+
+  try {
+    await fs.access(filePath);
+
+    const fileStream = fs.createReadStream(filePath);
+    const rl = readline.createInterface({
+      input: fileStream,
+      crlfDelay: Infinity
+    });
+
+    const students = [];
+    for await (const line of rl) {
+      const parts = line.split(',').map(part => part.trim());
+      if (parts.length > 1 && parts[1] !== '') {
+        parts[1] = convertIndexFormat(parts[1]);
+        students.push([parts[0], parts[1]]);
+      }
+    }
+
+    return students;
+  } catch (error) {
+    console.error(`Error accessing or reading the student list file: ${filePath}`, error);
+    throw new Error("File does not exist or cannot be accessed.");
+  }
+}
+
+router.post('/new', upload.single('zipFile'), asyncHandler(async (req, res) => {
+  if (!req.file) {
+    return res.status(400).send('No file uploaded.');
+  }
+
+  const subjectId = req.body.subjectId;
+  const testId = await db.addNewTest(subjectId);
+  const zipPath = req.file.path;
+
+  try {
+    fs.createReadStream(zipPath)
+      .pipe(unzipper.Extract({ path: `uploads/tests/${testId}` }))
+      .promise()
+      .then(async () => {
+        await fsp.unlink(zipPath);
+
+        try {
+          const studentList = await getStudentList(testId);
+          res.json({ testId, studentList });
+        } catch (error) {
+          console.error('Error reading student list:', error);
+          res.status(500).send('Error processing student list.');
+        }
+      });
+  } catch (error) {
+    console.error('Error extracting file:', error);
+    res.status(500).send('An error occurred while extracting the file.');
+  }
+}));
 
 module.exports = router;

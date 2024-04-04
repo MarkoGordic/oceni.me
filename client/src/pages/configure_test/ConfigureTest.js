@@ -22,6 +22,7 @@ function ConfigureTest() {
     const [configCompleted, setConfigCompleted] = useState(false);
     const [configStatus, setConfigStatus] = useState(false);
     const [configName, setConfigName] = useState("");
+    const [isConfigInprogress, setIsConfigInprogress] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -71,8 +72,13 @@ function ConfigureTest() {
     }, [targetZIP, isLoading, configid, testFiles, csTargetFile, testsConfig, configCompleted, configName]);
 
     useEffect(() => {
-        if (configid && configStatus === false && configCompleted === false) {
+        console.log(configid, configStatus, configCompleted);
+        if (configid && isConfigInprogress === false && configStatus === false && configCompleted === false) {
             fetchTestConfigStatus();
+        }
+
+        if(configid && isConfigInprogress === true && configStatus === false && configCompleted === false) {
+            setActiveTab('configure');
         }
 
         if(configStatus === true && configCompleted === false) {
@@ -93,6 +99,7 @@ function ConfigureTest() {
         .then(data => {
             setIsLoading(false);
             if (data.status === 'OBRADA') {
+                setIsConfigInprogress(true)
                 setTestFiles(data.testConfigs || []);
             } else if (data.status === 'ZAVRSEN') {
                 setConfigCompleted(true);
@@ -151,7 +158,6 @@ function ConfigureTest() {
     const completeConfiguration = (file) => {
         setIsLoading(true);
 
-        console.log(csFileName, csTargetFile, file);
         if (!file) {
             toast.error("Nema datoteke za učitavanje. Molimo odaberite .zip datoteku.");
             setIsLoading(false);

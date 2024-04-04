@@ -11,8 +11,9 @@ const ConfigureTab = ({ isLoading, testFiles, setTestsConfig, setConfigStatus })
     }, [testFiles]);
 
     const handlePointsChange = (points, globalIndex) => {
-        setTestPoints(currentPoints => currentPoints.map((p, i) => i === globalIndex ? points : p));
+        setTestPoints(currentPoints => { return currentPoints.map((p, i) => i === globalIndex ? points : p); });
     };
+    
 
     function confirmTests() {
         const updatedTestFiles = testFiles.map((folder, folderIndex) => ({
