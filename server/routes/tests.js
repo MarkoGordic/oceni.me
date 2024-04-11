@@ -179,10 +179,12 @@ router.post('/configure/complete', uploadTestConfig.single('solutionZIP'), async
         try {
           let folderCount = 0;
           let fileCount = 0;
+          let totalPoints = 0;
       
           testsConfig.forEach(folder => {
               folderCount += 1;
               fileCount += folder.files.length;
+              totalPoints += folder.files.reduce((acc, file) => acc + file.points, 0);
           });
 
           let finalConfiguration = {
@@ -191,6 +193,7 @@ router.post('/configure/complete', uploadTestConfig.single('solutionZIP'), async
             test_no: parseInt(req.body.testNo),
             total_tasks: folderCount,
             total_tests: fileCount,
+            total_points: totalPoints,
             tests_config: testsConfig
           };
 
@@ -486,9 +489,9 @@ router.post('/new', upload.single('configFile'), asyncHandler(async (req, res) =
     const rawData = await fsp.readFile(configPath, 'utf8');
     const configData = JSON.parse(rawData);
 
-    const { name, subject_id, test_no } = configData;
+    const { name, subject_id, test_no, total_tasks, total_tests, total_points } = configData;
 
-    const testId = await db.addNewTest(subject_id, name, test_no);
+    const testId = await db.addNewTest(subject_id, name, test_no, req.session.userId, total_tasks, total_tests, total_points);
 
     const savePath = path.join(__dirname, '../uploads', 'tests', String(testId), 'config.json');
 
@@ -641,5 +644,23 @@ router.post('/complete', asyncHandler(async (req, res) => {
   }
 }));
 
+router.post('/all', asyncHandler(async (req, res) => {
+  const { subjectId } = req.body;
+
+  if (!subjectId) {
+    return res.status(400).send('Subject ID is required.');
+  }
+
+  try {
+    const tests = await db.getTestsForSubject(subjectId);
+    if (tests.length === 0) {
+      return res.send({'message': '/'});
+    }
+    res.json(tests);
+  } catch (error) {
+    console.error('Error retrieving tests:', error);
+    res.status(500).send('An error occurred while retrieving the tests.');
+  }
+}));
 
 module.exports = router;

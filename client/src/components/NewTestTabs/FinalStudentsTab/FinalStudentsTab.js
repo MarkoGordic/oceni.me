@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 
 const FinalStudentsTab = ({ isLoading, studentList = [], testID }) => {
+    const navigate = useNavigate();
 
     const confirmFinalStudents = async () => {
         try {
@@ -18,6 +20,7 @@ const FinalStudentsTab = ({ isLoading, studentList = [], testID }) => {
             });
             if (response.ok) {
                 toast.success("Uspešno kreiran kolokvijum!");
+                navigate('./../../');
             } else {
                 toast.error("Došlo je do neočekivane greške prilikom kreiranja kolokvijuma.");
             }

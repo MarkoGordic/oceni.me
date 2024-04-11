@@ -2,21 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import { useParams } from 'react-router-dom';
 import 'react-toastify/dist/ReactToastify.css';
-import './manageTestConfigurations.css';
+import './subjectTests.css';
 import SubjectSidebar from '../../components/SubjectSidebar/SubjectSidebar';
-import TestConfigurationCard from '../../components/TestConfigurationCard/TestConfigurationCard';
+import TestCard from '../../components/TestCard/TestCard';
 
-const ManageTestConfigurations = () => {
+const SubjectTests = () => {
     const { id } = useParams();
-    const [testConfigs, setTestConfigs] = useState([]);
+    const [testsData, setTestsData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const fetchTestConfigurations = async () => {
+        const fetchTestsData = async () => {
             setIsLoading(true);
             
             try {
-                const response = await fetch(`http://localhost:8000/tests/config/get_subject`, {
+                const response = await fetch(`http://localhost:8000/tests/all`, {
                     method: "POST",
                     credentials: "include",
                     headers: {
@@ -29,7 +29,7 @@ const ManageTestConfigurations = () => {
                 }
                 const data = await response.json();
                 if (data.message !== "/"){
-                    setTestConfigs(data);
+                    setTestsData(data);
                     setIsLoading(false);
                 } else {
                     setIsLoading(false);
@@ -40,11 +40,11 @@ const ManageTestConfigurations = () => {
             }
         };
     
-        fetchTestConfigurations();
+        fetchTestsData();
     }, [id]);
 
     const handleDeleteSuccess = (deletedConfigId) => {
-        setTestConfigs(testConfigs.filter(config => config.id !== deletedConfigId));
+        setTestsData(testsData.filter(config => config.id !== deletedConfigId));
     };
 
     if (isLoading) return <p>Loading...</p>;
@@ -55,15 +55,15 @@ const ManageTestConfigurations = () => {
             <SubjectSidebar />
             
             <div className='content'>
-                <h1>Upravljanje konfiguracijama</h1>
+                <h1>Upravljanje kolokvijumima</h1>
 
                 <div className='test-configurations'>
-                    {testConfigs.length > 0 ? (
-                        testConfigs.map((config) => (
-                            <TestConfigurationCard key={config.id} testConfig={config} onDeleteSuccess={handleDeleteSuccess} />
+                    {testsData.length > 0 ? (
+                        testsData.map((config) => (
+                            <TestCard key={config.id} testData={config} onDeleteSuccess={handleDeleteSuccess} />
                         ))
                     ) : (
-                        <p>Nema konfiguracija testova za ovaj predmet.</p>
+                        <p>Nema kolokvijuma za ovaj predmet.</p>
                     )}
                 </div>
             </div>
@@ -71,4 +71,4 @@ const ManageTestConfigurations = () => {
     );
 }
 
-export default ManageTestConfigurations;
+export default SubjectTests;

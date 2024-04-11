@@ -245,12 +245,18 @@ class Database {
             CREATE TABLE IF NOT EXISTS tests (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 subject_id INT NOT NULL,
+                employee_id INT,
                 name VARCHAR(255) NOT NULL,
                 test_no INT NOT NULL,
+                total_tasks INT NOT NULL,
+                total_tests INT NOT NULL,
+                total_points INT NOT NULL,
                 initial_students TEXT,
                 final_students TEXT,
                 status ENUM('DODATA_KONFIGURACIJA', 'DODAT_ZIP', 'PODESENI_STUDENTI', 'ZAVRSEN') NOT NULL,
-                FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
+                FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE SET NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         `;
 
@@ -263,6 +269,7 @@ class Database {
                 test_no INT NOT NULL,
                 test_configs TEXT NOT NULL,
                 status ENUM('KREIRAN', 'OBRADA', 'ZAVRSEN') NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
                 FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE SET NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -770,10 +777,10 @@ class Database {
         }
     }
     
-    async addNewTest(subjectId, name, test_no) {
+    async addNewTest(subjectId, name, test_no, employee_id, total_tasks, total_tests, total_points) {
         try {
-            const insertQuery = `INSERT INTO tests (subject_id, name, test_no, initial_students, final_students, status) VALUES (?, ?, ?, NULL, NULL, 'DODATA_KONFIGURACIJA')`;
-            await this.pool.query(insertQuery, [subjectId, name, test_no]);
+            const insertQuery = `INSERT INTO tests (subject_id, name, test_no, initial_students, final_students, status, employee_id, total_tasks, total_tests, total_points) VALUES (?, ?, ?, NULL, NULL, 'DODATA_KONFIGURACIJA', ?, ?, ?, ?)`;
+            await this.pool.query(insertQuery, [subjectId, name, test_no, employee_id, total_tasks, total_tests, total_points]);
     
             const selectQuery = `SELECT id AS testId FROM tests WHERE subject_id = ? ORDER BY id DESC LIMIT 1`;
             const [selectResult] = await this.pool.query(selectQuery, [subjectId]);
@@ -909,7 +916,6 @@ class Database {
         
         if (!whitelist.includes(fieldName)) {
             throw new Error('Invalid field name provided.');
-        
         }
         
         const query = `UPDATE tests SET ${fieldName} = ? WHERE id = ?`;
@@ -918,6 +924,17 @@ class Database {
             return result.affectedRows > 0;
         } catch (error) {
             console.error('Error updating test field:', error);
+            throw error;
+        }
+    }
+
+    async getTestsForSubject(subjectId) {
+        const query = 'SELECT * FROM tests WHERE subject_id = ?';
+        try {
+            const [results] = await this.pool.query(query, [subjectId]);
+            return results;
+        } catch (error) {
+            console.error('Error retrieving tests for subject:', error);
             throw error;
         }
     }
