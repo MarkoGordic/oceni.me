@@ -93,3 +93,20 @@ body, #root {
 .confirm-upload-btn:hover {
     background-color: #007bff;
 }
+
+.confirm-missing-students-btn {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #f7f7ff;
+    background-color: #1e90ff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-family: "Jost", sans-serif;
+}
+
+.confirm-missing-students-btn:hover {
+    background-color: #007bff;
+}

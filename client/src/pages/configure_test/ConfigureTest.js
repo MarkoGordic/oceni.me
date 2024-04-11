@@ -92,7 +92,7 @@ function ConfigureTest() {
 
     const fetchTestConfigStatus = () => {
         setIsLoading(true);
-        fetch(`http://localhost:8000/tests/status?configId=${configid}`, {
+        fetch(`http://localhost:8000/tests/config/status?configId=${configid}`, {
             credentials: 'include'
         })
         .then(response => response.json())

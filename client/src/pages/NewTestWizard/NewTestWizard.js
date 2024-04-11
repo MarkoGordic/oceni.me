@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { ToastContainer, toast } from 'react-toastify';
 import { useParams, useNavigate } from 'react-router-dom';
 import './newTestWizard.css';
 import SubjectSidebar from '../../components/SubjectSidebar/SubjectSidebar';
 import UploadTab from '../../components/NewTestTabs/UploadTab/UploadTab';
-import ConfigureTab from "../../components/NewTestTabs/ConfigureTab/ConfigureTab";
+import StudentConfigureTab from "../../components/NewTestTabs/StudentConfigureTab.js/StudentConfigureTab";
 
 const NewTestWizard = () => {
     const { id, testid } = useParams();
@@ -13,6 +13,9 @@ const NewTestWizard = () => {
     const [tabs, setTabs] = useState([]);
     const [activeTab, setActiveTab] = useState('upload');
     const [isLoading, setIsLoading] = useState(false);
+    const [studentList, setStudentList] = useState([]);
+    const [missingStudents, setMissingStudents] = useState([]);
+    const [missingStudentsData, setMissingStudentsData] = useState([]);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -29,21 +32,57 @@ const NewTestWizard = () => {
             },
             {
                 id: 'configure',
-                title: 'Configure Test',
-                content: <ConfigureTab
+                title: 'Configure Students',
+                content: <StudentConfigureTab
                             isLoading={isLoading}
+                            studentData={studentList}
+                            setStudentData={setStudentList}
+                            missingIndexes={missingStudents}
                         />
             }
         ]);
-    }, [targetZIP, isLoading, testid]);
+    }, [isLoading]);
 
     useEffect(() => {
         if (testid) {
+            fetchTestStatus();
+        }
+    }, [testid]);
+
+    useEffect(() => {
+        console.log('testid:', testid, 'studentList:', studentList)
+        if (studentList !== undefined && testid && studentList != []) {
             setActiveTab('configure');
         } else {
             setActiveTab('upload');
         }
-    }, [testid]);
+
+    }, [testid, studentList, missingStudents]);
+
+    const fetchTestStatus = useCallback(() => {
+        console.log("KOJI KURAC");
+        setIsLoading(true);
+        fetch(`http://localhost:8000/tests/status?testId=${testid}`, {
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            setIsLoading(false);
+            if (data.final_students !== null){
+                setStudentList(data.final_students);
+            } else if (data.initial_students !== null){
+                setStudentList(data.knownStudents);
+                setMissingStudents(data.missingStudents);
+            } else {
+                navigate('../');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            toast.error('Error communicating with the server.');
+            setIsLoading(false);
+        });
+    }, [testid, navigate]);
 
     const uploadFile = (file) => {
         setIsLoading(true);
@@ -66,6 +105,8 @@ const NewTestWizard = () => {
         .then(response => response.json())
         .then(data => {
             setIsLoading(false);
+            setStudentList(data.students);
+            setMissingStudents(data.missingStudents);
             if (data.testId) {
                 toast.success('Uspešno otpremljeno i otpakovano!');
                 navigate(`./${data.testId}`);

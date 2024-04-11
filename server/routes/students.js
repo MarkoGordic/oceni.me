@@ -25,7 +25,7 @@ const upload = multer({ storage: storage });
 router.use(express.urlencoded({extended: true}));
 
 router.post('/new', upload.single('profile_image'), async (req, res) => {
-    const { first_name, last_name, index_number, email, password, course_code } = req.body;
+    const { first_name, last_name, index_number, email, password, course_code, gender } = req.body;
     const userAgent = req.headers['user-agent'] || 'Unknown User Agent';
     const employee = await db.getEmployeeById(req.session.userId);
 
@@ -60,7 +60,7 @@ router.post('/new', upload.single('profile_image'), async (req, res) => {
     }
 
     try {
-        const newStudentId = await db.addStudent(first_name, last_name, formattedIndexNumber, studentYear, email, hashedPassword, course_code);
+        const newStudentId = await db.addStudent(first_name, last_name, formattedIndexNumber, studentYear, email, hashedPassword, course_code, gender);
     
         if (req.file) {
             const targetDir = path.join(__dirname, '../static/student_pfp');
@@ -76,11 +76,11 @@ router.post('/new', upload.single('profile_image'), async (req, res) => {
             }
         }
         
-        await db.createLogEntry(req.session.userId, `${first_name} ${last_name}`, `Uspešno kreiranje korisničkog naloga za studenta ${first_name} ${last_name}.`, 'INFO', 'INFO', req.ip, userAgent);
+        await db.createLogEntry(req.session.userId, `${employee.first_name} ${employee.last_name}`, `Uspešno kreiranje korisničkog naloga za studenta ${first_name} ${last_name}.`, 'INFO', 'INFO', req.ip, userAgent);
         res.status(201).send("Student added successfully");
     } catch (error) {
         console.log(error)
-        await db.createLogEntry(null, `${first_name} ${last_name}`, `Neuspešan pokušaj kreiranja korisničkog naloga za studenta ${first_name} ${last_name}.`, 'GREŠKA', 'INFO', req.ip, userAgent);
+        await db.createLogEntry(null, `${employee.first_name} ${employee.last_name}`, `Neuspešan pokušaj kreiranja korisničkog naloga za studenta ${first_name} ${last_name}.`, 'GREŠKA', 'INFO', req.ip, userAgent);
         if (error.code === 'ER_DUP_ENTRY') {
             return res.status(400).send("Student with that index number already exists");
         }
@@ -173,6 +173,21 @@ router.get('/get/:id', async (req, res) => {
     }
 });
 
+router.post('/get/indexes', async (req, res) => {
+    const { indexes } = req.body;
+
+    if (!indexes || !Array.isArray(indexes) || indexes.length === 0) {
+        return res.status(400).send("Indexes array is required and must not be empty.");
+    }
+
+    try {
+        const students = await db.getStudentsByIndexes(indexes);
+        res.status(200).json(students);
+    } catch (error) {
+        console.error("Error fetching students by index numbers:", error);
+        res.status(500).send("Error fetching students");
+    }
+});
 
 router.get('/delete/:id', async (req, res) => {
     const { id } = req.params;

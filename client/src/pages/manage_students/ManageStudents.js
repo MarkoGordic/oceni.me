@@ -69,6 +69,7 @@ function ManageStudents() {
         password: '',
         profile_image: null,
         course_code: '',
+        gender: '',
     });
 
     const [modifyModalOpen, setModifyModalOpen] = useState(false);
@@ -103,6 +104,10 @@ function ManageStudents() {
 
     const handleSearchChange = (event) => {
         setSearchString(event.target.value);
+    };
+
+    const handleGenderSelectChange = selectedOption => {
+        setStudentData({ ...studentData, gender: selectedOption ? selectedOption.value : 'NP' });
     };
 
     useEffect(() => {
@@ -168,6 +173,7 @@ function ManageStudents() {
         formData.append('email', studentData.email);
         formData.append('password', studentData.password);
         formData.append('course_code', studentData.course_code);
+        formData.append('gender', studentData.gender);
         
         if (studentData.profile_image) {
             formData.append('profile_image', studentData.profile_image);
@@ -357,7 +363,7 @@ function ManageStudents() {
                 </div>
 
                 <button className='new-student-button' onClick={handleOpenModal}><div className='new-button-content'><i className="fi fi-rs-add"></i> DODAJ STUDENTA</div></button>
-                <NewStudentModal isOpen={isModalOpen} onClose={handleCloseModal} onSubmit={handleSubmit} onChange={handleInputChange} studentData={studentData} selectOnChange={handleSelectChange}/>
+                <NewStudentModal isOpen={isModalOpen} onClose={handleCloseModal} onSubmit={handleSubmit} onChange={handleInputChange} studentData={studentData} selectOnChange={handleSelectChange} onSelectGenderChange={handleGenderSelectChange}/>
 
                 <div className='student-list-wrap'>
                     {searchResults.length > 0 ? (

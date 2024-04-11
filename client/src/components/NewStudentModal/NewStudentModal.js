@@ -51,7 +51,7 @@ const customSelectStyles = {
   }),
 };
 
-const NewStudentModal = ({ isOpen, onClose, onSubmit, onChange, studentData, selectOnChange }) => {
+const NewStudentModal = ({ isOpen, onClose, onSubmit, onChange, studentData, selectOnChange, onSelectGenderChange }) => {
   if (!isOpen) return null;
   const animatedComponents = makeAnimated();
 
@@ -200,6 +200,11 @@ const NewStudentModal = ({ isOpen, onClose, onSubmit, onChange, studentData, sel
     { value: 'DR', label: 'Doktorske studije (studenti upisani od 2006 do 2010)' }
 ];
 
+  const genderOptions = [
+    { value: 'M', label: 'MUŠKO' },
+    { value: 'F', label: 'ŽENSKO' },
+  ];
+
   return (
     <div className="new-student-modal-overlay" onClick={onClose}>
       <div className="new-student-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -214,6 +219,20 @@ const NewStudentModal = ({ isOpen, onClose, onSubmit, onChange, studentData, sel
 
           <label htmlFor="last_name">Prezime studenta:</label>
           <input type="text" id="last_name" placeholder="Petrović" name="last_name" value={studentData.last_name} onChange={onChange} required />
+
+          <div className="select-gender">
+              <label htmlFor="gender">Pol</label>
+              <Select
+                  id="gender"
+                  components={animatedComponents}
+                  options={genderOptions}
+                  styles={customSelectStyles}
+                  placeholder="Pol"
+                  isClearable={true}
+                  className="gender-select"
+                  onChange={onSelectGenderChange}
+              />
+          </div>
 
           <label htmlFor="index_number">Broj indeksa:</label>
           <input type="text" id="index_number" placeholder="XX YYY/ZZZZ" name="index_number" value={studentData.index_number} onChange={onChange} required />

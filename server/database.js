@@ -3,7 +3,7 @@ const mysql = require("mysql2/promise");
 const pool = mysql.createPool({
     host: 'localhost',
     user: 'gordic',
-    password: 'NadjaImasNajlepseOciNaSvetu!',
+    password: 'NadjaNajlepsaSi<3!',
     database: 'oceni.me'
 });
 
@@ -39,7 +39,7 @@ class Database {
                 id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
                 first_name VARCHAR(100) NOT NULL,
                 last_name VARCHAR(100) NOT NULL,
-                gender ENUM('M', 'F'),
+                gender ENUM('M', 'F', 'NP'),
                 year YEAR NOT NULL,
                 index_number VARCHAR(20) NOT NULL UNIQUE,
                 email VARCHAR(100) NOT NULL UNIQUE,
@@ -228,7 +228,7 @@ class Database {
 
         const createSystemActivityLogsTable = `
             CREATE TABLE IF NOT EXISTS system_activity_logs (
-                id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+                id INT AUTO_INCREMENT PRIMARY KEY,
                 employee_id INT,
                 employee VARCHAR(255),
                 message TEXT NOT NULL,
@@ -243,22 +243,22 @@ class Database {
 
         const createTestsTable = `
             CREATE TABLE IF NOT EXISTS tests (
-                id INT NOT NULL AUTO_INCREMENT,
+                id INT AUTO_INCREMENT PRIMARY KEY,
                 subject_id INT NOT NULL,
-                PRIMARY KEY (id),
+                initial_students TEXT,
+                final_students TEXT,
                 FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         `;
 
         const createTestConfigurationsTable = `
             CREATE TABLE IF NOT EXISTS test_configs (
-                id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+                id INT AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
                 employee_id INT,
                 subject_id INT NOT NULL,
                 test_configs TEXT NOT NULL,
                 status ENUM('KREIRAN', 'OBRADA', 'ZAVRSEN') NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
                 FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE SET NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -768,7 +768,7 @@ class Database {
     
     async addNewTest(subjectId) {
         try {
-            const insertQuery = `INSERT INTO tests (subject_id) VALUES (?)`;
+            const insertQuery = `INSERT INTO tests (subject_id, initial_students, final_students) VALUES (?, NULL, NULL)`;
             await this.pool.query(insertQuery, [subjectId]);
     
             const selectQuery = `SELECT id AS testId FROM tests WHERE subject_id = ? ORDER BY id DESC LIMIT 1`;
@@ -886,6 +886,34 @@ class Database {
             return results;
         } catch (error) {
             console.error('Error retrieving test configurations for subject:', error);
+            throw error;
+        }
+    }
+
+    async getTestById(testId) {
+        const query = 'SELECT * FROM tests WHERE id = ?';
+        try {
+            const [results] = await this.pool.query(query, [testId]);
+            return results.length > 0 ? results[0] : null;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async updateTestField(testId, fieldName, fieldValue) {
+        const whitelist = ['initial_students', 'final_students'];
+        
+        if (!whitelist.includes(fieldName)) {
+            throw new Error('Invalid field name provided.');
+        
+        }
+        
+        const query = `UPDATE tests SET ${fieldName} = ? WHERE id = ?`;
+        try {
+            const [result] = await this.pool.query(query, [fieldValue, testId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('Error updating test field:', error);
             throw error;
         }
     }

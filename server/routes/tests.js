@@ -238,7 +238,7 @@ router.post('/configure/complete', uploadTestConfig.single('solutionZIP'), async
   }
 }));
 
-router.get('/status', asyncHandler(async (req, res) => {
+router.get('/config/status', asyncHandler(async (req, res) => {
   const { configId } = req.query;
 
   if (!configId) {
@@ -379,7 +379,7 @@ async function getStudentList(testId) {
   const filePath = path.join(__dirname, `../uploads/tests/${testId}/provera/spisak_stud_koji_trenutno_rade_proveru.txt`);
 
   try {
-    await fs.access(filePath);
+    await fsp.access(filePath, fs.constants.F_OK);
 
     const fileStream = fs.createReadStream(filePath);
     const rl = readline.createInterface({
@@ -388,24 +388,52 @@ async function getStudentList(testId) {
     });
 
     const students = [];
+
     for await (const line of rl) {
       const parts = line.split(',').map(part => part.trim());
-      if (parts.length > 1 && parts[1] !== '') {
-        parts[1] = convertIndexFormat(parts[1]);
-        students.push([parts[0], parts[1]]);
+      if (parts.length === 3 && parts[1] !== '') {
+        const indexFormatted = convertIndexFormat(parts[1]);
+        const [firstName, lastName] = parts[2].split(' ');
+        students.push({
+          id: parts[0],
+          index: indexFormatted,
+          firstName: firstName,
+          lastName: lastName
+        });
       }
     }
 
+    rl.close();
     return students;
+
   } catch (error) {
     console.error(`Error accessing or reading the student list file: ${filePath}`, error);
     throw new Error("File does not exist or cannot be accessed.");
   }
 }
 
+async function determineMissingStudents(testId) {
+  const testData = await db.getTestById(testId);
+  if (!testData || !testData.initial_students) {
+      throw new Error('Initial student data not found.');
+  }
+
+  const studentData = JSON.parse(testData.initial_students);
+  const studentIndexes = studentData.map(student => student.index);
+  const studentsFromDB = await db.getStudentsByIndexes(studentIndexes);
+
+  const foundIndexes = studentsFromDB.map(student => student.index_number);
+  const missingStudents = studentData.filter(student => !foundIndexes.includes(student.index));
+
+  return {
+      studentsFromDB,
+      missingIndexesWithPC: missingStudents.map(student => ({ pc: student.id, index: student.index, first_name: student.firstName, last_name: student.lastName})),
+  };
+}
+
 router.post('/new', upload.single('zipFile'), asyncHandler(async (req, res) => {
   if (!req.file) {
-    return res.status(400).send('No file uploaded.');
+      return res.status(400).send('No file uploaded.');
   }
 
   const subjectId = req.body.subjectId;
@@ -413,24 +441,56 @@ router.post('/new', upload.single('zipFile'), asyncHandler(async (req, res) => {
   const zipPath = req.file.path;
 
   try {
-    fs.createReadStream(zipPath)
-      .pipe(unzipper.Extract({ path: `uploads/tests/${testId}` }))
-      .promise()
-      .then(async () => {
-        await fsp.unlink(zipPath);
+      await fs.createReadStream(zipPath)
+          .pipe(unzipper.Extract({ path: `uploads/tests/${testId}` }))
+          .promise();
+    
+      await fsp.unlink(zipPath);
 
-        try {
-          const studentList = await getStudentList(testId);
-          res.json({ testId, studentList });
-        } catch (error) {
-          console.error('Error reading student list:', error);
-          res.status(500).send('Error processing student list.');
-        }
-      });
+      const studentData = await getStudentList(testId);
+      await db.updateTestField(testId, 'initial_students', JSON.stringify(studentData));
+      
+      const { studentsFromDB, missingIndexesWithPC } = await determineMissingStudents(testId);
+
+      res.json({ testId, students: studentsFromDB, missingStudents: missingIndexesWithPC });
   } catch (error) {
-    console.error('Error extracting file:', error);
-    res.status(500).send('An error occurred while extracting the file.');
+      console.error('Error processing student list:', error);
+      res.status(500).send('Error processing student list.');
   }
 }));
+
+router.get('/status', asyncHandler(async (req, res) => {
+  const { testId } = req.query;
+
+  if (!testId) {
+      return res.status(400).send('Test ID is required.');
+  }
+
+  try {
+      const testData = await db.getTestById(testId);
+
+      if (!testData) {
+          return res.status(404).send('Test configuration not found.');
+      }
+
+      const response = {
+          configId: testData.id,
+          initial_students: testData.initial_students ? JSON.parse(testData.initial_students) : null,
+          final_students: testData.final_students ? JSON.parse(testData.final_students) : null,
+      };
+
+      if (testData.final_students === null) {
+          const { studentsFromDB, missingIndexesWithPC } = await determineMissingStudents(testId);
+          response.knownStudents = studentsFromDB;
+          response.missingStudents = missingIndexesWithPC;
+      }
+
+      res.json(response);
+  } catch (error) {
+      console.error('Error retrieving test status:', error);
+      res.status(500).send('An error occurred while retrieving the test status.');
+  }
+}));
+
 
 module.exports = router;

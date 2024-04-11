@@ -20,6 +20,11 @@ app.use(session({
 
 app.use(['/user_pfp/:imageName', '/student_pfp/:imageName'], async (req, res, next) => {
   const imageName = req.params.imageName;
+  if (imageName === "default.png") {
+    res.sendFile(path.join(__dirname, 'static', 'default.png'));
+    return;
+  }
+
   const userId = parseInt(imageName.split('.')[0], 10);
 
   const filePath = path.join(__dirname, 'static', req.originalUrl);
@@ -28,6 +33,9 @@ app.use(['/user_pfp/:imageName', '/student_pfp/:imageName'], async (req, res, ne
       if (err) {
           try {
               const gender = await db.getUserGenderById(userId);
+              if (gender === 'NP')
+                return res.sendFile(path.join(__dirname, 'static', 'default.png'));
+
               const defaultImage = gender === 'M' ? 'defaultm.png' : 'defaultf.png';
               res.sendFile(path.join(__dirname, 'static', defaultImage));
           } catch (error) {

@@ -1,11 +1,62 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
+import Select from 'react-select';
+import makeAnimated from 'react-select/animated';
 import './modifyStudentModal.css';
+
+const customSelectStyles = {
+    control: (styles, { isFocused, isSelected }) => ({
+        ...styles,
+        backgroundColor: '#1C1B1B',
+        borderColor: isFocused ? '#1993F0' : 'white',
+        color: '#F7F7FF',
+        width: '350px',
+        minHeight: '40px',
+        '&:hover': { borderColor: '#1993F0' },
+        boxShadow: '0 2px 4px 0 rgba(0, 0, 0, 0.2)',
+        marginBottom: '10px',
+    }),
+    menu: (styles) => ({
+        ...styles,
+        backgroundColor: '#1C1B1B',
+        color: '#F7F7FF',
+        width: 350,
+        boxShadow: '0 2px 4px 0 rgba(0, 0, 0, 0.25)',
+    }),
+    option: (styles, { isFocused, isSelected }) => ({
+        ...styles,
+        backgroundColor: isSelected ? '#1993F0' : isFocused ? '#2C2B2B' : undefined,
+        color: isSelected ? '#F7F7FF' : '#F7F7FF',
+        '&:active': { backgroundColor: '#1993F0' },
+    }),
+    singleValue: (styles) => ({
+        ...styles,
+        color: '#F7F7FF',
+    }),
+    dropdownIndicator: (styles) => ({
+        ...styles,
+        color: '#F7F7FF',
+        '&:hover': { color: '#F7F7FF' },
+    }),
+    indicatorSeparator: (styles) => ({
+        ...styles,
+        backgroundColor: '#1993F0',
+    }),
+    placeholder: (styles) => ({
+        ...styles,
+        color: '#F7F7FF',
+    }),
+    input: (styles) => ({
+        ...styles,
+        color: '#F7F7FF',
+    }),
+  };
 
 function ModifyStudentModal({ isOpen, onClose, studentId, onStudentDeleted  }) {
     const [studentData, setStudentData] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('studentInfo');
+    const animatedComponents = makeAnimated();
 
     useEffect(() => {
         if (isOpen && studentId) {
@@ -17,12 +68,15 @@ function ModifyStudentModal({ isOpen, onClose, studentId, onStudentDeleted  }) {
         setIsLoading(true);
         setStudentData(null);
         try {
-            const response = await fetch(`http://localhost:8000/students/get/${id}`);
+            const response = await fetch(`http://localhost:8000/students/get/${id}`, {
+                credentials: 'include',
+            });
             if (!response.ok) {
                 throw new Error('Failed to fetch data');
             }
             const data = await response.json();
-            setStudentData(data);
+            const genderOption = genderOptions.find(option => option.value === data.gender);
+            setStudentData({ ...data, gender: genderOption || null });
         } catch (error) {
             console.error("Error fetching student data:", error);
         } finally {
@@ -33,7 +87,10 @@ function ModifyStudentModal({ isOpen, onClose, studentId, onStudentDeleted  }) {
     const deleteStudent = async () => {
         setIsLoading(true);
             try {
-                const response = await fetch(`http://localhost:8000/students/delete/${studentId}`);
+                const response = await fetch(`http://localhost:8000/students/delete/${studentId}`, {
+                    method: 'GET',
+                    credentials: 'include',
+                });
                 if (response.ok) {
                     toast.success("Student je uspešno obrisan.");
                     onClose();
@@ -65,10 +122,20 @@ function ModifyStudentModal({ isOpen, onClose, studentId, onStudentDeleted  }) {
         }));
     };
 
+    const handleGenderSelectChange = selectedOption => {
+        setStudentData({ ...studentData, gender: selectedOption });
+    };
+
     const handleModalContentClick = (e) => e.stopPropagation();
 
     const handleTabClick = (tabName) => setActiveTab(tabName);
 
+    const genderOptions = [
+        { value: 'M', label: 'MUŠKO' },
+        { value: 'F', label: 'ŽENSKO' },
+        { value: 'NP', label: 'NIJE POZNATO'}
+      ];
+    
     const renderRightColumnContent = () => {
         if (isLoading) {
             return <div>Loading...</div>;
@@ -90,6 +157,19 @@ function ModifyStudentModal({ isOpen, onClose, studentId, onStudentDeleted  }) {
 
                                 <label className='studentInfo-label' htmlFor="last_name">Prezime studenta:</label>
                                 <input className='studentInfo-input' type="text" id="last_name" name="last_name" value={studentData.last_name || ''} onChange={handleStudentInputChange} />
+
+                                <label className='studentInfo-label' htmlFor="index_number">Pol:</label>
+                                <Select
+                                    id="gender"
+                                    components={animatedComponents}
+                                    options={genderOptions}
+                                    styles={customSelectStyles}
+                                    placeholder="Pol"
+                                    isClearable={false}
+                                    className="gender-select"
+                                    value={studentData.gender !== null ? studentData.gender : { value: 'NP', label: 'NIJE POZNATO' }}
+                                    onChange={handleGenderSelectChange}
+                                />
 
                                 <label className='studentInfo-label' htmlFor="index_number">Broj indeksa:</label>
                                 <input className='studentInfo-input' type="text" id="index_number" name="index_number" value={studentData.index_number || ''} onChange={handleStudentInputChange} />
@@ -138,6 +218,7 @@ function ModifyStudentModal({ isOpen, onClose, studentId, onStudentDeleted  }) {
                     ...studentData,
                     id: studentId,
                 }),
+                credentials: 'include',
             });
     
             if (!response.ok) {

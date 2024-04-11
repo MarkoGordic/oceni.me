@@ -1,0 +1,85 @@
+.missing-student-card {
+    width: 600px;
+    height: 80px;
+    border-radius: 15px;
+    background-color: #0F0E0E;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    margin-bottom: 15px;
+    cursor: pointer;
+}
+
+.missing-student-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0 0 2px rgba(25, 147, 240, 0.5);
+}
+
+.missing-student-card img {
+    width: 60px;
+    height: 60px;
+    border-radius: 100%;
+    margin-right: 25px;
+    border: 3px solid #1993F0;
+}
+
+.missing-student-card p {
+    margin: 0;
+}
+
+.missing-student-card-info {
+    text-align: left;
+    width: 400px;
+}
+
+.missing-student-card-index {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 5px 0;
+}
+
+.missing-student-card-pc {
+    font-size: 14px;
+    color: #BABABA;
+}
+
+.missing-student-card-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+}
+
+.missing-student-card-action {
+    background: none;
+    border: none;
+    color: #1993F0;
+    font-size: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out, background-color 0.3s, color 0.3s, box-shadow 0.3s;
+    width: 40px;
+    height: 40px;
+    margin: 10px;
+    border-radius: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.missing-student-card-action:hover {
+    transform: scale(1.1);
+    background-color: #1993F0;
+    color: #FFF;
+    box-shadow: 0 0 15px rgba(25, 147, 240, 0.7);
+}
+
+.missing-student-card-action i{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+}
