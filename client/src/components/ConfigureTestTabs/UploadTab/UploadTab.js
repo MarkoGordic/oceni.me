@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { toast } from 'react-toastify';
 
-const UploadTab = ({ setFileName, setTargetZIP, confirmUpload, isLoading, setConfigName, configName }) => {
+const UploadTab = ({ setFileName, setTargetZIP, confirmUpload, isLoading, setConfigName, configName, setTestNo }) => {
     const [localFileName, setLocalFileName] = useState("");
     const fileInputRef = useRef(null);
 
@@ -30,6 +30,11 @@ const UploadTab = ({ setFileName, setTargetZIP, confirmUpload, isLoading, setCon
         setConfigName(e.target.value);
     };
 
+    const handleTestNoChange = (e) => {
+        const newNo = parseInt(e.target.value, 10) || 0;
+        setTestNo(newNo);
+    };
+
     return (
         isLoading ? (
             <div className="loader"></div>
@@ -37,16 +42,26 @@ const UploadTab = ({ setFileName, setTargetZIP, confirmUpload, isLoading, setCon
             <div className="newtest-wrap">
                 <h1>Kreiranje nove konfiguracije</h1>
                 <p className="newtest-info">Kako bi kreirali konfiguraciju za novi kolokvijum, molimo vas da unesete naziv ove konfiguracije i otpremite ZIP datoteku koja sadrži test primere.</p>
+                <p className="newtest-info">Naziv konfiguracije treba da odgovara nazivu kolokvijuma.</p>
                 
-                <label className="newtest-config-name-label">Naziv konfiguracije</label>
-                <input
-                    type="text"
-                    placeholder="Unesite naziv konfiguracije"
-                    value={configName}
-                    onChange={handleConfigNameChange}
-                    className="newtest-config-name-input"
-                    style={{ marginTop: "30px" }}
-                />
+                <div className="newtest-config-inputs">
+                    <div className="newtest-config-input">
+                        <label className="newtest-config-name-label">Naziv konfiguracije:</label>
+                        <input
+                            type="text"
+                            placeholder="Unesite naziv konfiguracije"
+                            value={configName}
+                            onChange={handleConfigNameChange}
+                            className="newtest-config-name-input"
+                            style={{ marginTop: "30px" }}
+                        />
+                    </div>
+
+                    <div className="newtest-config-input">
+                        <label className="newtest-config-name-label">Redni broj kolokvijuma:</label>
+                        <input className="newtest-test-no-input" type='number' min='0' max='100' step='1' onChange={handleTestNoChange} />
+                    </div>
+                </div>
                 
                 <div className="drop-zone" onClick={openFileDialog}>
                     <input

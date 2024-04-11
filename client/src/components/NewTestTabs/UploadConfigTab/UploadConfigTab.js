@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { toast } from 'react-toastify';
 
-const UploadTab = ({ setFileName, setTargetZIP, confirmUpload, isLoading }) => {
+const UploadConfigTab = ({ setFileName, setTargetJSON, confirmUpload, isLoading }) => {
     const [localFileName, setLocalFileName] = useState("");
     const fileInputRef = useRef(null);
 
@@ -15,13 +15,13 @@ const UploadTab = ({ setFileName, setTargetZIP, confirmUpload, isLoading }) => {
     };
 
     const validateAndSetFile = (file) => {
-        if (file && /\.(zip)$/i.test(file.name)) {
-            setTargetZIP(file);
+        if (file && /\.(json)$/i.test(file.name)) {
+            setTargetJSON(file);
             setFileName(file.name);
             setLocalFileName(file.name);
             toast.success("Datoteka uspešno učitana!");
         } else {
-            toast.error("Molimo vas da izaberete ZIP datoteku.");
+            toast.error("Molimo vas da izaberete .json datoteku.");
             setLocalFileName("");
         }
     };
@@ -31,7 +31,7 @@ const UploadTab = ({ setFileName, setTargetZIP, confirmUpload, isLoading }) => {
             <div className="loader"></div>
         ) : (
             <div className="newtest-wrap">
-                <h1>Dodavanje novog kolokvijuma (2/2)</h1>
+                <h1>Dodavanje novog kolokvijuma (1/2)</h1>
 
                     <p className="newtest-info">Dobro došli u čarobnjaka za dodavanje novog kolokvijuma. Ovaj čarobnjak će vas voditi kroz proces dodavanja svih neophodnih informacija o kolokvijumu.</p>
                     <p className="newtest-warning">UPOZORENJE: Ovaj proces može trajati nekoliko minuta. Molimo vas da ne zatvarate ovu stranicu dok se proces ne završi.</p>
@@ -41,12 +41,12 @@ const UploadTab = ({ setFileName, setTargetZIP, confirmUpload, isLoading }) => {
                             type="file"
                             hidden
                             onChange={handleFileSelect}
-                            accept=".zip"
+                            accept=".json"
                         />
                         {localFileName ? (
                             <p className="newtest-file-name-display">Izabrana datoteka: {localFileName}</p>
                         ) : (
-                            <p className="newtest-file-name-display">Prevucite ZIP datoteku ovde ili kliknite za izbor</p>
+                            <p className="newtest-file-name-display">Prevucite .json KONFIGURACIONU datoteku ovde ili kliknite za izbor</p>
                         )}
                     </div>
                     <button className="confirm-upload-btn" onClick={confirmUpload}>POTVRDI UČITAVANJE</button>
@@ -55,4 +55,4 @@ const UploadTab = ({ setFileName, setTargetZIP, confirmUpload, isLoading }) => {
     );
 };
 
-export default UploadTab;
+export default UploadConfigTab;

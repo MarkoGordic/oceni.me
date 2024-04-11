@@ -40,6 +40,7 @@ const testConfigStorage = multer.diskStorage({
     cb(null, file.originalname);
   },
 });
+
 const uploadTestConfig = multer({ storage: testConfigStorage });
 
 const asyncHandler = fn => (req, res, next) =>
@@ -50,7 +51,7 @@ router.post('/configure/new', uploadTestConfig.single('zipFile'), asyncHandler(a
       return res.status(400).send('No file uploaded.');
   }
 
-  const configid = await db.addNewTestConfig(req.session.userId, req.body.subjectId, req.body.configName);
+  const configid = await db.addNewTestConfig(req.session.userId, req.body.subjectId, req.body.configName, req.body.testNo);
   const zipPath = req.file.path;
   const extractPath = `uploads/test_configs/${configid}`;
 
@@ -176,8 +177,25 @@ router.post('/configure/complete', uploadTestConfig.single('solutionZIP'), async
         }
 
         try {
+          let folderCount = 0;
+          let fileCount = 0;
+      
+          testsConfig.forEach(folder => {
+              folderCount += 1;
+              fileCount += folder.files.length;
+          });
+
+          let finalConfiguration = {
+            name: req.body.configName,
+            subject_id: parseInt(req.body.subjectId),
+            test_no: parseInt(req.body.testNo),
+            total_tasks: folderCount,
+            total_tests: fileCount,
+            tests_config: testsConfig
+          };
+
           const configFilePath = path.join(outputPath, 'config.json');
-          await fsp.writeFile(configFilePath, JSON.stringify(testsConfig, null, 2), 'utf8');
+          await fsp.writeFile(configFilePath, JSON.stringify(finalConfiguration, null, 2), 'utf8');
       
           const outputZipPath = path.join(outputPath, '..', 'config.zip');
           const output = fs.createWriteStream(outputZipPath);
@@ -255,6 +273,8 @@ router.get('/config/status', asyncHandler(async (req, res) => {
       const response = {
           configId: testConfig.id,
           status: testConfig.status,
+          name: testConfig.name,
+          test_no: testConfig.test_no,
       };
 
       if (testConfig.status === 'OBRADA') {
@@ -395,8 +415,8 @@ async function getStudentList(testId) {
         const indexFormatted = convertIndexFormat(parts[1]);
         const [firstName, lastName] = parts[2].split(' ');
         students.push({
-          id: parts[0],
           index: indexFormatted,
+          pc: parts[0],
           firstName: firstName,
           lastName: lastName
         });
@@ -415,47 +435,125 @@ async function getStudentList(testId) {
 async function determineMissingStudents(testId) {
   const testData = await db.getTestById(testId);
   if (!testData || !testData.initial_students) {
-      throw new Error('Initial student data not found.');
+      return {
+          studentsFromDB: [],
+          missingIndexesWithPC: []
+      };
   }
 
   const studentData = JSON.parse(testData.initial_students);
   const studentIndexes = studentData.map(student => student.index);
-  const studentsFromDB = await db.getStudentsByIndexes(studentIndexes);
 
-  const foundIndexes = studentsFromDB.map(student => student.index_number);
+  let studentsFromDB = [];
+  try {
+      studentsFromDB = await db.getStudentsByIndexes(studentIndexes);
+  } catch (error) {
+      console.error('Error fetching students from DB:', error);
+      return {
+          studentsFromDB: [],
+          missingIndexesWithPC: []
+      };
+  }
+
+  const studentsWithPCs = studentData.map(student => {
+      const dbStudent = studentsFromDB.find(dbSt => dbSt.index_number === student.index);
+      return dbStudent ? { ...dbStudent, pc: student.id } : null;
+  }).filter(Boolean);
+
+  const foundIndexes = studentsWithPCs.map(student => student.index_number);
   const missingStudents = studentData.filter(student => !foundIndexes.includes(student.index));
 
   return {
-      studentsFromDB,
-      missingIndexesWithPC: missingStudents.map(student => ({ pc: student.id, index: student.index, first_name: student.firstName, last_name: student.lastName})),
+      studentsFromDB: studentsWithPCs,
+      missingIndexesWithPC: missingStudents.map(student => ({
+          pc: student.id,
+          index: student.index,
+          first_name: student.firstName,
+          last_name: student.lastName
+      })),
   };
 }
 
-router.post('/new', upload.single('zipFile'), asyncHandler(async (req, res) => {
+
+router.post('/new', upload.single('configFile'), asyncHandler(async (req, res) => {
   if (!req.file) {
-      return res.status(400).send('No file uploaded.');
+    return res.status(400).send('No file uploaded.');
   }
 
-  const subjectId = req.body.subjectId;
-  const testId = await db.addNewTest(subjectId);
+  const configPath = req.file.path;
+
+  try {
+    const rawData = await fsp.readFile(configPath, 'utf8');
+    const configData = JSON.parse(rawData);
+
+    const { name, subject_id, test_no } = configData;
+
+    const testId = await db.addNewTest(subject_id, name, test_no);
+
+    const savePath = path.join(__dirname, '../uploads', 'tests', String(testId), 'config.json');
+
+    await fsp.mkdir(path.dirname(savePath), { recursive: true });
+    await fsp.copyFile(configPath, savePath);
+    await fsp.unlink(configPath);
+
+    res.json({ testId, ...configData, status: 'DODATA_KONFIGURACIJA' });
+  } catch (error) {
+    console.error('Error processing the configuration:', error);
+    return res.status(500).send('Error processing the configuration.');
+  }
+}));
+
+router.post('/upload_data', upload.single('zipFile'), asyncHandler(async (req, res) => {
+  if (!req.file) {
+    return res.status(400).send('No file uploaded.');
+  }
+
+  const testId = req.body.testId;
   const zipPath = req.file.path;
 
   try {
-      await fs.createReadStream(zipPath)
-          .pipe(unzipper.Extract({ path: `uploads/tests/${testId}` }))
-          .promise();
+    await fs.createReadStream(zipPath)
+        .pipe(unzipper.Extract({ path: `uploads/tests/${testId}` }))
+        .promise();
+  
+    await fsp.unlink(zipPath);
+
+    const studentData = await getStudentList(testId);
+    await db.updateTestField(testId, 'initial_students', JSON.stringify(studentData));
+    await db.updateTestField(testId, 'status', 'DODAT_ZIP');
     
-      await fsp.unlink(zipPath);
+    const { studentsFromDB, missingIndexesWithPC } = await determineMissingStudents(testId);
 
-      const studentData = await getStudentList(testId);
-      await db.updateTestField(testId, 'initial_students', JSON.stringify(studentData));
-      
-      const { studentsFromDB, missingIndexesWithPC } = await determineMissingStudents(testId);
-
-      res.json({ testId, students: studentsFromDB, missingStudents: missingIndexesWithPC });
+    res.json({ testId, students: studentsFromDB, missingStudents: missingIndexesWithPC, status: 'DODAT_ZIP' });
   } catch (error) {
       console.error('Error processing student list:', error);
       res.status(500).send('Error processing student list.');
+  }
+}));
+
+router.post('/confirm_missing_students', asyncHandler(async (req, res) => {
+  const { testId, missingStudentIndexes } = req.body;
+
+  if (!testId) {
+      return res.status(400).send('Test ID is required.');
+  }
+
+  try {
+      const testData = await db.getTestById(testId);
+      if (!testData || !testData.initial_students) {
+          return res.status(404).send('Initial student list not found for the test.');
+      }
+
+      let initialStudents = JSON.parse(testData.initial_students);
+      const finalStudents = initialStudents.filter(student => !missingStudentIndexes.includes(student.index));
+      
+      await db.updateTestField(testId, 'final_students', JSON.stringify(finalStudents));
+      await db.updateTestField(testId, 'status', 'PODESENI_STUDENTI');
+
+      res.json({ testId, finalStudents, status: 'PODESENI_STUDENTI' });
+  } catch (error) {
+      console.error('Error finalizing student list:', error);
+      res.status(500).send('An error occurred while finalizing the student list.');
   }
 }));
 
@@ -475,11 +573,12 @@ router.get('/status', asyncHandler(async (req, res) => {
 
       const response = {
           configId: testData.id,
+          status: testData.status,
           initial_students: testData.initial_students ? JSON.parse(testData.initial_students) : null,
           final_students: testData.final_students ? JSON.parse(testData.final_students) : null,
       };
 
-      if (testData.final_students === null) {
+      if (testData.final_students === null && testData.status !== "DODATA_KONFIGURACIJA") {
           const { studentsFromDB, missingIndexesWithPC } = await determineMissingStudents(testId);
           response.knownStudents = studentsFromDB;
           response.missingStudents = missingIndexesWithPC;
@@ -489,6 +588,56 @@ router.get('/status', asyncHandler(async (req, res) => {
   } catch (error) {
       console.error('Error retrieving test status:', error);
       res.status(500).send('An error occurred while retrieving the test status.');
+  }
+}));
+
+router.post('/complete', asyncHandler(async (req, res) => {
+  const { testId, finalStudents } = req.body;
+  console.log(req.body);
+
+  if (!testId) {
+      return res.status(400).send('Test ID is required.');
+  }
+
+  if (!finalStudents || !Array.isArray(finalStudents) || finalStudents.length === 0) {
+      return res.status(400).send('A valid list of final students is required.');
+  }
+
+  const basePath = path.join(__dirname, `../uploads/tests/${testId}`);
+  const proveraPath = path.join(basePath, 'provera');
+  const dataPath = path.join(basePath, 'data');
+
+  try {
+      await fsp.mkdir(dataPath, { recursive: true });
+
+      for (const student of finalStudents) {
+          const { pc } = student;
+
+          const tgzFiles = await fsp.readdir(proveraPath);
+          const tgzFile = tgzFiles.find(file => file.endsWith(`_${pc}.tgz`));
+
+          if (!tgzFile) {
+              console.log(`No .tgz file found for student PC: ${pc}`);
+              continue;
+          }
+
+          const tgzFilePath = path.join(proveraPath, tgzFile);
+          const studentDataPath = path.join(dataPath, pc);
+
+          await fsp.mkdir(studentDataPath, { recursive: true });
+
+          await fs.createReadStream(tgzFilePath)
+              .pipe(unzipper.Extract({ path: studentDataPath }))
+              .promise()
+              .then(async () => {
+                  await fsp.unlink(tgzFilePath);
+              });
+      }
+
+      res.send({ success: true, message: 'All student data processed and original .tgz files removed.' });
+  } catch (error) {
+      console.error('Error processing student data:', error);
+      res.status(500).send('An error occurred while processing student data.');
   }
 }));
 

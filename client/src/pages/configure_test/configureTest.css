@@ -183,3 +183,18 @@ body, #root {
 .config-finish-buttons button {
     margin: 10px;
 }
+
+.newtest-config-inputs {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.newtest-config-input {
+    margin: 10px;
+}
+
+.newtest-test-no-input {
+    max-width: 200px;
+}

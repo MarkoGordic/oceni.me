@@ -1,0 +1,32 @@
+.test-students-table {
+    width: 90%;
+    margin: 0 auto;
+    border-collapse: collapse;
+    background-color: #1a1a1a;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.test-students-table th, .test-students-table td {
+    padding: 12px;
+    text-align: left;
+    color: #f7f7ff;
+}
+
+.test-students-table th {
+    background-color: #1993F0;
+    color: #ffffff;
+}
+
+.test-students-table tr:nth-child(even) {
+    background-color: #262626;
+}
+
+.test-students-table tr:hover {
+    background-color: #2a3036;
+}
+
+.test-students-table th:first-child,
+.test-students-table td:first-child {
+    text-align: center;
+}

@@ -42,7 +42,7 @@ class Database {
                 gender ENUM('M', 'F', 'NP'),
                 year YEAR NOT NULL,
                 index_number VARCHAR(20) NOT NULL UNIQUE,
-                email VARCHAR(100) NOT NULL UNIQUE,
+                email VARCHAR(100) NOT NULL,
                 password VARCHAR(100) NOT NULL,
                 course_code VARCHAR(10),
                 FOREIGN KEY (course_code) REFERENCES courses(code)
@@ -245,8 +245,11 @@ class Database {
             CREATE TABLE IF NOT EXISTS tests (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 subject_id INT NOT NULL,
+                name VARCHAR(255) NOT NULL,
+                test_no INT NOT NULL,
                 initial_students TEXT,
                 final_students TEXT,
+                status ENUM('DODATA_KONFIGURACIJA', 'DODAT_ZIP', 'PODESENI_STUDENTI', 'ZAVRSEN') NOT NULL,
                 FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         `;
@@ -257,6 +260,7 @@ class Database {
                 name VARCHAR(255) NOT NULL,
                 employee_id INT,
                 subject_id INT NOT NULL,
+                test_no INT NOT NULL,
                 test_configs TEXT NOT NULL,
                 status ENUM('KREIRAN', 'OBRADA', 'ZAVRSEN') NOT NULL,
                 FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
@@ -766,10 +770,10 @@ class Database {
         }
     }
     
-    async addNewTest(subjectId) {
+    async addNewTest(subjectId, name, test_no) {
         try {
-            const insertQuery = `INSERT INTO tests (subject_id, initial_students, final_students) VALUES (?, NULL, NULL)`;
-            await this.pool.query(insertQuery, [subjectId]);
+            const insertQuery = `INSERT INTO tests (subject_id, name, test_no, initial_students, final_students, status) VALUES (?, ?, ?, NULL, NULL, 'DODATA_KONFIGURACIJA')`;
+            await this.pool.query(insertQuery, [subjectId, name, test_no]);
     
             const selectQuery = `SELECT id AS testId FROM tests WHERE subject_id = ? ORDER BY id DESC LIMIT 1`;
             const [selectResult] = await this.pool.query(selectQuery, [subjectId]);
@@ -803,10 +807,10 @@ class Database {
         }
     }
 
-    async addNewTestConfig(employee_id, subject_id, name) {
+    async addNewTestConfig(employee_id, subject_id, name, test_no) {
         try {
-            const insertQuery = `INSERT INTO test_configs (employee_id, subject_id, name, status, test_configs) VALUES (?, ?, ?, 'KREIRAN', '[]')`;
-            await this.pool.query(insertQuery, [employee_id, subject_id, name]);
+            const insertQuery = `INSERT INTO test_configs (employee_id, subject_id, name, status, test_configs, test_no) VALUES (?, ?, ?, 'KREIRAN', '[]', ?)`;
+            await this.pool.query(insertQuery, [employee_id, subject_id, name, test_no]);
 
             const selectQuery = `SELECT id AS configId FROM test_configs WHERE employee_id = ? ORDER BY id DESC LIMIT 1`;
             const [selectResult] = await this.pool.query(selectQuery, [employee_id]);
@@ -826,7 +830,7 @@ class Database {
 
     async getTestConfigById(configId) {
         const query = `
-            SELECT id, employee_id, test_configs, status
+            SELECT id, employee_id, test_configs, status, test_no, name
             FROM test_configs
             WHERE id = ?
         `;
@@ -901,7 +905,7 @@ class Database {
     }
 
     async updateTestField(testId, fieldName, fieldValue) {
-        const whitelist = ['initial_students', 'final_students'];
+        const whitelist = ['initial_students', 'final_students', 'status'];
         
         if (!whitelist.includes(fieldName)) {
             throw new Error('Invalid field name provided.');

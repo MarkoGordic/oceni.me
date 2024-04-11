@@ -25,7 +25,7 @@ const upload = multer({ storage: storage });
 router.use(express.urlencoded({extended: true}));
 
 router.post('/new', upload.single('profile_image'), async (req, res) => {
-    const { first_name, last_name, index_number, email, password, course_code, gender } = req.body;
+    let { first_name, last_name, index_number, email, password, course_code, gender, subject_id } = req.body;
     const userAgent = req.headers['user-agent'] || 'Unknown User Agent';
     const employee = await db.getEmployeeById(req.session.userId);
 
@@ -54,9 +54,16 @@ router.post('/new', upload.single('profile_image'), async (req, res) => {
         return res.status(400).send("Password does not meet criteria.");
     }
 
-    const isValidCourseCode = await db.courseCodeExists(course_code);
-    if (!isValidCourseCode) {
-        return res.status(400).send("Invalid course code provided.");
+    if(course_code){
+        const isValidCourseCode = await db.courseCodeExists(course_code);
+        if (!isValidCourseCode) {
+            return res.status(400).send("Invalid course code provided.");
+        }
+    } else {
+        console.log(subject_id);
+        subject = await db.getSubjectById(subject_id);
+        console.log(subject);
+        course_code = subject.course_code;
     }
 
     try {

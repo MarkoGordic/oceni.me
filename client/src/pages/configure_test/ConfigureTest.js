@@ -23,6 +23,7 @@ function ConfigureTest() {
     const [configStatus, setConfigStatus] = useState(false);
     const [configName, setConfigName] = useState("");
     const [isConfigInprogress, setIsConfigInprogress] = useState(false);
+    const [testNo, setTestNo] = useState(0);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -37,6 +38,7 @@ function ConfigureTest() {
                             isLoading={isLoading}
                             setConfigName={setConfigName}
                             configName={configName}
+                            setTestNo={setTestNo}
                         />
             },
             {
@@ -98,10 +100,15 @@ function ConfigureTest() {
         .then(response => response.json())
         .then(data => {
             setIsLoading(false);
+            console.log("PODACI PROMENJENI: ", data);
             if (data.status === 'OBRADA') {
                 setIsConfigInprogress(true)
+                setConfigName(data.name);
+                setTestNo(data.test_no);
                 setTestFiles(data.testConfigs || []);
             } else if (data.status === 'ZAVRSEN') {
+                setConfigName(data.name);
+                setTestNo(data.test_no);
                 setConfigCompleted(true);
             } else {
                 setActiveTab('upload');
@@ -127,6 +134,7 @@ function ConfigureTest() {
         formData.append('zipFile', file);
         formData.append('subjectId', id);
         formData.append('configName', configName); 
+        formData.append('testNo', parseInt(testNo));
 
         fetch('http://localhost:8000/tests/configure/new', {
             method: 'POST',
@@ -164,10 +172,14 @@ function ConfigureTest() {
             return;
         }
 
+        console.log("COMPLETE CONFIGURATION: ", file, configid, testsConfig, id, configName, testNo);
         const formData = new FormData();
         formData.append('solutionZIP', file);
         formData.append('configid', configid);
         formData.append('testsConfig', JSON.stringify(testsConfig));
+        formData.append('subjectId', id);
+        formData.append('configName', configName);
+        formData.append('testNo', testNo);
 
         fetch('http://localhost:8000/tests/configure/complete', {
             method: 'POST',
