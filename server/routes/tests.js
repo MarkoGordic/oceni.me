@@ -10,7 +10,19 @@ const fsp = fs.promises;
 const unzipper = require('unzipper');
 const readline = require('readline');
 const archiver = require('archiver');
+const PdfPrinter = require('pdfmake');
 const { generateTestirajSH } = require('../util/student_autotest');
+
+const fonts = {
+  Roboto: {
+      normal: 'fonts/Jost/Jost-Regular.ttf',
+      bold: 'fonts/Jost/Jost-Regular.ttf',
+      italics: 'fonts/Jost/Jost-Regular.ttf',
+      bolditalics: 'fonts/Jost/Jost-Regular.ttf',
+  }
+};
+
+const printer = new PdfPrinter(fonts);
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -594,9 +606,15 @@ router.get('/status', asyncHandler(async (req, res) => {
   }
 }));
 
+function convertIndexToFolderName(index) {
+  return index.toLowerCase()
+              .replace(/\s+/g, '')
+              .replace(/^(\D{2})0+/,'$1')
+              .replace('/', '-');
+}
+
 router.post('/complete', asyncHandler(async (req, res) => {
   const { testId, finalStudents } = req.body;
-  console.log(req.body);
 
   if (!testId) {
       return res.status(400).send('Test ID is required.');
@@ -610,37 +628,66 @@ router.post('/complete', asyncHandler(async (req, res) => {
   const proveraPath = path.join(basePath, 'provera');
   const dataPath = path.join(basePath, 'data');
 
-  try {
-      await fsp.mkdir(dataPath, { recursive: true });
+  await fsp.mkdir(dataPath, { recursive: true });
 
-      for (const student of finalStudents) {
-          const { pc } = student;
+  for (const student of finalStudents) {
+      const { pc, index } = student;
+      const studentFolderName = convertIndexToFolderName(index);
 
-          const tgzFiles = await fsp.readdir(proveraPath);
-          const tgzFile = tgzFiles.find(file => file.endsWith(`_${pc}.tgz`));
+      const tgzFiles = await fsp.readdir(proveraPath);
+      const tgzFile = tgzFiles.find(file => file.endsWith(`_${pc}.tgz`));
 
-          if (!tgzFile) {
-              console.log(`No .tgz file found for student PC: ${pc}`);
-              continue;
-          }
-
-          const tgzFilePath = path.join(proveraPath, tgzFile);
-          const studentDataPath = path.join(dataPath, pc);
-
-          await fsp.mkdir(studentDataPath, { recursive: true });
-
-          await fs.createReadStream(tgzFilePath)
-              .pipe(unzipper.Extract({ path: studentDataPath }))
-              .promise()
-              .then(async () => {
-                  await fsp.unlink(tgzFilePath);
-              });
+      if (!tgzFile) {
+          console.log(`No .tgz file found for student PC: ${pc}`);
+          let tmpStudent = await db.getStudentsByIndexes([index]);
+          db.addNewTestGrading(tmpStudent[0].id, testId, req.session.userId, 0, "NEMA_FAJLOVA");
+          continue;
       }
 
-      res.send({ success: true, message: 'All student data processed and original .tgz files removed.' });
+      const tgzFilePath = path.join(proveraPath, tgzFile);
+      const studentDataPath = path.join(dataPath, pc);
+
+      await fsp.mkdir(studentDataPath, { recursive: true });
+
+      await fs.createReadStream(tgzFilePath)
+          .pipe(unzipper.Extract({ path: studentDataPath }))
+          .promise();
+
+      await fsp.unlink(tgzFilePath);
+
+      const indexFolderPath = path.join(studentDataPath, 'home', 'provera', studentFolderName);
+      const filesToMove = await fsp.readdir(indexFolderPath);
+      for (const file of filesToMove) {
+          const srcFilePath = path.join(indexFolderPath, file);
+          const destFilePath = path.join(studentDataPath, file);
+          await fsp.rename(srcFilePath, destFilePath);
+      }
+
+      await fsp.rm(path.join(studentDataPath, '_MACOSX'), { recursive: true, force: true });
+      await fsp.rm(path.join(studentDataPath, 'home'), { recursive: true, force: true });
+  }
+
+  res.send({ success: true, message: 'All student data processed.' });
+}));
+
+router.get('/get', asyncHandler(async (req, res) => {
+  const { testId } = req.query;
+
+  if (!testId) {
+      return res.status(400).send('Test ID is required.');
+  }
+
+  try {
+      const testConfig = await db.getTestById(testId);
+
+      if (!testConfig) {
+          return res.status(404).send('Test not found.');
+      }
+
+      res.json(testConfig);
   } catch (error) {
-      console.error('Error processing student data:', error);
-      res.status(500).send('An error occurred while processing student data.');
+      console.error('Error retrieving test:', error);
+      res.status(500).send('An error occurred while retrieving the test.');
   }
 }));
 
@@ -660,6 +707,110 @@ router.post('/all', asyncHandler(async (req, res) => {
   } catch (error) {
     console.error('Error retrieving tests:', error);
     res.status(500).send('An error occurred while retrieving the tests.');
+  }
+}));
+
+router.post('/gradings/get', asyncHandler(async (req, res) => {
+  const { testId } = req.body;
+
+  if (!testId) {
+    return res.status(400).send('Test ID is required.');
+  }
+
+  try {
+    const gradings = await db.getTestGradings(testId);
+    res.json(gradings);
+  } catch (error) {
+    console.error('Error retrieving gradings:', error);
+    res.status(500).send('An error occurred while retrieving the gradings.');
+  }
+}));
+
+router.get('/generate-pdf', asyncHandler(async (req, res) => {
+  const { testId } = req.query;
+
+  if (!testId) {
+    return res.status(400).send('Test ID is required.');
+  }
+
+  try {
+    const testDetails = await db.getTestById(testId);
+    const studentList = JSON.parse(testDetails.final_students);
+    
+    if (!testDetails || !studentList) {
+      return res.status(404).send('Test or student list not found.');
+    }
+
+    const docDefinition = {
+        content: [
+            {
+                text: 'Arhitektura Računara - T1234',
+                style: 'header'
+            },
+            {
+                text: `Datum: ${new Date(testDetails.created_at).toLocaleDateString('sr-Latn-RS', { year: 'numeric', month: 'long', day: 'numeric' })}`,
+                style: 'subheader'
+            },
+            {
+                style: 'tableExample',
+                table: {
+                    widths: ['auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
+                    body: [
+                        ['Broj', 'Indeks', 'PC', 'Ime i Prezime', 'Poeni / Max', 'Ocenio'].map(header => ({ text: header, style: 'tableHeader' })),
+                        ...studentList.map((item, index) => [
+                            index + 1,
+                            item.index,
+                            item.pc,
+                            `${item.firstName} ${item.lastName}`,
+                            `0 / ${testDetails.total_points}`,
+                            'Radovan Turović'
+                        ])
+                    ]
+                },
+                layout: 'lightHorizontalLines'
+            }
+        ],
+        footer: function(currentPage, pageCount) {
+            return {
+                  text: currentPage.toString() + ' od ' + pageCount + ' | Generisano pomoću oceni.me | © FTN, Marko Gordić 2024 | N <3',
+                  alignment: 'center',
+            };
+        },
+        styles: {
+            header: {
+              fontSize: 18,
+              bold: true,
+              margin: [0, 0, 0, 10],
+              color: '#005b96'
+            },
+            tableExample: {
+                margin: [0, 5, 0, 15]
+            },
+            tableHeader: {
+              bold: true,
+              fontSize: 13,
+              color: '#4d4d4d'
+            },
+            footer: {
+                fontSize: 10
+            }
+        },
+        defaultStyle: {
+            alignment: 'justify'
+        }
+    };
+
+    const pdfDoc = printer.createPdfKitDocument(docDefinition);
+
+    const filename = 'acs_izvestaj.pdf';
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    pdfDoc.pipe(res);
+    pdfDoc.end();
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    res.status(500).send('An error occurred while generating the PDF.');
   }
 }));
 

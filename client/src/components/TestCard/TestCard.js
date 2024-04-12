@@ -17,7 +17,7 @@ function TestCard({ testData, onDeleteSuccess }) {
     });
 
     const handlePreview = (configId) => {
-        navigate('./../configure/' + configId);
+        navigate('./' + configId);
     };
 
     return (
@@ -30,7 +30,7 @@ function TestCard({ testData, onDeleteSuccess }) {
             </div>
             
             <div className='test-configuration-card-actions'>
-                <button className='test-configuration-card-action' ><i className="fi fi-br-menu-burger"></i></button>
+                <button className='test-configuration-card-action' onClick={() => handlePreview(id)}><i className="fi fi-br-menu-burger"></i></button>
                 <button className='test-configuration-card-action' ><i className="fi fi-sr-play"></i></button>
                 <button className='test-configuration-card-action' ><i className="fi fi-rr-trash"></i></button>
             </div>

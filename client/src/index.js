@@ -17,6 +17,7 @@ import SubjectStudents from './pages/subject_students/SubjectStudents';
 import ManageTestConfigurations from './pages/manage_test_configurations/ManageTestConfigurations';
 import ManageSubject from './pages/manage_subject/ManageSubject';
 import SubjectTests from './pages/subject_tests/SubjectTests';
+import TestListing from './pages/test_listing/TestListing';
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify';
 import ConfigureTest from './pages/configure_test/ConfigureTest';
@@ -34,6 +35,7 @@ root.render(
           <Route path="/subjects" element={<ProtectedRoute><UserProvider><MySubjects /></UserProvider></ProtectedRoute>} />
           <Route path="/subjects/:id/overview" element={<ProtectedRoute><UserProvider><SubjectOverview /></UserProvider></ProtectedRoute>} />
           <Route path="/subjects/:id/tests" element={<ProtectedRoute><UserProvider><SubjectTests /></UserProvider></ProtectedRoute>} />
+          <Route path="/subjects/:id/tests/:testid" element={<ProtectedRoute><UserProvider><TestListing /></UserProvider></ProtectedRoute>} />
           <Route path="/subjects/:id/tests/new" element={<ProtectedRoute><UserProvider><NewTestWizard /></UserProvider></ProtectedRoute>} />
           <Route path="/subjects/:id/tests/new/:testid" element={<ProtectedRoute><UserProvider><NewTestWizard /></UserProvider></ProtectedRoute>} />
           <Route path="/subjects/:id/tests/configurations" element={<ProtectedRoute><UserProvider><ManageTestConfigurations /></UserProvider></ProtectedRoute>} />

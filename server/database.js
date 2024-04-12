@@ -275,6 +275,36 @@ class Database {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         `;
 
+        const createTestGradingsTable = `
+            CREATE TABLE IF NOT EXISTS test_gradings (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                student_id INT NOT NULL,
+                test_id INT NOT NULL,
+                employee_id INT,
+                grading TEXT NOT NULL,
+                status ENUM('NEMA_FAJLOVA', 'NEOCENJEN', 'OCENJEN') NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+                FOREIGN KEY (test_id) REFERENCES tests(id) ON DELETE CASCADE,
+                FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        `;
+
+        const createAutoTestResultsTable = `
+            CREATE TABLE IF NOT EXISTS auto_test_results (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                student_id INT NOT NULL,
+                test_id INT NOT NULL,
+                employee_id INT,
+                results TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                status ENUM('KREIRAN', 'OBRADA', 'ZAVRSEN') NOT NULL,
+                FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+                FOREIGN KEY (test_id) REFERENCES tests(id) ON DELETE CASCADE,
+                FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        `;
+
         try {
             await this.pool.execute(createeemployeesTable);
             console.info("[INFO] : Employees table created successfully.");
@@ -294,6 +324,10 @@ class Database {
             console.info("[INFO] : Tests table created successfully.");
             await this.pool.execute(createTestConfigurationsTable);
             console.info("[INFO] : Test configurations table created successfully.");
+            await this.pool.execute(createTestGradingsTable);
+            console.info("[INFO] : Test gradings table created successfully.");
+            await this.pool.execute(createAutoTestResultsTable);
+            console.info("[INFO] : Auto test results table created successfully.");
         } catch (err) {
             console.error("[ERROR] : Error while running SQL.", err);
         }
@@ -938,6 +972,37 @@ class Database {
             throw error;
         }
     }
+
+    async addNewTestGrading(studentId, testId, employeeId, grading, status) {
+        const insertQuery = `
+            INSERT INTO test_gradings (student_id, test_id, employee_id, grading, status)
+            VALUES (?, ?, ?, ?, ?)
+        `;
+
+        try {
+            await this.pool.query(insertQuery, [studentId, testId, employeeId, grading, status]);
+        } catch (error) {
+            console.error('Error adding test grading:', error);
+            throw error;
+        }
+    }
+
+    async getTestGradings(testId) {
+        const query = `
+            SELECT tg.*, s.index_number
+            FROM test_gradings tg
+            JOIN students s ON tg.student_id = s.id
+            WHERE tg.test_id = ?
+        `;
+        try {
+            const [results] = await this.pool.query(query, [testId]);
+            return results;
+        } catch (error) {
+            console.error('Error retrieving test gradings with student indexes:', error);
+            throw error;
+        }
+    }    
+    
 }
 
 module.exports = Database;

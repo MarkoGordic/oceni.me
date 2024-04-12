@@ -249,9 +249,9 @@ function ModifyStudentModal({ isOpen, onClose, studentId, onStudentDeleted  }) {
                     <i className='fi fi-sr-time-past'></i>
                         <p className='sidebar-route-text'>Aktivnosti</p>
                     </div>
-                    <div className={`modify-student-modal-tab ${activeTab === 'contact' ? 'active' : ''}`} onClick={() => handleTabClick('contact')}>
-                        <i className='fi fi-rr-paper-plane'></i>
-                        <p className='sidebar-route-text'>Kontaktiraj studenta</p>
+                    <div className={`modify-student-modal-tab ${activeTab === 'tests' ? 'active' : ''}`} onClick={() => handleTabClick('tests')}>
+                        <i className='fi fi-rr-edit'></i>
+                        <p className='sidebar-route-text'>Kolokvijumi</p>
                     </div>
                     <div className={`modify-student-modal-tab ${activeTab === 'admin' ? 'active' : ''}`} onClick={() => handleTabClick('admin')}>
                         <i className='fi fi-rs-shield'></i>

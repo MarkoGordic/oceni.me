@@ -36,7 +36,7 @@ const NewTestWizard = () => {
                 content: <UploadConfigTab
                             setFileName={setJSONFileName}
                             setTargetJSON={setTargetJSON}
-                            confirmUpload={confirmConfigUpload}
+                            confirmUpload={() => confirmConfigUpload(targetJSON)}
                             isLoading={isLoading}
                         />
             },
@@ -72,17 +72,13 @@ const NewTestWizard = () => {
                         />
             }
         ]);
-    }, [isLoading, status, missingStudents]);
+    }, [isLoading, status, missingStudents, targetZIP, targetJSON]);
 
     useEffect(() => {
         if (testid) {
             fetchTestStatus();
         }
     }, [testid]);
-
-    useEffect(() => {
-        console.log("TARGET:", targetJSON);
-    }, [targetJSON]);
 
     useEffect(() => {
         console.log("STATUS:", status);
@@ -204,8 +200,8 @@ const NewTestWizard = () => {
         });
     };
 
-    const confirmConfigUpload = () => {
-        uploadConfigurationFile(targetJSON);
+    const confirmConfigUpload = (file) => {
+        uploadConfigurationFile(file);
     };
 
     const confirmMissingStudents = async () => {
