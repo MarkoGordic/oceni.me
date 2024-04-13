@@ -500,16 +500,46 @@ router.post('/new', upload.single('configFile'), asyncHandler(async (req, res) =
   try {
     const rawData = await fsp.readFile(configPath, 'utf8');
     const configData = JSON.parse(rawData);
-
-    const { name, subject_id, test_no, total_tasks, total_tests, total_points } = configData;
+    const { name, subject_id, test_no, total_tasks, total_tests, total_points, tests_config } = configData;
 
     const testId = await db.addNewTest(subject_id, name, test_no, req.session.userId, total_tasks, total_tests, total_points);
-
     const savePath = path.join(__dirname, '../uploads', 'tests', String(testId), 'config.json');
-
     await fsp.mkdir(path.dirname(savePath), { recursive: true });
     await fsp.copyFile(configPath, savePath);
     await fsp.unlink(configPath);
+
+    const autotestConfPath = path.join(__dirname, '../uploads', 'tests', String(testId), 'autotestConf');
+    await fsp.mkdir(autotestConfPath, { recursive: true });
+
+    const runShTemplate = await fsp.readFile(path.join(__dirname, '../util/run.sh'), 'utf8');
+
+    for (const test of tests_config) {
+      const folderPath = path.join(autotestConfPath, test.folder);
+      await fsp.mkdir(folderPath, { recursive: true });
+
+      for (const file of test.files) {
+        const fileFolderPath = path.join(folderPath, file.name.replace(/\.\w+$/, ''));
+        await fsp.mkdir(fileFolderPath, { recursive: true });
+
+        let modifiedRunSh = runShTemplate.replace('<TASKNO_PLACEHOLDER>', test.folder);
+
+        let TESTS_INPUTS = '';
+        let INPUT_TXT = '';
+        const lines = file.content.split('\r\n');
+        for (const line of lines) {
+          if (line.startsWith('@')) {
+            const input = line.slice(1);
+            TESTS_INPUTS += input + '\\n\\n';
+            INPUT_TXT += input + '\n';
+          }
+        }
+
+        modifiedRunSh = modifiedRunSh.replace('<TASK_INPUT_PLACEHOLDER>', TESTS_INPUTS.replace(/\\n/g, '\n'));
+
+        await fsp.writeFile(path.join(fileFolderPath, `run.sh`), modifiedRunSh);
+        await fsp.writeFile(path.join(fileFolderPath, 'input.txt'), INPUT_TXT);
+      }
+    }
 
     res.json({ testId, ...configData, status: 'DODATA_KONFIGURACIJA' });
   } catch (error) {
@@ -517,6 +547,7 @@ router.post('/new', upload.single('configFile'), asyncHandler(async (req, res) =
     return res.status(500).send('Error processing the configuration.');
   }
 }));
+
 
 router.post('/upload_data', upload.single('zipFile'), asyncHandler(async (req, res) => {
   if (!req.file) {
