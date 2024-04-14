@@ -54,11 +54,18 @@ function TestListing() {
 
                 const enrichedStudents = students.map(student => {
                     const grading = gradingsMap[student.index];
+                    let autotest_progress = 0;
+
+                    if (grading && grading.status === 'OCENJEN') {
+                        autotest_progress = 100;
+                    }
+
                     return {
                         ...student,
                         autotest_status: grading ? grading.status : 'PRIPREMLJEN',
-                        points: grading ? grading.grading : '?',
-                        maxPoints: testData.total_points
+                        points: grading ? grading.total_points : '?',
+                        maxPoints: testData.total_points,
+                        autotest_progress: autotest_progress
                     };
                 });
 
@@ -79,6 +86,140 @@ function TestListing() {
         window.open(downloadUrl, '_blank').focus();
     }
 
+    const getStatusClassName = (status) => {
+        switch(status) {
+            case 'NEMA_FAJLOVA':
+                return 'NEMA_FAJLOVA';
+            case 'PRIPREMLJEN':
+                return 'PRIPREMLJEN';
+            case 'TESTIRANJE':
+                return 'TESTIRANJE';
+            case 'OCENJEN':
+                return 'OCENJEN';
+            default:
+                return '';
+        }
+    };
+
+    const handleStartStudentAutotest = (studentIndex, pc, fullName) => {
+        const updatedStudents = students.map(student => {
+            if (student.index === studentIndex) {
+                return { ...student, autotest_status: 'TESTIRANJE', autotest_progress: 0 };
+            }
+            return student;
+        });
+        setStudents(updatedStudents);
+
+        fetch('http://localhost:8000/autotest/run/student', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                testId: testid,
+                studentIndex,
+                pc: pc,
+            }),
+        }).then((response) => {
+            if (response.ok) {
+                toast.success('Automatsko testiranje je pokrenuto za studenta ' + fullName + '.');
+            } else {
+                toast.error('Neuspešno pokretanje automatskog testiranja.');
+            }
+        }).catch((error) => {
+            toast.error('Failed to start autotest process.');
+            console.error(error);
+        });
+    }
+
+    function handleStartAllAutotests() {
+        const tasks = students.map(student => ({
+            studentIndex: student.index,
+            pc: student.pc
+        }));
+    
+        fetch('http://localhost:8000/autotest/run/group', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                testId: testid,
+                tasks,
+            }),
+        }).then((response) => {
+            if (response.ok) {
+                toast.success('Automatsko testiranje pokrenuto za sve studente.');
+                const updatedStudents = students.map(student => ({
+                    ...student,
+                    autotest_status: 'TESTIRANJE',
+                    autotest_progress: 0
+                }));
+                setStudents(updatedStudents);
+            } else {
+                toast.error('Neuspešno pokretanje automatskog testiranja za sve studente.');
+            }
+        }).catch((error) => {
+            toast.error('Failed to start autotest process for all students.');
+            console.error(error);
+        });
+    }
+
+    const handleAutotestStatusUpdate = () => {
+        const studentIndexes = students.filter(student => student.autotest_status === 'TESTIRANJE')
+                                       .map(student => student.index);
+    
+        if (studentIndexes.length === 0) {
+            toast.info('Nema studenata u procesu testiranja.');
+            return;
+        }
+    
+        console.log(studentIndexes);
+        fetch('http://localhost:8000/autotest/progress', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                testId: testid,
+                studentIndexes,
+            }),
+        }).then(async (response) => {
+            if (response.ok) {
+                const data = await response.json();
+                toast.success('Automatsko testiranje je osveženo.');
+                console.log(data);
+    
+                const updatedStudents = students.map(student => {
+                    const statusUpdate = data.find(status => status.studentIndex === student.index);
+                    if (statusUpdate) {
+                        return {
+                            ...student,
+                            points: statusUpdate.points,
+                            autotest_status: statusUpdate.status,
+                            autotest_progress: (statusUpdate.autotest_progress || 0)
+                        };
+                    }
+                    return student;
+                });
+    
+                setStudents(updatedStudents);
+            } else {
+                toast.error('Neuspešno osvežavanje automatskog testiranja.');
+            }
+        }).catch((error) => {
+            toast.error('Failed to update autotest status.');
+            console.error(error);
+        });
+    };
+
+    useEffect(() => {
+        console.log(students)
+    }, [students]);
+
     if (isLoading) return <div className='loader'>Loading...</div>;
 
     return (
@@ -88,9 +229,14 @@ function TestListing() {
             <div className='content'>
                 <h1>Kolokvijum - {testData.name}</h1>
 
-                <button className='get-acs-button' onClick={getAcs}>ACS IZVEŠTAJ</button>
-
                 <h2>Listing Studenata</h2>
+                
+                <div className='test-listing-buttons'>
+                    <button className='get-acs-button' onClick={getAcs}>ACS IZVEŠTAJ</button>
+                    <button className='get-acs-button' onClick={handleStartAllAutotests}>POKRENI AT</button>
+                    <button className='get-acs-button' onClick={handleAutotestStatusUpdate}>OSVEZI AT</button>
+                </div>
+
                 <table className="test-table">
                     <thead>
                         <tr>
@@ -99,6 +245,7 @@ function TestListing() {
                             <th>Indeks</th>
                             <th>Računar</th>
                             <th>AT Status</th>
+                            <th>AT Napredak</th>
                             <th>Poeni</th>
                             <th>Akcije</th>
                         </tr>
@@ -110,11 +257,16 @@ function TestListing() {
                                 <td>{student.firstName} {student.lastName}</td>
                                 <td>{student.index}</td>
                                 <td>{student.pc}</td>
-                                <td>{student.autotest_status}</td>
+                                <td className={getStatusClassName(student.autotest_status)}>{student.autotest_status}</td>
+                                <td>
+                                    <div className="progress-bar">
+                                        <span className="progress-bar-fill" style={{width: `${student.autotest_progress || 0}%`}}></span>
+                                    </div>
+                                </td>
                                 <td>{student.points || 0} / {testData.total_points}</td>
                                 <td className="action-buttons">
                                     <button className="test-configuration-card-action"><i className="fi fi-rr-eye"></i></button>
-                                    <button className="test-configuration-card-action"><i className="fi fi-rr-play"></i></button>
+                                    <button className="test-configuration-card-action" onClick={() => handleStartStudentAutotest(student.index, student.pc, student.firstName + ' ' + student.lastName)}><i className="fi fi-rr-play"></i></button>
                                     <button className="test-configuration-card-action"><i className="fi fi-rr-trash"></i></button>
                                 </td>
                             </tr>

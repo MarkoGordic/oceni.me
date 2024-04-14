@@ -253,6 +253,7 @@ class Database {
                 total_points INT NOT NULL,
                 initial_students TEXT,
                 final_students TEXT,
+                tasks TEXT,
                 status ENUM('DODATA_KONFIGURACIJA', 'DODAT_ZIP', 'PODESENI_STUDENTI', 'ZAVRSEN') NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
@@ -281,8 +282,9 @@ class Database {
                 student_id INT NOT NULL,
                 test_id INT NOT NULL,
                 employee_id INT,
-                grading TEXT NOT NULL,
-                status ENUM('NEMA_FAJLOVA', 'NEOCENJEN', 'OCENJEN') NOT NULL,
+                total_points INT NOT NULL,
+                gradings TEXT,
+                status ENUM('NEMA_FAJLOVA', 'TESTIRANJE', 'OCENJEN') NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
                 FOREIGN KEY (test_id) REFERENCES tests(id) ON DELETE CASCADE,
@@ -295,10 +297,11 @@ class Database {
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 student_id INT NOT NULL,
                 test_id INT NOT NULL,
+                task_no VARCHAR(10) NOT NULL,
+                test_no VARCHAR(10) NOT NULL,
                 employee_id INT,
-                results TEXT NOT NULL,
+                result INT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                status ENUM('KREIRAN', 'OBRADA', 'ZAVRSEN') NOT NULL,
                 FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
                 FOREIGN KEY (test_id) REFERENCES tests(id) ON DELETE CASCADE,
                 FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE SET NULL
@@ -813,7 +816,7 @@ class Database {
     
     async addNewTest(subjectId, name, test_no, employee_id, total_tasks, total_tests, total_points) {
         try {
-            const insertQuery = `INSERT INTO tests (subject_id, name, test_no, initial_students, final_students, status, employee_id, total_tasks, total_tests, total_points) VALUES (?, ?, ?, NULL, NULL, 'DODATA_KONFIGURACIJA', ?, ?, ?, ?)`;
+            const insertQuery = `INSERT INTO tests (subject_id, name, test_no, initial_students, final_students, status, employee_id, total_tasks, total_tests, total_points, tasks) VALUES (?, ?, ?, NULL, NULL, 'DODATA_KONFIGURACIJA', ?, ?, ?, ?, NULL)`;
             await this.pool.query(insertQuery, [subjectId, name, test_no, employee_id, total_tasks, total_tests, total_points]);
     
             const selectQuery = `SELECT id AS testId FROM tests WHERE subject_id = ? ORDER BY id DESC LIMIT 1`;
@@ -946,7 +949,7 @@ class Database {
     }
 
     async updateTestField(testId, fieldName, fieldValue) {
-        const whitelist = ['initial_students', 'final_students', 'status'];
+        const whitelist = ['initial_students', 'final_students', 'status', 'tasks'];
         
         if (!whitelist.includes(fieldName)) {
             throw new Error('Invalid field name provided.');
@@ -973,19 +976,50 @@ class Database {
         }
     }
 
-    async addNewTestGrading(studentId, testId, employeeId, grading, status) {
+    async addNewTestGrading(studentId, testId, employeeId, total_points, status) {
         const insertQuery = `
-            INSERT INTO test_gradings (student_id, test_id, employee_id, grading, status)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO test_gradings (student_id, test_id, employee_id, total_points, gradings, status)
+            VALUES (?, ?, ?, ?, NULL, ?)
         `;
 
         try {
-            await this.pool.query(insertQuery, [studentId, testId, employeeId, grading, status]);
+            await this.pool.query(insertQuery, [studentId, testId, employeeId, total_points, status]);
         } catch (error) {
             console.error('Error adding test grading:', error);
             throw error;
         }
     }
+
+    async updateFinalTestGrading(testId, studentId, total_points, gradings, status) {
+        const selectQuery = `
+            SELECT COUNT(1) AS cnt
+            FROM test_gradings
+            WHERE test_id = ? AND student_id = ?
+        `;
+    
+        const insertQuery = `
+            INSERT INTO test_gradings (test_id, student_id, total_points, gradings, status)
+            VALUES (?, ?, ?, ?, ?)
+        `;
+    
+        const updateQuery = `
+            UPDATE test_gradings
+            SET total_points = ?, gradings = ?, status = ?
+            WHERE test_id = ? AND student_id = ?
+        `;
+    
+        try {
+            const [results] = await this.pool.query(selectQuery, [testId, studentId]);
+            if (results[0].cnt > 0) {
+                await this.pool.query(updateQuery, [total_points, gradings, status, testId, studentId]);
+            } else {
+                await this.pool.query(insertQuery, [testId, studentId, total_points, gradings, status]);
+            }
+        } catch (error) {
+            console.error('Error updating final test grading:', error);
+            throw error;
+        }
+    }    
 
     async getTestGradings(testId) {
         const query = `
@@ -1001,7 +1035,65 @@ class Database {
             console.error('Error retrieving test gradings with student indexes:', error);
             throw error;
         }
-    }    
+    }
+
+    async getTestGradingForStudent(testId, studentId) {
+        const query = `
+            SELECT * FROM test_gradings
+            WHERE test_id = ?
+            AND student_id = ?
+        `;
+        try {
+            const [results] = await this.pool.query(query, [parseInt(testId), parseInt(studentId)]);
+            return results.length > 0 ? results[0] : null;
+        } catch (error) {
+            console.error('Error retrieving test grading for student:', error);
+            throw error;
+        }
+    }
+
+    async addNewAutoTestResult(studentId, testId, employeeId, result, taskNo, testNo) {
+        const insertQuery = `
+            INSERT INTO auto_test_results (student_id, test_id, employee_id, result, test_no, task_no)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `;
+
+        try {
+            await this.pool.query(insertQuery, [studentId, testId, employeeId, result, testNo, taskNo]);
+        } catch (error) {
+            console.error('Error adding auto test result:', error);
+            throw error;
+        }
+    }
+
+    async getAutoTestResultsForStudent(studentId, testId) {
+        const query = `
+            SELECT * FROM auto_test_results
+            WHERE student_id = ?
+            AND test_id = ?
+        `;
+        try {
+            const [results] = await this.pool.query(query, [studentId, testId]);
+            return results;
+        } catch (error) {
+            console.error('Error retrieving auto test results for student:', error);
+            throw error;
+        }
+    }
+
+    async clearAutoTestResultsForStudent(studentId, testId) {
+        const query = `
+            DELETE FROM auto_test_results
+            WHERE student_id = ?
+            AND test_id = ?
+        `;
+        try {
+            await this.pool.query(query, [studentId, testId]);
+        } catch (error) {
+            console.error('Error clearing auto test results for student:', error);
+            throw error;
+        }
+    }
     
 }
 

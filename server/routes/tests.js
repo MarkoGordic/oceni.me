@@ -512,8 +512,12 @@ router.post('/new', upload.single('configFile'), asyncHandler(async (req, res) =
     await fsp.mkdir(autotestConfPath, { recursive: true });
 
     const runShTemplate = await fsp.readFile(path.join(__dirname, '../util/run.sh'), 'utf8');
+    const gdbTemplate = await fsp.readFile(path.join(__dirname, '../util/gdb.py'), 'utf8');
+
+    let folderTestsMapping = {};
 
     for (const test of tests_config) {
+      folderTestsMapping[test.folder] = {};
       const folderPath = path.join(autotestConfPath, test.folder);
       await fsp.mkdir(folderPath, { recursive: true });
 
@@ -522,6 +526,7 @@ router.post('/new', upload.single('configFile'), asyncHandler(async (req, res) =
         await fsp.mkdir(fileFolderPath, { recursive: true });
 
         let modifiedRunSh = runShTemplate.replace('<TASKNO_PLACEHOLDER>', test.folder);
+        let modifiedGdb = gdbTemplate.replace('<OUTPUT_PATH_PLACEHOLDER>', '/output/results' + test.folder + file.name + '.json');
 
         let TESTS_INPUTS = '';
         let INPUT_TXT = '';
@@ -534,12 +539,25 @@ router.post('/new', upload.single('configFile'), asyncHandler(async (req, res) =
           }
         }
 
-        modifiedRunSh = modifiedRunSh.replace('<TASK_INPUT_PLACEHOLDER>', TESTS_INPUTS.replace(/\\n/g, '\n'));
+        const OUTPREFIX = "OUTP01";
+        TEST_OUTPUT = "";
+        TEST_OUTPUT += OUTPREFIX + '=$(cat <<EOL\n';
+        TEST_OUTPUT += file.result + '\n';
+        TEST_OUTPUT += 'EOL\n)\n\n';
 
+        modifiedRunSh = modifiedRunSh.replaceAll('<TASK_INPUT_PLACEHOLDER>', TESTS_INPUTS.replace(/\\n/g, '\n'));
+        modifiedRunSh = modifiedRunSh.replaceAll('<COMPILE_STATUS_TASK_PLACEHOLDER>', test.folder + file.name);
+        modifiedRunSh = modifiedRunSh.replaceAll('<TEST_OUTPUT_PLACEHOLDER>', TEST_OUTPUT);
+        modifiedRunSh = modifiedRunSh.replaceAll('<EXPECTED_EXIT_CODE_PLACEHOLDER>', file.code);
+
+        await fsp.writeFile(path.join(fileFolderPath, `gdb.py`), modifiedGdb);
         await fsp.writeFile(path.join(fileFolderPath, `run.sh`), modifiedRunSh);
         await fsp.writeFile(path.join(fileFolderPath, 'input.txt'), INPUT_TXT);
+        folderTestsMapping[test.folder][file.name] = file.points;
       }
     }
+
+    await db.updateTestField(testId, 'tasks', JSON.stringify(folderTestsMapping));
 
     res.json({ testId, ...configData, status: 'DODATA_KONFIGURACIJA' });
   } catch (error) {

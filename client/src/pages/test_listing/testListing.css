@@ -81,3 +81,25 @@ body, #root {
 .get-acs-button:hover{
     background-color: #1476d2;
 }
+
+.NEMA_FAJLOVA { color: red !important; }
+.TESTIRANJE {
+    color: #1993F0 !important;
+    animation: fadeInOut 2s infinite;
+}
+.PRIPREMLJEN { color: green !important; }
+.OCENJEN {
+    color: #1993F0 !important;
+}
+
+@keyframes fadeInOut {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.test-listing-buttons {
+    display: flex;
+    justify-content: space-between;
+    max-width: 500px;
+    margin: auto;
+}

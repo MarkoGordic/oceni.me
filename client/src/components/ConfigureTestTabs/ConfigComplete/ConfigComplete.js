@@ -80,7 +80,7 @@ const ConfigComplete = ({ isLoading, setIsLoading, isCompleted}) => {
             <div className="config-wrap">
                 <h1 style={{margin: "0"}}>Konfiguracija je završena</h1>
                 <h3 style={{margin: "0", marginBottom: '10px'}}>ID Konfiguracije : {configid}</h3>
-                <p className='newtest-warning'>Prikaz ulaza i izlaza je opisnog karaktera i nije realno stanje.</p>
+                <p className='newtest-warning'>Prikaz ulaza i izlaza je opisnog karaktera i ne reflektuje stvarno stanje!</p>
                 {renderTable()}
 
                 <div className='config-finish-buttons'>
