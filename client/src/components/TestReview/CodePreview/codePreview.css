@@ -1,0 +1,15 @@
+.code-preview {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.code-preview-code {
+    background-color: #0B0A0A;
+    height: 90%;
+    width: 700px;
+    border-radius: 10px;
+    box-shadow: 0 0 12px rgba(25, 147, 240, 0.9);
+}
