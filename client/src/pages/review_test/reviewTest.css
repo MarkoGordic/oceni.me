@@ -34,3 +34,26 @@ body, #root {
     display: inline-block;
     float: right;
 }
+
+.review-tab {
+    width: 90%;
+    height: 40px;
+    padding: 10px;
+    background-color: #0F0E0E;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.review-tab:hover {
+    box-shadow: 0 0 0 2px rgba(25, 147, 240, 0.5);
+}
+
+.review-tab i {
+    font-size: 25px;
+}

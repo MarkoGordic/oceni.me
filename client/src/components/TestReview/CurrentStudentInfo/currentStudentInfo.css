@@ -1,0 +1,94 @@
+.review-student-card {
+    margin-top: 35px;
+    display: block;
+    align-items: center;
+    width: 90%;
+    background-color: #0F0E0E;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    color: #F7F7FF;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    height: 70px;
+}
+
+.review-student-card:hover {
+    box-shadow: 0 0 0 2px rgba(25, 147, 240, 0.5);
+}
+
+.review-student-card-info {
+    display: inline-flex;
+    height: 70px;
+    width: 100%;
+    text-align: left;
+    
+    display: flex;
+    align-items: center;
+}
+
+.review-student-card-avatar {
+    border-radius: 100%;
+    height: 60px;
+    width: 60px;
+    object-fit: cover;
+    border: 3px solid #1993F0;
+    margin-right: 20px;
+}
+
+.review-student-card-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 30px;
+}
+
+.review-student-card-info-details {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.review-student-card-full-name {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 5px 0;
+}
+
+.review-student-card-email {
+    font-size: 16px;
+    margin: 0 0 0 0;
+    color: #BABABA;
+}
+
+.review-student-card-actions {
+    width: 50%;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.review-student-card-points {
+    font-size: 40px;
+    margin: 0;
+}
+
+.review-student-card-button {
+    background-color: #1993F0;
+    color: #F7F7FF;
+    border: none;
+    padding: 5px 20px;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-family: "Inter", sans-serif;
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+.review-student-card-button:hover {
+    background-color: #1476d2;
+}

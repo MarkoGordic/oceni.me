@@ -70,6 +70,8 @@ const TestRoutes = require('./routes/tests');
 app.use('/tests', cors({origin: 'http://localhost:3000', credentials: true}), ensureAuthenticated, TestRoutes);
 const AutoTestRoutes = require('./routes/autotest');
 app.use('/autotest', cors({origin: 'http://localhost:3000', credentials: true}), ensureAuthenticated, AutoTestRoutes);
+const ReviewRoutes = require('./routes/review');
+app.use('/review', cors({origin: 'http://localhost:3000', credentials: true}), ensureAuthenticated, ReviewRoutes);
 
 app.listen(8000, () => {
   console.log('Server is running on port: 8000');

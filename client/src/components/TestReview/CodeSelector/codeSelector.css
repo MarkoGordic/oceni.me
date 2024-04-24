@@ -1,0 +1,43 @@
+.code-selector {
+    width: 90%;
+    padding: 10px;
+    margin-bottom: 20px;
+}
+
+.code-selector-single-task {
+    display: inline-flex;
+    width: 90%;
+    text-align: left;
+}
+
+.code-selector-single-task-no {
+    margin-right: 10px;
+    border-radius: 10px;
+    width: 70px;
+    height: 40px;
+    background-color: #0B0A0A;
+    font-size: 20px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.code-selector-single-task-no-button {
+    background-color: #1476d2;
+    color: #F7F7FF;
+    border: none;
+    padding: 5px 20px;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-family: "Inter", sans-serif;
+    margin-left: 10px;
+    margin-right: 10px;    
+}
+
+
+.code-selector-single-task-no-button:hover {
+    background-color: #1476d2;
+}

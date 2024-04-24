@@ -19,6 +19,7 @@ import ManageSubject from './pages/manage_subject/ManageSubject';
 import SubjectTests from './pages/subject_tests/SubjectTests';
 import TestListing from './pages/test_listing/TestListing';
 import ReviewTest from './pages/review_test/ReviewTest';
+import Welcome from './pages/welcome/Welcome';
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify';
 import ConfigureTest from './pages/configure_test/ConfigureTest';
@@ -31,6 +32,7 @@ root.render(
       <AuthProvider>
         <Routes>
           <Route path="/" element={<Login />} />
+          <Route path="/welcome" element={<Welcome />}/>
           <Route path="/app" element={<ProtectedRoute><UserProvider><App /></UserProvider></ProtectedRoute>} />
 
           <Route path="/subjects" element={<ProtectedRoute><UserProvider><MySubjects /></UserProvider></ProtectedRoute>} />

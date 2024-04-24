@@ -384,11 +384,12 @@ class Database {
     }
 
     async getUserGenderById(userId) {
+        console.log("USER ID : ", userId);
         const [rows] = await this.pool.query('SELECT gender FROM employees WHERE id = ?', [userId]);
         if (rows.length > 0) {
             return rows[0].gender;
         } else {
-            throw new Error('Employee not found');
+            return "NP";
         }
     }
 

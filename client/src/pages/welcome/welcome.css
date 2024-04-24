@@ -1,0 +1,105 @@
+.welcome-wrap {
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #070707;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.welcome-content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-family: "Parisienne", cursive;
+}
+
+.welcome-quote {
+    width: 100%;
+    font-size: 30px;
+    text-align: center;
+    overflow: hidden;
+    transition: width 1s ease-in-out, left 1.5s ease-in-out;
+}
+
+.word-span {
+    display: inline-block;
+    margin-right: 5px;
+    opacity: 1;
+    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.other-tab {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    background-color: #070707;
+    color: white;
+    font-size: 24px;
+}
+
+.welcome-app {
+    font-size: 45px;
+    margin-bottom: 50px;
+}
+
+.fade-in {
+  animation: fadeInAnimation 1s;
+}
+
+.fade-out {
+  animation: fadeOutAnimation 1s;
+}
+
+@keyframes fadeInAnimation {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeOutAnimation {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+  
+
+.welcome-loader {
+    width: 90px;
+    aspect-ratio: 1;
+    color:#1e90ff;
+    background:
+     radial-gradient(circle at 60% 65%, currentColor 62%, #0000 65%) top left,
+     radial-gradient(circle at 40% 65%, currentColor 62%, #0000 65%) top right,
+     linear-gradient(to bottom left, currentColor 42%,#0000 43%) bottom left ,
+     linear-gradient(to bottom right,currentColor 42%,#0000 43%) bottom right;
+    background-size: 50% 50%;
+    background-repeat: no-repeat;
+    position: relative;
+  }
+  .welcome-loader:after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: inherit;
+    opacity: 0.4;
+    animation: l3 1s infinite;
+  }
+  @keyframes l3 {
+    to {transform:scale(1.8);opacity:0}
+  }
