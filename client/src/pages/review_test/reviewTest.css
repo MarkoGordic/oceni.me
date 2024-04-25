@@ -35,6 +35,10 @@ body, #root {
     float: right;
 }
 
+.review-tab-wrap {
+    margin-bottom: 20px;
+}
+
 .review-tab {
     width: 90%;
     height: 40px;
@@ -47,7 +51,11 @@ body, #root {
     display: flex;
     justify-content: space-around;
     align-items: center;
-    margin-bottom: 25px;
+}
+
+.review-tab-name {
+    margin: auto;
+    user-select: none;
 }
 
 .review-tab:hover {
@@ -56,4 +64,17 @@ body, #root {
 
 .review-tab i {
     font-size: 25px;
+}
+
+.tab-content {
+    width: 90%;
+    background-color: #252525;
+    padding: 10px;
+    color: #ccc;
+    margin-top: 0px;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+}
+
+.review-tab-active {
+    box-shadow: 0 0 12px rgba(25, 147, 240, 0.9);
 }

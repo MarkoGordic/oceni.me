@@ -6,6 +6,7 @@ import CodePreview from "../../components/TestReview/CodePreview/CodePreview";
 import CurrentStudentInfo from "../../components/TestReview/CurrentStudentInfo/CurrentStudentInfo";
 import CodeSelector from "../../components/TestReview/CodeSelector/CodeSelector";
 import CodeSelectorInfo from "../../components/TestReview/CodeSelectorInfo/CodeSelectorInfo";
+import EmulatorDebuggerTab from "../../components/TestReview/EmulatorDebuggerTab/EmulatorDebuggerTab";
 import './reviewTest.css';
 
 const ReviewTest = () => {
@@ -24,6 +25,16 @@ const ReviewTest = () => {
     const [studentGradingResults, setStudentGradingResults] = useState(null);
 
     const [isLoading, setIsLoading] = useState(false);
+
+    const [debbugLine, setDebbugLine] = useState([]);
+
+    const [openTabs, setOpenTabs] = useState({});
+    const tabComponents = {
+        'EMULATOR & DEBUGGER': EmulatorDebuggerTab,
+    };
+    const tabProps = {
+        'EMULATOR & DEBUGGER': { taskNo: targetTaskNo, testNo: targetTestNo, pc: pc, setDebbugLine: setDebbugLine},
+    };
 
     useEffect(() => {
         if(studentId)
@@ -46,9 +57,24 @@ const ReviewTest = () => {
 
     useEffect(() => {
         if(studentGrading){
+            console.log("STUDENT GRADING", studentGrading);
             setCurrentPoints(studentGrading.total_points);
         }
     }, [studentGrading]);
+
+    useEffect(() => {
+        if (studentGradingResults) {
+            let grading = studentGrading;
+            let updatedGrading = JSON.stringify(studentGradingResults);
+            grading.gradings = updatedGrading;
+            console.log("UPDATED GRADING", grading.gradings);
+            const totalPoints = Object.values(studentGradingResults).reduce((acc, taskGrades) => {
+                return acc + Object.values(taskGrades).reduce((sum, num) => sum + num, 0);
+            }, 0);
+            setCurrentPoints(totalPoints);
+            setStudentGrading(grading);
+        }
+    }, [studentGradingResults]);
 
     async function fetchStudentData() {
         setIsLoading(true);
@@ -112,14 +138,7 @@ const ReviewTest = () => {
         }
     }
 
-    async function savePoints() {
-        let grading = studentGrading;
-        let updatedGrading = JSON.stringify(studentGradingResults);
-        grading.gradings = updatedGrading;
-        setStudentGrading(grading);
-        return;
-        setIsLoading(true);
-
+    async function savePoints(updatedGrading, totalPoints) {
         try {
             const response = await fetch(`http://localhost:8000/review/grading/save`, {
                 method: 'POST',
@@ -127,7 +146,7 @@ const ReviewTest = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ testId: parseInt(testid), studentId: parseInt(studentId), grading: studentGradingResults, total_points: currentPoints }),
+                body: JSON.stringify({ testId: parseInt(testid), studentId: parseInt(studentId), grading: updatedGrading, total_points: totalPoints }),
             });
             if (!response.ok) {
                 toast.error("Došlo je do greške prilikom čuvanja ocene.", response.type);
@@ -137,10 +156,13 @@ const ReviewTest = () => {
         } catch (error) {
             console.log("Error saving grading data:", error);
             toast.error("Došlo je do greške prilikom čuvanja ocene.", error);
-        } finally {
-            setIsLoading(false);
-        }
-    }
+        } 
+   }
+
+    const toggleTab = (tabName) => {
+        setOpenTabs(prev => ({ ...prev, [tabName]: !prev[tabName] }));
+    };
+
 
     if (isLoading) return <p>Loading...</p>;
 
@@ -150,9 +172,8 @@ const ReviewTest = () => {
             <TestReviewHeader />
             <div className='review-content'>
                 <div className="left-column">
-                    <CodePreview pc={pc} taskNo={targetTaskNo} />
+                    <CodePreview pc={pc} taskNo={targetTaskNo} lineNumber={debbugLine} />
                 </div>
-
                 <div className="right-column">
                     <CurrentStudentInfo student={studentData} currentPoints={currentPoints} maxPoints={maxPoints}/>
                     <CodeSelectorInfo
@@ -165,35 +186,23 @@ const ReviewTest = () => {
                         setTotalPoints={setCurrentPoints}
                     />
                     <CodeSelector testData={testData} setCode={setTargetTaskNo} setCodeTest={setTargetTestNo}/>
-
-                    <div className="review-tab">
-                        <i className="fi fi-rr-angle-small-down"></i>
-                        <h2>EMULATOR & DEBUGGER</h2>
-                        <i className="fi fi-rr-angle-small-down"></i>
-                    </div>
-
-                    <div className="review-tab">
-                        <i className="fi fi-rr-angle-small-down"></i>
-                        <h2>SISTEMSKI REGISTRI & FLAGOVI</h2>
-                        <i className="fi fi-rr-angle-small-down"></i>
-                    </div>
-
-                    <div className="review-tab">
-                        <i className="fi fi-rr-angle-small-down"></i>
-                        <h2>SISTEMSKI POZIVI</h2>
-                        <i className="fi fi-rr-angle-small-down"></i>
-                    </div>
-
-                    <div className="review-tab">
-                        <i className="fi fi-rr-angle-small-down"></i>
-                        <h2>PLAGIJAT PROVERA</h2>
-                        <i className="fi fi-rr-angle-small-down"></i>
-                    </div>
-
+    
+                    {Object.entries(tabComponents).map(([tab, Component]) => (
+                        <div className="review-tab-wrap" key={tab}>
+                            <div className={`review-tab ${openTabs[tab] ? 'review-tab-active' : ''}`} onClick={() => toggleTab(tab)}>
+                                <i className="fi fi-rr-angle-small-down"></i>
+                                <h2 className="review-tab-name">{tab}</h2>
+                                <i className="fi fi-rr-angle-small-down"></i>
+                            </div>
+                            {openTabs[tab] && (
+                                <div className="tab-content">
+                                    <Component {...tabProps[tab]} />
+                                </div>
+                            )}
+                        </div>
+                    ))}
                 </div>
             </div>
-
-            <script src="https://cdn.jsdelivr.net/npm/prismjs@1.24.1/prism.js"></script>
         </div>
     );
 }

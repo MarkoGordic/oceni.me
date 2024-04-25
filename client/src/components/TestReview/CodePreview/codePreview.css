@@ -60,3 +60,16 @@
     text-align: right;
     user-select: none;
 }
+
+.highlighted-line {
+    background-color: #323843; /* Or any other color for highlighting */
+}
+
+.line-arrow {
+    height: 10px;
+    width: 10px;
+    background-color: green;
+    border-radius: 50%;
+    position: absolute;
+    left: -30px; /* Adjust position as needed */
+}

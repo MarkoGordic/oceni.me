@@ -4,6 +4,10 @@ import './testReviewHeader.css';
 const TestReviewHeader = () => {
     const [currentTime, setCurrentTime] = useState(new Date());
 
+    setInterval(() => {
+        setCurrentTime(new Date());
+    }, 1000);
+
     return (
         <div className="review-header">
             <h1 className="review-header-banner">oceni.me</h1>

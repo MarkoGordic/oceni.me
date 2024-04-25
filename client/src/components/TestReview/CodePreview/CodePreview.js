@@ -8,9 +8,10 @@ import './codePreview.css';
 
 hljs.registerLanguage('x86asm', x86asm);
 
-const CodePreview = ({ taskNo, pc }) => {
+const CodePreview = ({ taskNo, pc, lineNumber }) => {
     const { testid } = useParams();
-    const [code, setCode] = useState('');
+    const [codeText, setCodeText] = useState('');
+    const [highlightedCode, setHighlightedCode] = useState(null);
 
     useEffect(() => {
         if (taskNo === null || pc === null) return;
@@ -21,21 +22,7 @@ const CodePreview = ({ taskNo, pc }) => {
                     credentials: 'include',
                 });
                 const text = await response.text();
-                const highlighted = hljs.highlight(text, { language: 'x86asm' }).value;
-                const lines = highlighted.split('\n').map((line, index) => {
-                    const lineNumber = index + 1;
-                    const isSyntaxOnly = line.trim().startsWith('<span class="hljs');
-                    const isEmpty = line.trim() === '';
-                    
-                    return (
-                        <div className="code-line" key={index}>
-                            <span className="line-number">{lineNumber}</span>
-                            {!isSyntaxOnly && !isEmpty && <div className="breakpoint-button"></div>}
-                            <span className="code-content" dangerouslySetInnerHTML={{ __html: line || '&nbsp;' }} />
-                        </div>
-                    );
-                });
-                setCode(lines);
+                setCodeText(text);
             } catch (error) {
                 toast.error("Došlo je do greške prilikom učitavanja koda.");
             }
@@ -44,10 +31,31 @@ const CodePreview = ({ taskNo, pc }) => {
         fetchCode();
     }, [taskNo, pc, testid]);
 
+    useEffect(() => {
+        if (!codeText) return;
+
+        const highlighted = hljs.highlight(codeText, { language: 'x86asm' }).value;
+        const lines = highlighted.split('\n').map((line, index) => {
+            const currentLineNumber = index + 1;
+            const isSyntaxOnly = line.trim().startsWith('<span class="hljs');
+            const isEmpty = line.trim() === '';
+
+            return (
+                <div className={`code-line ${currentLineNumber === lineNumber ? "highlighted-line" : ""}`} key={index}>
+                    <span className="line-number">{currentLineNumber}</span>
+                    {!isSyntaxOnly && !isEmpty && <div className="breakpoint-button"></div>}
+                    {currentLineNumber === lineNumber && <div className="line-arrow"></div>}
+                    <span className="code-content" dangerouslySetInnerHTML={{ __html: line || '&nbsp;' }} />
+                </div>
+            );
+        });
+        setHighlightedCode(lines);
+    }, [codeText, lineNumber]);
+
     return (
         <div className="code-preview">
             <pre className="code-preview-code">
-                {code}
+                {highlightedCode}
             </pre>
         </div>
     );

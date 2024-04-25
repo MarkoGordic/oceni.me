@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const fsp = require('fs/promises');
 const database = require('../database');
 const db = new database();
 
@@ -13,13 +14,27 @@ router.get('/code/:testId/:pc/:taskNo', async (req, res) => {
 
     const filePath = path.join(__dirname, '..', 'uploads', 'tests', testId, 'data', pc, `z${taskNo}`, `z${taskNo}.S`);
 
-    fs.readFile(filePath, 'utf8', (err, data) => {
-        if (err) {
-            console.error("Error reading the file:", err);
-            return res.status(404).send("File not found");
-        }
+    try {
+        const data = await fsp.readFile(filePath, 'utf8');
         res.send(data);
-    });
+    } catch (err) {
+        console.error("Error reading the file:", err);
+        res.status(404).send("Datoteka nije pronađena.");
+    }
+});
+
+router.get('/debugger/:testId/:pc/:taskNo/:testNo', async (req, res) => {
+    const { testId, pc, taskNo, testNo } = req.params;
+
+    const filePath = path.join(__dirname, '..', 'uploads', 'tests', testId, 'data', pc, 'results', `resultsz${taskNo}${testNo}.json`);
+
+    try {
+        const data = await fsp.readFile(filePath, 'utf8');
+        res.send(data);
+    } catch (err) {
+        console.error("Error reading the file:", err);
+        res.status(404).send("Datoteka nije pronađena.");
+    }
 });
 
 router.post('/grading', async (req, res) => {
@@ -49,13 +64,8 @@ router.post('/grading/save', async (req, res) => {
     }
 
     try{
-        const result = await db.updateFinalTestGrading(testId, studentId, total_points, grading, "OCENJEN")
-        console.log(result);
-        if (result) {
-            res.status(200).json(result);
-        } else {
-            res.status(404).send('Grading not found for given student.');
-        }
+        await db.updateFinalTestGrading(testId, studentId, total_points, grading, "OCENJEN")
+        res.status(200).json({ message: 'Grading saved successfully' });
     } catch (error) {
         res.status(500).json({ error: 'Internal server error' });
     }

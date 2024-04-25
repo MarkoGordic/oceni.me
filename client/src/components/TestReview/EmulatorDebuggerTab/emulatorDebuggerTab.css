@@ -1,0 +1,43 @@
+.dbg-controls button {
+    color: #F7F7FF;
+    border: none;
+    padding: 8px 16px;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin: 5px;
+    font-family: "Jost", sans-serif;
+}
+
+.dbg-run-btn {
+    background-color: green;
+}
+
+.dbg-run-btn:hover {
+    background-color: #2ba92b;
+}
+
+.dbg-stop-btn {
+    background-color: #ff0033;
+}
+
+.dbg-stop-btn:hover {
+    background-color: #cc0000;
+}
+
+.dbg-step-btn {
+    background-color: #1993F0;
+}
+
+.dbg-step-btn:hover {
+    background-color: #1476d2;
+}
+
+.dbg-step-back-btn {
+    background-color: #1993F0;
+}
+
+.dbg-step-back-btn:hover {
+    background-color: #1476d2;
+}
