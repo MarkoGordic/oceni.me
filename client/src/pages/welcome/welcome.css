@@ -6,6 +6,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    font-family: "Jost", sans-serif;
 }
 
 .welcome-content {
@@ -56,8 +57,16 @@
 }
 
 .welcome-app {
-    font-size: 45px;
-    margin-bottom: 50px;
+    font-size: 55px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.welcome-app-info {
+  margin-top: 0;
+  margin-bottom: 50px;
+  font-size: 18px;
+  color: #1e90ff;
 }
 
 .fade-in {
@@ -103,3 +112,40 @@
   @keyframes l3 {
     to {transform:scale(1.8);opacity:0}
   }
+
+.welcome-account-form {
+    width: 80%;
+    max-width: 370px;
+    color: #F7F7FF;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: left;
+    font-family: "Jost", sans-serif;
+}
+
+.welcome-account-form form {
+    display: flex;
+    flex-direction: column;
+}
+
+.welcome-account-form label {
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.welcome-account-form button {
+    background-color: #1e90ff;
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+    font-family: "Jost", sans-serif;
+}
+
+.welcome-account-form button:hover {
+    background-color: #1476d2;
+}

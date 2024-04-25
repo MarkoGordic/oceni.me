@@ -21,6 +21,8 @@ const ReviewTest = () => {
     const [maxPoints, setMaxPoints] = useState(0);
     const [currentPoints, setCurrentPoints] = useState(0);
 
+    const [studentGradingResults, setStudentGradingResults] = useState(null);
+
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
@@ -110,6 +112,36 @@ const ReviewTest = () => {
         }
     }
 
+    async function savePoints() {
+        let grading = studentGrading;
+        let updatedGrading = JSON.stringify(studentGradingResults);
+        grading.gradings = updatedGrading;
+        setStudentGrading(grading);
+        return;
+        setIsLoading(true);
+
+        try {
+            const response = await fetch(`http://localhost:8000/review/grading/save`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ testId: parseInt(testid), studentId: parseInt(studentId), grading: studentGradingResults, total_points: currentPoints }),
+            });
+            if (!response.ok) {
+                toast.error("Došlo je do greške prilikom čuvanja ocene.", response.type);
+            }
+            const data = await response.json();
+            setStudentGrading(data);
+        } catch (error) {
+            console.log("Error saving grading data:", error);
+            toast.error("Došlo je do greške prilikom čuvanja ocene.", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
     if (isLoading) return <p>Loading...</p>;
 
     return (
@@ -123,7 +155,15 @@ const ReviewTest = () => {
 
                 <div className="right-column">
                     <CurrentStudentInfo student={studentData} currentPoints={currentPoints} maxPoints={maxPoints}/>
-                    <CodeSelectorInfo testData={testData} codeTask={targetTaskNo} codeTest={targetTestNo} grading={studentGrading}/>
+                    <CodeSelectorInfo
+                        testData={testData}
+                        codeTask={targetTaskNo}
+                        codeTest={targetTestNo}
+                        grading={studentGrading}
+                        savePoints={savePoints}
+                        setStudentGradingResults={setStudentGradingResults}
+                        setTotalPoints={setCurrentPoints}
+                    />
                     <CodeSelector testData={testData} setCode={setTargetTaskNo} setCodeTest={setTargetTestNo}/>
 
                     <div className="review-tab">

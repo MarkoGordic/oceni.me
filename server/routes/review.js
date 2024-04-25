@@ -24,7 +24,6 @@ router.get('/code/:testId/:pc/:taskNo', async (req, res) => {
 
 router.post('/grading', async (req, res) => {
     const { studentId, testId } = req.body;
-    console.log(testId, studentId);
     
     if (testId === undefined || studentId === undefined) {
         return res.status(400).json({ error: 'Missing required grading details' });
@@ -32,7 +31,6 @@ router.post('/grading', async (req, res) => {
 
     try{
         const grading = await db.getTestGradingForStudent(testId, studentId);
-        console.log(grading);
         if (grading) {
             res.status(200).json(grading);
         } else {
@@ -41,7 +39,26 @@ router.post('/grading', async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: 'Internal server error' });
     }
+});
 
+router.post('/grading/save', async (req, res) => {
+    const { studentId, testId, grading, total_points } = req.body;
+    
+    if (testId === undefined || studentId === undefined || grading === undefined) {
+        return res.status(400).json({ error: 'Missing required grading details' });
+    }
+
+    try{
+        const result = await db.updateFinalTestGrading(testId, studentId, total_points, grading, "OCENJEN")
+        console.log(result);
+        if (result) {
+            res.status(200).json(result);
+        } else {
+            res.status(404).send('Grading not found for given student.');
+        }
+    } catch (error) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
 
 module.exports = router;
