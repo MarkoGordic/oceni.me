@@ -27,13 +27,15 @@ const ReviewTest = () => {
     const [isLoading, setIsLoading] = useState(false);
 
     const [debbugLine, setDebbugLine] = useState([]);
+    const [debbugFile, setDebbugFile] = useState(null);
+    const [breakpoints, setBreakpoints] = useState([]);
 
     const [openTabs, setOpenTabs] = useState({});
     const tabComponents = {
         'EMULATOR & DEBUGGER': EmulatorDebuggerTab,
     };
     const tabProps = {
-        'EMULATOR & DEBUGGER': { taskNo: targetTaskNo, testNo: targetTestNo, pc: pc, setDebbugLine: setDebbugLine},
+        'EMULATOR & DEBUGGER': { taskNo: targetTaskNo, testNo: targetTestNo, pc: pc, setDebbugLine: setDebbugLine, setDebbugFile: setDebbugFile, breakpoints: breakpoints},
     };
 
     useEffect(() => {
@@ -172,7 +174,7 @@ const ReviewTest = () => {
             <TestReviewHeader />
             <div className='review-content'>
                 <div className="left-column">
-                    <CodePreview pc={pc} taskNo={targetTaskNo} lineNumber={debbugLine} />
+                    <CodePreview pc={pc} taskNo={targetTaskNo} testNo={targetTestNo} lineNumber={debbugLine} debbugFile={debbugFile} setBreakpoints={setBreakpoints} />
                 </div>
                 <div className="right-column">
                     <CurrentStudentInfo student={studentData} currentPoints={currentPoints} maxPoints={maxPoints}/>

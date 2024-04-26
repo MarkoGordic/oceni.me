@@ -9,10 +9,34 @@ const db = new database();
 
 router.use(express.urlencoded({extended: true}));
 
-router.get('/code/:testId/:pc/:taskNo', async (req, res) => {
+router.get('/files/:testId/:pc/:taskNo', async (req, res) => {
     const { testId, pc, taskNo } = req.params;
 
-    const filePath = path.join(__dirname, '..', 'uploads', 'tests', testId, 'data', pc, `z${taskNo}`, `z${taskNo}.S`);
+    const folderPath = path.join(__dirname, '..', 'uploads', 'tests', testId, 'data', pc, `z${taskNo}`);
+
+    try {
+        const files = await fsp.readdir(folderPath);
+        res.send(files);
+    } catch (err) {
+        console.error("Error reading the folder:", err);
+        res.status(404).send("Folder not found.");
+    }
+});
+
+router.get('/code/:testId/:pc/:taskNo/:fileName', async (req, res) => {
+    const { testId, pc, taskNo, fileName } = req.params;
+
+    // Validate fileName to include more typical file naming conventions
+    if (!/^[a-zA-Z0-9_.-]+$/.test(fileName)) {
+        return res.status(400).send("Invalid filename.");
+    }
+
+    const dirPath = path.resolve(__dirname, '..', 'uploads', 'tests', testId, 'data', pc, `z${taskNo}`);
+    const filePath = path.join(dirPath, fileName);
+
+    if (!filePath.startsWith(dirPath)) {
+        return res.status(403).send("Access denied.");
+    }
 
     try {
         const data = await fsp.readFile(filePath, 'utf8');

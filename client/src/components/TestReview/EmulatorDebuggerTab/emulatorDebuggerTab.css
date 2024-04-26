@@ -41,3 +41,54 @@
 .dbg-step-back-btn:hover {
     background-color: #1476d2;
 }
+
+.dbg-run-to-brk-btn {
+    background-color: #1993F0;
+}
+
+.dbg-run-to-brk-btn:hover {
+    background-color: #1476d2;
+}
+
+.gdb-register-pair {
+    display: inline-flex;
+    width: 100%;
+}
+
+.gdb-register {
+    width: 50%;
+    text-align: left;
+    margin-bottom: 5px;
+    margin-top: 5px;
+}
+
+.gdb-register-types {
+    height: 30px;
+    align-items: center;
+}
+
+.div-register-type-select-row {
+    height: 30px;
+    align-items: center;
+    display: inline-flex;
+    justify-content: space-around;
+    width: 100%;
+    margin-top: 5px;
+}
+
+.gdb-register-type-select {
+    margin-left: 10px;
+    margin-right: 25px;
+    padding: 5px;
+    background-color: #333;
+    border-radius: 4px;
+    border: 2px solid #007bff;
+    font-size: 14px;
+    color: #fff;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.gdb-register-type-select:hover {
+    border-color: #0056b3;
+    background-color: #090909;
+}
