@@ -347,7 +347,7 @@ class Database {
     }
 
     async getEmployeeById(id) {
-        const query = 'SELECT first_name, last_name, email, password, id, role FROM employees WHERE id = ?';
+        const query = 'SELECT first_name, last_name, email, id, role, gender FROM employees WHERE id = ?';
         try {
             const [results] = await this.pool.query(query, [id]);
             return results.length > 0 ? results[0] : null;
@@ -398,17 +398,29 @@ class Database {
         let queryParams = [];
         let setParts = [];
         
-        if (updateFields.firstName) {
+        if (updateFields.first_name) {
             setParts.push(`first_name = ?`);
-            queryParams.push(updateFields.firstName);
+            queryParams.push(updateFields.first_name);
         }
-        if (updateFields.lastName) {
+        if (updateFields.last_name) {
             setParts.push(`last_name = ?`);
-            queryParams.push(updateFields.lastName);
+            queryParams.push(updateFields.last_name);
         }
         if (updateFields.email) {
             setParts.push(`email = ?`);
             queryParams.push(updateFields.email);
+        }
+        if (updateFields.role) {
+            setParts.push(`role = ?`);
+            queryParams.push(updateFields.role);
+        }
+        if (updateFields.gender) {
+            setParts.push(`gender = ?`);
+            queryParams.push(updateFields.gender);
+        }
+        if (updateFields.password) {
+            setParts.push(`password = ?`);
+            queryParams.push(updateFields.password);
         }
     
         if (setParts.length === 0) {
@@ -419,12 +431,13 @@ class Database {
         queryParams.push(userId);
     
         try {
-            await this.pool.query(query, queryParams);
+            const [result] = await this.pool.query(query, queryParams);
+            return result.affectedRows > 0;
         } catch (error) {
             console.error('Error updating employee info:', error);
             throw error;
         }
-    }
+    }    
 
     async resetEmployeePassword(userId, hashedNewPassword) {
         const query = 'UPDATE employees SET password = ? WHERE id = ?';
@@ -1105,6 +1118,35 @@ class Database {
             throw error;
         }
     }
+
+    async getTestResultsByStudentId(studentId) {
+        const query = `
+            SELECT 
+                t.id, 
+                t.name AS test_name, 
+                t.created_at, 
+                t.total_points AS total_possible_points, 
+                tg.total_points AS score, 
+                tg.employee_id,
+                s.name AS subject_name,
+                s.code AS subject_code,
+                s.year AS subject_year
+            FROM tests t
+            JOIN test_gradings tg ON t.id = tg.test_id
+            JOIN employees e ON tg.employee_id = e.id
+            JOIN subjects s ON t.subject_id = s.id
+            WHERE tg.student_id = ?
+            ORDER BY t.created_at DESC;
+        `;
+        try {
+            const [results] = await this.pool.query(query, [studentId]);
+            return results;
+        } catch (error) {
+            console.error('Error retrieving test results for student:', error);
+            throw error;
+        }
+    }    
+      
 
     async addNewAutoTestResult(studentId, testId, employeeId, result, taskNo, testNo) {
         const insertQuery = `

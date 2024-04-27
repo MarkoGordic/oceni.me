@@ -33,7 +33,6 @@ function SubjectSidebar() {
             <div className='sidebar-delim'></div>
 
             <div className='sidebar-routes'>
-                <SidebarRoute icon='fi fi-sr-time-past' text='Istorija aktivnosti' path={`${basePath}/logs`} />
                 <SidebarRoute icon='fi fi-rs-shield' text='Upravljaj predmetom' path={`${basePath}/manage`} />
             </div>
 

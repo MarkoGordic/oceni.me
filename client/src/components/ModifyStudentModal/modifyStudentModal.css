@@ -180,3 +180,64 @@
     scrollbar-width: thin;
     scrollbar-color: #1993F0 #0F0E0E;
 }
+
+.studentModifyModal-tests {
+    overflow-y: auto;
+    height: 450px;
+}
+
+.studentModifyModal-test {
+    width: 400px;
+    height: 110px;
+    margin: auto;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    background-color: #1C1C1C;
+
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    cursor: pointer;
+}
+
+.studentModifyModal-test:hover {
+    box-shadow: 0 0 0 2px rgba(25, 147, 240, 0.5);
+}
+
+.studentModifyModal-test img {
+    height: 80px;
+    width: 80px;
+    border-radius: 100%;
+}
+
+.studentModifyModal-test-details {
+    margin-left: 20px;
+    width: 280px;
+    text-align: left;
+}
+
+.studentModifyModal-test-name {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 5px 0;
+}
+
+.studentModifyModal-test-subject {
+    font-size: 14px;
+    margin: 0 0 0 0;
+    color: #BABABA;
+}
+
+.studentModifyModal-test-date {
+    font-size: 14px;
+    margin: 0;
+    color: #D1D1D1;
+}
+
+.studentModifyModal-test-grade {
+    font-size: 14px;
+    margin: 0;
+    color: #D1D1D1;
+}

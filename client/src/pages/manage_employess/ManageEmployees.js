@@ -5,6 +5,7 @@ import './manageEmployees.css';
 import UserCard from '../../components/UserCard/UserCard';
 import ModifyEmployeeModal from '../../components/ModifyEmployeeModal/ModifyEmployeeModal';
 import NewEmployeeModal from '../../components/NewEmployeeModal/NewEmployeeModal';
+import { ToastContainer } from 'react-toastify';
 
 function ManageEmployees() {
     const [searchString, setSearchString] = useState('');
@@ -65,6 +66,10 @@ function ManageEmployees() {
         setSearchString(event.target.value);
     };
 
+    const handleEmployeeUpdated = async () => {
+        performSearch();
+    };
+
     useEffect(() => {
         if (searchString.trim() !== '') {
             performSearch();
@@ -99,7 +104,7 @@ function ManageEmployees() {
 
     const handleSubmit = async (event) => {
         event.preventDefault();
-    
+        
         const emailPattern = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
         const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_])[A-Za-z\d\W_]{10,}$/;
         
@@ -150,6 +155,7 @@ function ManageEmployees() {
     return (
         <div className='wrap'>
             <Sidebar />
+            <ToastContainer theme="dark" />
             <div className='content'>
                 <h1 className='page-title'>Upravljanje zaposlenima</h1>
                 <div className="search-bar">
@@ -190,6 +196,7 @@ function ManageEmployees() {
                     onClose={() => setModifyModalOpen(false)}
                     employeeId={selectedEmployeeId}
                     onEmployeeDeleted={() => setDeletionCount(count => count + 1)}
+                    onComplete={handleEmployeeUpdated}
                 />
             </div>
         </div>

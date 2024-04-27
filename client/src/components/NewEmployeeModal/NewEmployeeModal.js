@@ -132,7 +132,7 @@ function NewEmployeeModal({ isOpen, onClose, onSubmit, employeeData, onInputChan
                     </div>
 
                     <div className="modal-action-buttons">
-                        <button type="submit" className="submit-button">Sačuvaj izmene</button>
+                        <button type="submit" className="submit-button" onClick={onSubmit}>Sačuvaj izmene</button>
                         <button type="button" className="cancel-button" onClick={onClose}>Odustani</button>
                     </div>
                 </form>

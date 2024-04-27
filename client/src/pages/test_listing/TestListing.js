@@ -273,7 +273,6 @@ function TestListing() {
         });
     };
     
-
     useEffect(() => {
         console.log(selectedStudent)
     }, [selectedStudent]);

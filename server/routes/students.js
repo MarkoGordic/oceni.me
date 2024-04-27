@@ -96,7 +96,7 @@ router.post('/new', upload.single('profile_image'), async (req, res) => {
 });
 
 router.post('/update', async (req, res) => {
-    const { id, first_name, last_name, index_number, email, password } = req.body;
+    const { id, first_name, last_name, index_number, email, password, gender } = req.body;
 
     if (!id) {
         return res.status(400).send("Student ID is required.");
@@ -112,6 +112,14 @@ router.post('/update', async (req, res) => {
         last_name: last_name || studentData.last_name,
         index_number: index_number || studentData.index_number,
     };
+
+    if (gender) {
+        if(gender === "M" || gender === "F")
+            updateData.gender = gender;
+        else
+            updateData.gender = studentData.gender;
+    } else
+        updateData.gender = studentData.gender;
 
     if(index_number){
         const indexPattern = /^([A-Za-z]{2})\s(\d{1,3})\/(\d{4})$/;
@@ -235,5 +243,17 @@ router.get('/from_subject/:id', async (req, res) => {
         res.status(500).send("Error fetching students");
     }
 });
+
+router.get('/tests/:studentId', async (req, res) => {
+    const { studentId } = req.params;
+    try {
+        const testResults = await db.getTestResultsByStudentId(studentId);
+        res.status(200).json(testResults);
+    } catch (error) {
+        console.error("Error fetching test results:", error);
+        res.status(500).send("Error fetching test results");
+    }
+});
+
 
 module.exports = router;

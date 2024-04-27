@@ -52,8 +52,10 @@ const customSelectStyles = {
     }),
   };
 
-function ModifyStudentModal({ isOpen, onClose, studentId, onStudentDeleted  }) {
+function ModifyStudentModal({ isOpen, onClose, studentId, onStudentDeleted, onComplete }) {
     const [studentData, setStudentData] = useState(null);
+    const [testResults, setTestResults] = useState([]);
+
     const [isLoading, setIsLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('studentInfo');
     const animatedComponents = makeAnimated();
@@ -63,6 +65,29 @@ function ModifyStudentModal({ isOpen, onClose, studentId, onStudentDeleted  }) {
             fetchStudentData(studentId);
         }
     }, [isOpen, studentId]);
+
+    useEffect(() => {
+        if (studentData) {
+            fetchTestResults(studentData.id);
+        }
+    }, [studentData]);
+
+    async function fetchTestResults(studentId) {
+        try {
+            const response = await fetch(`http://localhost:8000/students/tests/${studentId}`, {
+                credentials: 'include',
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setTestResults(data);
+            } else {
+                toast.error("Došlo je do greške prilikom učitavanja testova.");
+            }
+        } catch (error) {
+            console.error("Error fetching tests:", error);
+            toast.error("Došlo je do greške prilikom učitavanja testova.");
+        }
+    }
 
     async function fetchStudentData(id) {
         setIsLoading(true);
@@ -149,52 +174,57 @@ function ModifyStudentModal({ isOpen, onClose, studentId, onStudentDeleted  }) {
             case 'studentInfo':
                 return (
                     <div>
-                        <div>
-                            <img className='studentInfo-avatar' src={'http://localhost:8000/student_pfp/' + studentData.id + '.jpg'}></img>
-                            <div className='studentInfo-data-wrap'>
-                                <label className='studentInfo-label' htmlFor="first_name">Ime studenta:</label>
-                                <input className='studentInfo-input' type="text" id="first_name" name="first_name" value={studentData.first_name || ''} onChange={handleStudentInputChange} />
+                        <img className='studentInfo-avatar' src={'http://localhost:8000/student_pfp/' + studentData.id + '.jpg'}></img>
+                        <div className='studentInfo-data-wrap'>
+                            <label className='studentInfo-label' htmlFor="first_name">Ime studenta:</label>
+                            <input className='studentInfo-input' type="text" id="first_name" name="first_name" value={studentData.first_name || ''} onChange={handleStudentInputChange} />
 
-                                <label className='studentInfo-label' htmlFor="last_name">Prezime studenta:</label>
-                                <input className='studentInfo-input' type="text" id="last_name" name="last_name" value={studentData.last_name || ''} onChange={handleStudentInputChange} />
+                            <label className='studentInfo-label' htmlFor="last_name">Prezime studenta:</label>
+                            <input className='studentInfo-input' type="text" id="last_name" name="last_name" value={studentData.last_name || ''} onChange={handleStudentInputChange} />
 
-                                <label className='studentInfo-label' htmlFor="index_number">Pol:</label>
-                                <Select
-                                    id="gender"
-                                    components={animatedComponents}
-                                    options={genderOptions}
-                                    styles={customSelectStyles}
-                                    placeholder="Pol"
-                                    isClearable={false}
-                                    className="gender-select"
-                                    value={studentData.gender !== null ? studentData.gender : { value: 'NP', label: 'NIJE POZNATO' }}
-                                    onChange={handleGenderSelectChange}
-                                />
+                            <label className='studentInfo-label' htmlFor="gender">Pol:</label>
+                            <Select
+                                id="gender"
+                                components={animatedComponents}
+                                options={genderOptions}
+                                styles={customSelectStyles}
+                                placeholder="Pol"
+                                isClearable={false}
+                                className="gender-select"
+                                value={studentData.gender !== null ? studentData.gender : { value: 'NP', label: 'NIJE POZNATO' }}
+                                onChange={handleGenderSelectChange}
+                            />
 
-                                <label className='studentInfo-label' htmlFor="index_number">Broj indeksa:</label>
-                                <input className='studentInfo-input' type="text" id="index_number" name="index_number" value={studentData.index_number || ''} onChange={handleStudentInputChange} />
+                            <label className='studentInfo-label' htmlFor="index_number">Broj indeksa:</label>
+                            <input className='studentInfo-input' type="text" id="index_number" name="index_number" value={studentData.index_number || ''} onChange={handleStudentInputChange} />
                             
-                                <label className='studentInfo-label' htmlFor="email">Elektronska pošta:</label>
-                                <input className='studentInfo-input' type="email" id="email" placeholder="primer.tidajem@uns.ac.rs" name="email" value={studentData.email || ''} onChange={handleStudentInputChange} />
+                            <label className='studentInfo-label' htmlFor="email">Elektronska pošta:</label>
+                            <input className='studentInfo-input' type="email" id="email" placeholder="primer.tidajem@uns.ac.rs" name="email" value={studentData.email || ''} onChange={handleStudentInputChange} />
 
-                                <label className='studentInfo-label' htmlFor="password">Postavi novu lozinku:</label>
-                                <input className='studentInfo-input' type="password" id="password" placeholder="MnogoJakaSifra" name="password" onChange={handleStudentInputChange} />
-
-                            </div>
+                            <label className='studentInfo-label' htmlFor="password">Postavi novu lozinku:</label>
+                            <input className='studentInfo-input' type="password" id="password" placeholder="MnogoJakaSifra" name="password" onChange={handleStudentInputChange} />
                         </div>
                     </div>
                 );
-                case 'admin':
-                    return (
-                        <div className='modifyModalAdmin-wrap'>
-                            <p style={{ color: '#FF5555', fontWeight: 'bold', marginBottom: '20px' }}>
-                                Upozorenje: Brisanje studenta je trajna akcija koja se ne može poništiti.
-                            </p>
-                            <button onClick={deleteStudent}>
-                                Obriši Studenta
-                            </button>
+            case 'tests':
+                return (
+                    <div>
+                        <div className='studentModifyModal-tests'>
+                            {renderTestResults()}
                         </div>
-                    );                
+                    </div>
+                );
+            case 'admin':
+                return (
+                    <div className='modifyModalAdmin-wrap'>
+                        <p style={{ color: '#FF5555', fontWeight: 'bold', marginBottom: '20px' }}>
+                            Upozorenje: Brisanje studenta je trajna akcija koja se ne može poništiti.
+                        </p>
+                        <button onClick={deleteStudent}>
+                            Obriši Studenta
+                        </button>
+                    </div>
+                );                
             default:
                 return <div>?</div>;
         }
@@ -216,16 +246,18 @@ function ModifyStudentModal({ isOpen, onClose, studentId, onStudentDeleted  }) {
                 },
                 body: JSON.stringify({
                     ...studentData,
+                    gender: studentData.gender.value,
                     id: studentId,
                 }),
                 credentials: 'include',
             });
     
             if (!response.ok) {
-                throw new Error('Failed to update student data');
+                toast.error('Došlo je do greške prilikom ažuriranja podataka studenta.');
             }
     
             toast.success("Podaci studenta su uspešno ažurirani.");
+            onComplete();
             onClose();
         } catch (error) {
             console.error("Error updating student data:", error);
@@ -235,6 +267,22 @@ function ModifyStudentModal({ isOpen, onClose, studentId, onStudentDeleted  }) {
         }
     };
     
+    const renderTestResults = () => {
+        if (testResults.length === 0) {
+            return <p>No test results found.</p>;
+        }
+        return testResults.map((test, index) => (
+            <div key={index} className='studentModifyModal-test'>
+                <img src={'http://localhost:8000/user_pfp/' + test.employee_id + '.jpg'} alt="Employee" />
+                <div className='studentModifyModal-test-details'>
+                    <p className='studentModifyModal-test-name'>{test.test_name}</p>
+                    <p className='studentModifyModal-test-subject'>{test.subject_name} {test.subject_code} - {test.subject_year}</p>
+                    <p className='studentModifyModal-test-date'>Date: {new Date(test.created_at).toLocaleDateString()}</p>
+                    <p className='studentModifyModal-test-grade'>Score: {test.score}/{test.total_possible_points}</p>
+                </div>
+            </div>
+        ));
+    };    
 
     return (
         <div className="modify-student-modal-overlay" onClick={handleOverlayClick}>

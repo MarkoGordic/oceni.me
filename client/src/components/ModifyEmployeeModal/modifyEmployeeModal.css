@@ -27,6 +27,9 @@
     width: 35%;
     height: 100%;
     border-right: 2px solid #2C2C2C;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .modify-employee-modal-column-right {
@@ -94,4 +97,49 @@
     width: 100px;
     border-radius: 100%;
     border: 3px solid #1993F0;
+}
+
+
+.modify-employee-modal-button-green {
+    width: 180px;
+    height: 25px;
+    display: inline-flex;
+    justify-content: left;
+    align-items: center;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+    margin: 5px;
+    padding: 10px;
+    transition: 0.3s;
+    cursor: pointer;
+    color: green;
+}
+
+.modify-employee-modal-button-green:hover {
+    background-color: #333933;
+    color: green;
+    border-radius: 5px;
+}
+
+.modify-employee-modal-button-red {
+    width: 180px;
+    height: 25px;
+    display: inline-flex;
+    justify-content: left;
+    align-items: center;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+    margin: 5px;
+    padding: 10px;
+    transition: 0.3s;
+    cursor: pointer;
+    color: #FF5555;
+}
+
+.modify-employee-modal-button-red:hover {
+    background-color: #493333;
+    color: #FF5555;
+    border-radius: 5px;
 }

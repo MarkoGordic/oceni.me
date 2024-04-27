@@ -110,6 +110,10 @@ function ManageStudents() {
         setStudentData({ ...studentData, gender: selectedOption ? selectedOption.value : 'NP' });
     };
 
+    const handleStudentUpdated = async () => {
+        performSearch();
+    };
+
     useEffect(() => {
         if (searchString.trim() !== '' || selectedCourseFilter) {
             performSearch();
@@ -387,6 +391,7 @@ function ManageStudents() {
                     onClose={() => setModifyModalOpen(false)}
                     studentId={selectedStudentId}
                     onStudentDeleted={() => setDeletionCount(count => count + 1)}
+                    onComplete={handleStudentUpdated}
                 />
             </div>
         </div>

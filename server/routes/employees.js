@@ -168,7 +168,7 @@ router.post('/reset_password', async (req, res) => {
 });
 
 router.post('/new', upload.single('profile_image'), async (req, res) => {
-    const { first_name, last_name, email, password, role } = req.body;
+    const { first_name, last_name, email, password, role, gender } = req.body;
     const userAgent = req.headers['user-agent'] || 'Unknown User Agent';
     const employee = await db.getEmployeeById(req.session.userId);
 
@@ -178,7 +178,7 @@ router.post('/new', upload.single('profile_image'), async (req, res) => {
     
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newEmployeeId = await db.registerNewEmployee(first_name, last_name, email, hashedPassword, role);
+        const newEmployeeId = await db.registerNewEmployee(first_name, last_name, email, hashedPassword, role, gender);
 
         if (req.file) {
             const targetDir = path.join(__dirname, '../static/user_pfp');
@@ -201,6 +201,63 @@ router.post('/new', upload.single('profile_image'), async (req, res) => {
             return res.status(400).json({ error: 'Email already exists' });
         }
         await db.createLogEntry(req.session.userId, `${employee.first_name} ${employee.last_name}`, `Neuspešan pokusaj kreiranja novog korisničkog naloga za zaposlenog ${first_name} ${last_name}.`, 'GREŠKA', 'INFO', req.ip, userAgent);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+router.post('/update', async (req, res) => {
+    const { id, first_name, last_name, email, role, gender, password } = req.body;
+
+    if (!id) {
+        return res.status(400).json({ error: 'Employee ID is required' });
+    }
+
+    try {
+        const employee = await db.getEmployeeById(id);
+        if (!employee) {
+            return res.status(404).json({ error: 'Employee not found' });
+        }
+
+        const updateData = {};
+        if (first_name) updateData.first_name = first_name;
+        if (last_name) updateData.last_name = last_name;
+
+        if(email){
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailPattern.test(email)) {
+                return res.status(400).send("Invalid email format.");
+            }
+            updateData.email = email;
+        } else
+            updateData.email = employee.email;
+
+            if (gender) {
+                if(gender === "M" || gender === "F")
+                    updateData.gender = gender;
+                else
+                    updateData.gender = employee.gender;
+            } else
+                updateData.gender = employee.gender;
+
+        if (gender) updateData.gender = gender;
+
+        if (password) {
+            const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{10,}$/;
+            if (!passwordPattern.test(password)) {
+                return res.status(400).send("Password does not meet criteria.");
+            }
+    
+            const hashedPassword = await bcrypt.hash(password, 10);
+            updateData.password = hashedPassword;
+        }
+
+        await db.updateEmployeeInfo(id, updateData);
+
+        await db.createLogEntry(id, `${employee.first_name} ${employee.last_name}`, 'Updated employee information', 'INFO', 'INFO', req.ip, req.headers['user-agent']);
+
+        res.status(200).json({ message: 'Employee updated successfully' });
+    } catch (error) {
+        console.error("Error updating employee:", error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
