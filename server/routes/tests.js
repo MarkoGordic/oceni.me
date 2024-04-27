@@ -52,8 +52,22 @@ const testConfigStorage = multer.diskStorage({
     cb(null, file.originalname);
   },
 });
-
 const uploadTestConfig = multer({ storage: testConfigStorage });
+
+const uploadStudentFile = multer.diskStorage({
+    destination: function (req, file, cb) {
+      const tempPath = 'uploads/studentFiles';
+      if (!fs.existsSync(tempPath)) {
+          fs.mkdirSync(tempPath, { recursive: true });
+      }
+      cb(null, tempPath);
+  },
+  filename: function (req, file, cb) {
+      cb(null, file.originalname);
+  }
+});
+const uploadStudentFiles = multer({ storage: uploadStudentFile });
+
 
 const asyncHandler = fn => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
@@ -489,7 +503,6 @@ async function determineMissingStudents(testId) {
   };
 }
 
-
 router.post('/new', upload.single('configFile'), asyncHandler(async (req, res) => {
   if (!req.file) {
     return res.status(400).send('No file uploaded.');
@@ -566,7 +579,6 @@ router.post('/new', upload.single('configFile'), asyncHandler(async (req, res) =
   }
 }));
 
-
 router.post('/upload_data', upload.single('zipFile'), asyncHandler(async (req, res) => {
   if (!req.file) {
     return res.status(400).send('No file uploaded.');
@@ -592,6 +604,58 @@ router.post('/upload_data', upload.single('zipFile'), asyncHandler(async (req, r
   } catch (error) {
       console.error('Error processing student list:', error);
       res.status(500).send('Error processing student list.');
+  }
+}));
+
+router.post('/upload_student_files', uploadStudentFiles.single('zipFile'), asyncHandler(async (req, res) => {
+  if (!req.body.testId || !req.body.pc) {
+      return res.status(400).send('testId and pc must be provided');
+  }
+
+  const { testId, pc, studentId } = req.body;
+  const tempFilePath = `uploads/studentFiles/${req.file.originalname}`;
+  const finalPath = `uploads/tests/${testId}/data/${pc}`;
+  const finalFilePath = `${finalPath}/${req.file.originalname}`;
+
+  try {
+      await fsp.rm(finalPath, { recursive: true, force: true });
+      await fsp.mkdir(finalPath, { recursive: true });
+
+      await fsp.rename(tempFilePath, finalFilePath);
+
+      await fs.createReadStream(finalFilePath)
+          .pipe(unzipper.Extract({ path: finalPath }))
+          .promise();
+
+      await fsp.unlink(finalFilePath);
+
+      const indexFolderPath = path.join(finalPath, 'home', 'provera');
+      const filesToMove = await fsp.readdir(indexFolderPath, { withFileTypes: true });
+
+      for (const dirent of filesToMove) {
+          if (dirent.isDirectory()) {
+              const subfolderPath = path.join(indexFolderPath, dirent.name);
+              const subFiles = await fsp.readdir(subfolderPath);
+
+              for (const fileName of subFiles) {
+                  const srcFilePath = path.join(subfolderPath, fileName);
+                  const destFilePath = path.join(finalPath, fileName);
+                  await fsp.rename(srcFilePath, destFilePath);
+              }
+
+              await fsp.rm(subfolderPath, { recursive: true, force: true });
+          }
+      }
+
+      await fsp.rm(path.join(finalPath, '_MACOSX'), { recursive: true, force: true });
+      await fsp.rm(path.join(finalPath, 'home'), { recursive: true, force: true });
+
+      db.deleteTestGrading(testId, studentId);
+
+      res.send({ success: true, message: 'Files have been processed successfully.' });
+  } catch (error) {
+      console.error('Error processing student files:', error);
+      res.status(500).send('An error occurred during the file processing.');
   }
 }));
 
@@ -733,12 +797,92 @@ router.get('/get', asyncHandler(async (req, res) => {
           return res.status(404).send('Test not found.');
       }
 
+      const finalStudents = JSON.parse(testConfig.final_students);
+      if (!finalStudents || finalStudents.length === 0) {
+          return res.status(404).send('Final students data is missing or invalid.');
+      }
+
+      const studentIndexes = finalStudents.map(student => student.index);
+      if (studentIndexes.length === 0) {
+          return res.status(404).send('No student indexes found.');
+      }
+
+      const studentIds = await db.getStudentIdsByIndexes(studentIndexes);
+      if (studentIds.length === 0) {
+          return res.status(404).send('No students found for provided indexes.');
+      }
+
+      const updatedFinalStudents = finalStudents.map(student => {
+          const foundId = studentIds.find(id => id.index_number === student.index);
+          return { ...student, studentId: foundId ? foundId.id : null };
+      });
+
+      testConfig.final_students = JSON.stringify(updatedFinalStudents);
+
       res.json(testConfig);
   } catch (error) {
       console.error('Error retrieving test:', error);
       res.status(500).send('An error occurred while retrieving the test.');
   }
 }));
+
+router.delete('/delete/:testId', asyncHandler(async (req, res) => {
+  const { testId } = req.params;
+
+  try {
+      const testDetails = await db.getTestById(testId);
+      if (!testDetails) {
+          return res.status(404).send('Test not found.');
+      }
+
+      await db.deleteTestById(testId);
+
+      const testPath = path.join(__dirname, `../uploads/tests/${testId}`);
+      await fsp.rm(testPath, { recursive: true, force: true });
+
+      res.send({ success: true, message: 'Test and all associated files have been deleted successfully.' });
+  } catch (error) {
+      console.error('Error deleting test:', error);
+      res.status(500).send('An error occurred while deleting the test.');
+  }
+}));
+
+router.post('/remove_student', asyncHandler(async (req, res) => {
+  const { testId, studentId, student_index } = req.body;
+
+  if (!testId || !studentId || !student_index) {
+      return res.status(400).send('Test ID and Student ID are required.');
+  }
+
+  try {
+      const testDetails = await db.getTestById(testId);
+      if (!testDetails) {
+          return res.status(404).send('Test not found.');
+      }
+
+      const finalStudents = JSON.parse(testDetails.final_students || '[]');
+      const studentIndex = finalStudents.findIndex(student => student.index === student_index);
+      const pc = finalStudents[studentIndex].pc;
+
+      if (studentIndex === -1) {
+          return res.status(404).send('Student not found in the final student list.');
+      }
+
+      finalStudents.splice(studentIndex, 1);
+      await db.updateTestField(testId, 'final_students', JSON.stringify(finalStudents));
+
+      await db.deleteTestGradingByStudentId(testId, studentId);
+
+      const studentDataPath = `uploads/tests/${testId}/data/${pc}`;
+      await fsp.rm(studentDataPath, { recursive: true, force: true });
+
+      res.send({ success: true, message: 'Student removed successfully from the test.' });
+  } catch (error) {
+      console.error('Error removing student:', error);
+      res.status(500).send('An error occurred while removing the student.');
+  }
+}));
+
 
 router.post('/all', asyncHandler(async (req, res) => {
   const { subjectId } = req.body;

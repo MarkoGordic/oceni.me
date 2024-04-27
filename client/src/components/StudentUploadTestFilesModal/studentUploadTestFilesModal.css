@@ -1,0 +1,53 @@
+.student-upload-test-files-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.student-upload-test-files-modal-content {
+    background-color: #0F0E0E;
+    color: #F7F7FF;
+    padding: 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.student-upload-test-files-close {
+    float: right;
+    font-size: 28px;
+    cursor: pointer;
+}
+
+.student-upload-test-files-drop-zone {
+    height: 200px;
+    border: 2px dashed #007bff;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 20px 0;
+    cursor: pointer;
+}
+
+.student-upload-test-files-button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.student-upload-test-files-button:hover {
+    background-color: #0056b3;
+}

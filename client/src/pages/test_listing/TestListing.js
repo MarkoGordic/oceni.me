@@ -3,12 +3,19 @@ import { useParams } from 'react-router-dom';
 import './testListing.css';
 import { toast, ToastContainer } from 'react-toastify';
 import SubjectSidebar from '../../components/SubjectSidebar/SubjectSidebar';
+import StudentUploadTestFilesModal from '../../components/StudentUploadTestFilesModal/StudentUploadTestFilesModal';
+import { useNavigate } from 'react-router-dom';
 
 function TestListing() {
     const { testid } = useParams();
     const [isLoading, setIsLoading] = useState(true);
     const [students, setStudents] = useState([]);
     const [testData, setTestData] = useState({});
+
+    const [showUploadModal, setShowUploadModal] = useState(false);
+    const [selectedStudent, setSelectedStudent] = useState(null);
+
+    const navigate = useNavigate();
 
     useEffect(() => {
         async function fetchInitialStudentData() {
@@ -216,9 +223,64 @@ function TestListing() {
         });
     };
 
+    const handleAddFiles = (studentIndex, pc, studentId) => {
+        setSelectedStudent({ index: studentIndex, pc: pc, studentId: studentId});
+        setShowUploadModal(true);
+    };
+
+    const updateStudentStatus = (studentId, newStatus) => {
+        const updatedStudents = students.map(student => {
+            if (student.studentId === studentId) {
+                return {
+                    ...student,
+                    autotest_status: newStatus,
+                    points: '?',
+                    autotest_progress: 0 
+                };
+            }
+            return student;
+        });
+        setStudents(updatedStudents);
+    };    
+
+    const handleUploadSuccess = () => {
+        updateStudentStatus(selectedStudent.studentId, 'PRIPREMLJEN');
+        setShowUploadModal(false);
+    };
+
+    const handleDeleteStudent = (studentId, student_index) => {
+        fetch(`http://localhost:8000/tests/remove_student`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ testId: testid, studentId, student_index}),
+            credentials: 'include',
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                toast.success('Student je uspešno obrisan.');
+
+                setStudents(students.filter(student => student.studentId !== studentId));
+            } else {
+                toast.error('Došlo je do greške prilikom brisanja studenta.');
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting student data:', error);
+            toast.error('Došlo je do greške prilikom brisanja studenta.');
+        });
+    };
+    
+
     useEffect(() => {
-        console.log(students)
-    }, [students]);
+        console.log(selectedStudent)
+    }, [selectedStudent]);
+
+    const navigateToReview = (studentId) => {
+        navigate(`./review/${studentId}`);
+    };    
 
     if (isLoading) return <div className='loader'>Loading...</div>;
 
@@ -226,6 +288,18 @@ function TestListing() {
         <div className='wrap'>
             <ToastContainer theme="dark" />
             <SubjectSidebar />
+
+            {showUploadModal && (
+                <StudentUploadTestFilesModal
+                    onClose={() => setShowUploadModal(false)}
+                    onUpload={() => handleUploadSuccess()}
+                    testId={testid}
+                    studentIndex={selectedStudent.index}
+                    pc={selectedStudent.pc}
+                    studentId={selectedStudent.studentId}
+                />
+            )}
+
             <div className='content'>
                 <h1>Kolokvijum - {testData.name}</h1>
 
@@ -265,9 +339,14 @@ function TestListing() {
                                 </td>
                                 <td>{student.points || 0} / {testData.total_points}</td>
                                 <td className="action-buttons">
-                                    <button className="test-configuration-card-action"><i className="fi fi-rr-eye"></i></button>
+                                    {student.autotest_status !== 'NEMA_FAJLOVA' && (
+                                        <button className="test-configuration-card-action" onClick={() => navigateToReview(student.studentId)}><i className="fi fi-rr-eye"></i></button>
+                                    )}
+                                    {student.autotest_status === 'NEMA_FAJLOVA' && (
+                                        <button className="test-configuration-card-action" onClick={() => handleAddFiles(student.index, student.pc, student.studentId)}><i className="fi fi-rr-plus"></i></button>
+                                    )}
                                     <button className="test-configuration-card-action" onClick={() => handleStartStudentAutotest(student.index, student.pc, student.firstName + ' ' + student.lastName)}><i className="fi fi-rr-play"></i></button>
-                                    <button className="test-configuration-card-action"><i className="fi fi-rr-trash"></i></button>
+                                    <button className="test-configuration-card-action" onClick={() => handleDeleteStudent(student.studentId, student.index)}><i className="fi fi-rr-trash"></i></button>
                                 </td>
                             </tr>
                         ))}

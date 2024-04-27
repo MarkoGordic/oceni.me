@@ -3,12 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 function TestCard({ testData, onDeleteSuccess }) {
-    console.log(testData);
-    const { id, name, employee_id, total_tasks, total_tests, total_points, created_at } = testData;
     const navigate = useNavigate();
+    const { id, name, employee_id, total_tasks, total_tests, total_points, created_at } = testData;
 
     const date = new Date(created_at);
-
     const formattedDate = date.toLocaleDateString('sr-Latn-RS', {
         year: 'numeric', month: 'long', day: 'numeric'
     });
@@ -16,8 +14,27 @@ function TestCard({ testData, onDeleteSuccess }) {
         hour: '2-digit', minute: '2-digit'
     });
 
-    const handlePreview = (configId) => {
-        navigate('./' + configId);
+    const handlePreview = () => {
+        navigate(`./${id}`);
+    };
+
+    const handleDelete = async () => {
+        try {
+            const response = await fetch(`http://localhost:8000/tests/delete/${id}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+            const data = await response.json();
+            if (response.ok) {
+                toast.success('Test je uspešno obrisan.');
+                onDeleteSuccess(id);
+            } else {
+                toast.error(data.message);
+            }
+        } catch (error) {
+            console.error('Error deleting test:', error);
+            toast.error('Došlo je do greške prilikom brisanja testa.');
+        }
     };
 
     return (
@@ -25,14 +42,13 @@ function TestCard({ testData, onDeleteSuccess }) {
             <img src={`http://localhost:8000/user_pfp/${employee_id}.jpg`} alt='User' />
             <div className='test-configuration-card-info'>
                 <p className='test-configuration-card-name'>{name}</p>
-                <p className='test-configuration-card-total'>Ukupan broj zadataka/testova/poena: {total_tasks} | {total_tests} | {total_points}</p>
-                <p className='test-configuration-card-date'>Kreirano: {formattedDate} {formattedTime}</p>
+                <p className='test-configuration-card-total'>Tasks/Tests/Points: {total_tasks} | {total_tests} | {total_points}</p>
+                <p className='test-configuration-card-date'>Created: {formattedDate} {formattedTime}</p>
             </div>
             
             <div className='test-configuration-card-actions'>
-                <button className='test-configuration-card-action' onClick={() => handlePreview(id)}><i className="fi fi-br-menu-burger"></i></button>
-                <button className='test-configuration-card-action' ><i className="fi fi-sr-play"></i></button>
-                <button className='test-configuration-card-action' ><i className="fi fi-rr-trash"></i></button>
+                <button className='test-configuration-card-action' onClick={handlePreview}><i className="fi fi-br-menu-burger"></i></button>
+                <button className='test-configuration-card-action' onClick={handleDelete}><i className="fi fi-rr-trash"></i></button>
             </div>
         </div>
     );

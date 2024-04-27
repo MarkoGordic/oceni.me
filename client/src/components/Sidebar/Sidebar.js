@@ -27,7 +27,6 @@ function Sidebar() {
 
             {user.role === 0 && (
                 <div className='sidebar-routes'>
-                    <SidebarRoute icon='fi fi-rr-chat-arrow-grow' text='Statistika' path='/admin/statistics' />
                     <SidebarRoute icon='fi fi-rr-fingerprint' text='Upravljanje zaposlenima' path='/admin/users' />
                     <SidebarRoute icon='fi fi-rr-graduation-cap' text='Upravljanje predmetima' path='/admin/subjects' />
                     <SidebarRoute icon='fi fi-sr-time-past' text='Istorija aktivnosti' path='/admin/logs' />

@@ -852,6 +852,20 @@ class Database {
         }
     }
 
+    async getStudentIdsByIndexes(indexes) {
+        const query = `
+            SELECT id, index_number FROM students
+            WHERE index_number IN (?)
+        `;
+        try {
+            const [results] = await this.pool.query(query, [indexes]);
+            return results;
+        } catch (error) {
+            console.error('Error retrieving student IDs by indexes:', error);
+            throw error;
+        }
+    }
+
     async addNewTestConfig(employee_id, subject_id, name, test_no) {
         try {
             const insertQuery = `INSERT INTO test_configs (employee_id, subject_id, name, status, test_configs, test_no) VALUES (?, ?, ?, 'KREIRAN', '[]', ?)`;
@@ -977,6 +991,18 @@ class Database {
         }
     }
 
+    async deleteTestById(testId) {
+        const deleteQuery = 'DELETE FROM tests WHERE id = ?';
+        try {
+            await this.pool.query(deleteQuery, [testId]);
+            return true;
+        } catch (error) {
+            console.error('Error deleting test:', error);
+            throw error;
+        }
+    }
+    
+
     async addNewTestGrading(studentId, testId, employeeId, total_points, status) {
         const insertQuery = `
             INSERT INTO test_gradings (student_id, test_id, employee_id, total_points, gradings, status)
@@ -1018,6 +1044,33 @@ class Database {
             }
         } catch (error) {
             console.error('Error updating final test grading:', error);
+            throw error;
+        }
+    }
+
+    async deleteTestGrading(testId, studentId) {
+        const query = `
+            DELETE FROM test_gradings
+            WHERE test_id = ? AND student_id = ?
+        `;
+        try {
+            const [result] = await this.pool.query(query, [testId, studentId]);
+            return result.affectedRows > 0
+        } catch (error) {
+            console.error('Error deleting test grading:', error);
+        }
+    }
+    
+    async deleteTestGradingByStudentId(testId, studentId) {
+        const query = `
+            DELETE FROM test_gradings
+            WHERE test_id = ? AND student_id = ?
+        `;
+        try {
+            const [result] = await this.pool.query(query, [testId, studentId]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('Error deleting test grading for student:', error);
             throw error;
         }
     }    
