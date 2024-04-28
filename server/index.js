@@ -50,11 +50,13 @@ app.use(['/user_pfp/:imageName', '/student_pfp/:imageName'], async (req, res, ne
 
 function ensureAuthenticated(req, res, next) {
   if (req.session.userId) {
-    next();
+      next();
   } else {
-    res.redirect('http://localhost:3000/');
+      req.session.redirectTo = req.originalUrl;
+      res.redirect(`http://localhost:3000/?redirect=${encodeURIComponent(req.originalUrl)}`);
   }
 }
+
 
 const AuthRoutes = require('./routes/auth');
 app.use('/auth', cors({origin: 'http://localhost:3000', credentials: true}), AuthRoutes);

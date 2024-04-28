@@ -976,6 +976,25 @@ class Database {
         }
     }
 
+    async getTestsByStudentIndex(studentIndex) {
+        const studentIndexJSON = JSON.stringify({"index": studentIndex});
+        const query = `
+            SELECT DISTINCT t.id, t.initial_students, t.final_students
+            FROM tests t
+            LEFT JOIN test_gradings tg ON t.id = tg.test_id
+            WHERE tg.student_id = ?
+            OR JSON_CONTAINS(t.initial_students, ?)
+            OR JSON_CONTAINS(t.final_students, ?)
+        `;
+        try {
+            const [results] = await this.pool.query(query, [studentIndex, studentIndexJSON, studentIndexJSON]);
+            return results;
+        } catch (error) {
+            console.error('Error retrieving tests by student index:', error);
+            throw error;
+        }
+    }
+
     async updateTestField(testId, fieldName, fieldValue) {
         const whitelist = ['initial_students', 'final_students', 'status', 'tasks'];
         

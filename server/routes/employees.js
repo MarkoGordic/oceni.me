@@ -37,14 +37,15 @@ router.get('/me', async (req, res) => {
             return res.status(404).json({ error: 'Employee not found' });
         }
 
-        const { first_name, last_name, email, id, role } = employee;
+        const { first_name, last_name, email, id, role, gender } = employee;
 
         res.json({
             first_name,
             last_name,
             email,
             id,
-            role
+            role,
+            gender
         });
     } catch (error) {
         console.error("[ERROR] : Error fetching employee details:", error);
@@ -207,6 +208,8 @@ router.post('/new', upload.single('profile_image'), async (req, res) => {
 
 router.post('/update', async (req, res) => {
     const { id, first_name, last_name, email, role, gender, password } = req.body;
+    const userId = req.session.userId;
+    const user = await db.getEmployeeById(userId);
 
     if (!id) {
         return res.status(400).json({ error: 'Employee ID is required' });
@@ -253,10 +256,11 @@ router.post('/update', async (req, res) => {
 
         await db.updateEmployeeInfo(id, updateData);
 
-        await db.createLogEntry(id, `${employee.first_name} ${employee.last_name}`, 'Updated employee information', 'INFO', 'INFO', req.ip, req.headers['user-agent']);
+        await db.createLogEntry(req.session.userId, `${user.first_name} ${user.last_name}`, `Promenjeni su podaci za zaposlenog ${first_name} ${last_name}`, 'INFO', 'INFO', req.ip, req.headers['user-agent']);
 
         res.status(200).json({ message: 'Employee updated successfully' });
     } catch (error) {
+        await db.createLogEntry(req.session.userId, `${user.first_name} ${user.last_name}`, `Neuspešan pokusaj promene podataka za zaposlenog sa ID ${id}.`, 'GREŠKA', 'GREŠKA', req.ip, userAgent);
         console.error("Error updating employee:", error);
         res.status(500).json({ error: 'Internal server error' });
     }

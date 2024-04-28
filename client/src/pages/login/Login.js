@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './login.css';
 
 function Login() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const togglePasswordVisibility = () => setIsPasswordVisible(!isPasswordVisible);
   const [errorMessage, setErrorMessage] = useState('');
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const togglePasswordVisibility = () => {
-    setIsPasswordVisible(!isPasswordVisible);
-  };
+  const from = location.state?.from?.pathname || '/';
 
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
@@ -22,16 +26,16 @@ function Login() {
         break;
       case 'login_error':
         setErrorMessage('Došlo je do greške prilikom prijave. Molimo pokušajte ponovo.');
+        break;
     }
-  }, [window.location.search]);
-
+  }, []);
 
   return (
     <div className="wrap">
       <div className='column background' id="left"></div>
       <div className='column' id='right'>
         <div className='login-wrap'>
-          <form action="http://localhost:8000/auth/login" method="post">
+          <form action={"http://localhost:8000/auth/login?redirect=" + from} method="post">
             <h1 style={{ marginBottom: errorMessage ? '0px' : '20px' }}>PRIJAVA</h1>
             {errorMessage && <p className="error-msg">{errorMessage}</p>}
 

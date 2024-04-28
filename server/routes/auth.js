@@ -20,30 +20,37 @@ router.get('/status', (req, res) => {
 
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
+    const redirect = req.query.redirect;
+    console.log(redirect);
     const userAgent = req.headers['user-agent'] || 'Unknown User Agent';
 
     try {
         const employee = await db.getEmployeeByEmail(email);
         if (!employee) {
             await db.createLogEntry(null, '', `Neuspešan pokušaj logovanja za korisnika ${email}: Korisnik nije pronađen`, 'UPOZORENJE', 'AUTORIZACIJA', req.ip, userAgent);
-            return res.redirect(base_url + '/?error=user_not_found');
+            return res.redirect(`${base_url}/?error=user_not_found`);
         }
 
         const match = await bcrypt.compare(password, employee.password);
         if (match) {
             req.session.userId = employee.id;
-
             await db.createLogEntry(employee.id, `${employee.first_name} ${employee.last_name}`, 'Korisnik se ulogovao/la na sistem.', 'INFO', 'AUTORIZACIJA', req.ip, userAgent);
-            res.status(303).redirect(base_url + '/app');
+
+            let redirectTo = `${base_url}${redirect}` || `${base_url}/app`;
+            if (redirect === 'undefined' || redirect === "/")
+                redirectTo = `${base_url}/app`;
+            
+            res.redirect(redirectTo);
         } else {
             await db.createLogEntry(employee.id, `${employee.first_name} ${employee.last_name}`, 'Neuspešan pokušaj logovanja, pogrešna lozinka', 'UPOZORENJE', 'AUTORIZACIJA', req.ip, userAgent);
-            res.redirect(base_url + '/?error=incorrect_password');
+            res.redirect(`${base_url}/?error=incorrect_password`);
         }
     } catch (error) {
         await db.createLogEntry(null, '', "Došlo je do greške prilikom logovanja: " + error.message, 'GREŠKA', 'AUTORIZACIJA', req.ip, userAgent);
-        res.redirect(base_url + '/?error=login_error');
+        res.redirect(`${base_url}/?error=login_error`);
     }
 });
+
 
 router.get('/logout', async (req, res) => {
     const userId = req.session.userId;

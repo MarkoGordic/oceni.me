@@ -4,11 +4,13 @@ const database = require('../database');
 const db = new database();
 const multer  = require('multer');
 const upload = multer();
+const checkIsDekan = require('../middleware/isDekan');
+const subjectActions = require('../middleware/subjectActions');
 
 router.use(express.urlencoded({extended: true}));
 router.use(express.json());
 
-router.post('/new', upload.none(), async (req, res) => {
+router.post('/new', checkIsDekan, upload.none(), async (req, res) => {
     const { subject_name, code, professorId, year, course_code } = req.body;
     const userAgent = req.headers['user-agent'] || 'Unknown User Agent';
     const employee = await db.getEmployeeById(req.session.userId);
@@ -54,7 +56,7 @@ router.get('/get/:id', async (req, res) => {
     }
 });
 
-router.post('/update', upload.none(), async (req, res) => {
+router.post('/update', subjectActions, upload.none(), async (req, res) => {
     const { subject_id, subject_name, code, professor_id, year, course_code } = req.body;
 
     if (!(subject_id && subject_name && code && professor_id && year && course_code)) {
@@ -80,7 +82,7 @@ router.post('/update', upload.none(), async (req, res) => {
     }
 });
 
-router.get('/delete/:id', async (req, res) => {
+router.get('/delete/:id', subjectActions, async (req, res) => {
     const { id } = req.params;
 
     try {

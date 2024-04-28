@@ -7,7 +7,8 @@ function App() {
         name: '',
         email: '',
         avatar: '',
-        id: null
+        id: null,
+        gender: ''
     });
 
     const [activities, setActivities] = useState([]);
@@ -27,7 +28,8 @@ function App() {
                     name: `${userData.first_name} ${userData.last_name}`,
                     email: userData.email,
                     avatar: userData.avatar,
-                    id: userData.id
+                    id: userData.id,
+                    gender: userData.gender
                 });
 
                 fetchActivities(userData.id);
@@ -76,14 +78,66 @@ function App() {
             console.error('There was a problem fetching activities:', error);
         }
     };
-    
 
     const getGreeting = () => {
-        const hour = new Date().getHours();
-        if (hour < 12) return `☀️ Dobro jutro, ${user.name}!`;
-        if (hour < 18) return `🌞 Dobar dan, ${user.name}!`;
-        return `🌜 Dobro veče, ${user.name}!`;
-    };
+        const now = new Date();
+        const hour = now.getHours();
+        const dayOfWeek = now.getDay();
+        const dateToday = now.getDate();
+        const monthToday = now.getMonth();
+    
+        const firstName = user.name.split(' ')[0];
+        const genderPrefix = user.gender === 'M' ? 'budan' : 'budna';
+    
+        const isNewYear = (dateToday === 1 && monthToday === 0);
+        const isChristmas = (dateToday === 7 && monthToday === 0);
+        const isValentines = (dateToday === 14 && monthToday === 1);
+        const isInternationalWorkersDay = (dateToday === 1 && monthToday === 4);
+    
+        if (isNewYear) {
+            return <p>🎉 Srećna Nova Godina, {firstName}! 🍾</p>;
+        } else if (isChristmas) {
+            return <p>🎄 Srećan Božić, {firstName}! Mir Božji, Hristos se rodi!</p>;
+        } else if (isValentines) {
+            return <p>❤️ Srećan Dan zaljubljenih, {firstName}!</p>;
+        } else if (isInternationalWorkersDay) {
+            return <p>🔨 Srećan Praznik rada, {firstName}!</p>;
+        }
+    
+        const dayGreetings = {
+            0: `🍂 Uživaj u nedeljnom odmoru, zaslužila si!`,
+            1: `🌞 Nova nedelja, nove prilike za uspeh te čekaju!`,
+            2: `💪 Uzmi dan u ruke i napravi nešto sjajno!`,
+            3: `🐫 Sredina nedelje je tu, drži se, skoro je vikend!`,
+            4: `🌟 Još samo malo do vikenda, izdrži!`,
+            5: `🎉 Petak je! Skoro vikend za opuštanje i zabavu!`,
+            6: `🎈 Uživaj u suboti, vreme je za avanture!`
+        };
+    
+        let timeGreeting;
+        if (hour < 5) {
+            timeGreeting = `🌒 ${firstName}, kako to da si još ${genderPrefix}?`;
+        } else if (hour < 12) {
+            timeGreeting = `☀️ Dobro jutro, ${firstName}!`;
+        } else if (hour < 17) {
+            timeGreeting = `🌞 Dobar dan, ${firstName}!`;
+        } else {
+            timeGreeting = `🌜 Dobro veče, ${firstName}!`;
+        }
+    
+        if (dayOfWeek === 0 && user.gender === 'F') {
+            dayGreetings[0] = "🍂 Uživaj u nedeljnom odmoru, zaslužila si!";
+        } else if (dayOfWeek === 0 && user.gender === 'M') {
+            dayGreetings[0] = "🍂 Uživaj u nedeljnom odmoru, zaslužio si!";
+        }
+    
+        return (
+            <>
+                <p style={{"margin" : "0px"}}>{timeGreeting}</p>
+                <p style={{"margin" : "0px", "fontSize": "20px", "color" : "#BABABA"}}>{dayGreetings[dayOfWeek]}</p>
+            </>
+        );
+    };    
 
     return (
         <div className='wrap'>

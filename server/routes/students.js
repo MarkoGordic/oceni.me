@@ -6,6 +6,8 @@ const bcrypt = require('bcrypt');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const fsp = require('fs').promises;
+const checkIsAssistant = require('../middleware/isAssistant');
 
 const storage = multer.diskStorage({
     destination: function(req, file, cb) {
@@ -24,7 +26,7 @@ const upload = multer({ storage: storage });
 
 router.use(express.urlencoded({extended: true}));
 
-router.post('/new', upload.single('profile_image'), async (req, res) => {
+router.post('/new', checkIsAssistant, upload.single('profile_image'), async (req, res) => {
     let { first_name, last_name, index_number, email, password, course_code, gender, subject_id } = req.body;
     const userAgent = req.headers['user-agent'] || 'Unknown User Agent';
     const employee = await db.getEmployeeById(req.session.userId);
@@ -95,7 +97,7 @@ router.post('/new', upload.single('profile_image'), async (req, res) => {
     }
 });
 
-router.post('/update', async (req, res) => {
+router.post('/update', checkIsAssistant, async (req, res) => {
     const { id, first_name, last_name, index_number, email, password, gender } = req.body;
 
     if (!id) {
@@ -150,10 +152,14 @@ router.post('/update', async (req, res) => {
         updateData.password = hashedPassword;
     }
 
+    const employee = await db.getEmployeeById(req.session.userId);
+
     try {
         await db.updateStudentById(id, updateData);
+        await db.createLogEntry(req.session.userId, `${employee.first_name} ${employee.last_name}`, `Promenjeni su podaci za studenta ${updateData.first_name} ${updateData.last_name}.`, 'INFO', 'INFO', req.ip, userAgent);
         res.status(200).send("Student updated successfully");
     } catch (error) {
+        await db.createLogEntry(req.session.userId, `${user.first_name} ${user.last_name}`, `Neuspešan pokusaj promene podataka za studenta sa ID ${id}.`, 'GREŠKA', 'INFO', req.ip, userAgent);
         console.error("Error updating student:", error);
         res.status(500).send("Error updating student");
     }
@@ -204,23 +210,55 @@ router.post('/get/indexes', async (req, res) => {
     }
 });
 
-router.get('/delete/:id', async (req, res) => {
+router.get('/delete/:id', checkIsAssistant, async (req, res) => {
     const { id } = req.params;
     const userAgent = req.headers['user-agent'] || 'Unknown User Agent';
     const employee = await db.getEmployeeById(req.session.userId);
+    const studentData = await db.getStudentById(id);
 
     try {
+        const tests = await db.getTestsByStudentIndex(studentData.index_number);
+
+        for (const test of tests) {
+            const initialStudents = JSON.parse(test.initial_students);
+            const finalStudents = JSON.parse(test.final_students);
+
+            const studentPCsSet = new Set([
+                ...initialStudents.filter(student => student.index === studentData.index_number).map(student => student.pc),
+                ...finalStudents.filter(student => student.index === studentData.index_number).map(student => student.pc)
+            ]);
+
+            for (const pc of studentPCsSet) {
+                const studentDataPath = path.join(__dirname, `../uploads/tests/${test.id}/data/${pc}`);
+                await fsp.rm(studentDataPath, { recursive: true, force: true });
+            }
+
+            const updatedInitialStudents = initialStudents.filter(student => student.index !== studentData.index_number);
+            const updatedFinalStudents = finalStudents.filter(student => student.index !== studentData.index_number);
+
+            if (initialStudents.length !== updatedInitialStudents.length) {
+                await db.updateTestField(test.id, 'initial_students', JSON.stringify(updatedInitialStudents));
+            }
+
+            if (finalStudents.length !== updatedFinalStudents.length) {
+                await db.updateTestField(test.id, 'final_students', JSON.stringify(updatedFinalStudents));
+            }
+
+            await db.deleteTestGradingByStudentId(test.id, id);
+        }
+
         const result = await db.deleteStudentById(id);
         if (result) {
-            await db.createLogEntry(id, `${employee.first_name} ${employee.last_name}`, `Obrisan je korisnički nalog za studenta ${result.first_name} ${result.last_name}.`, 'INFO', 'INFO', req.ip, userAgent);
-            res.status(200).send("Student successfully deleted");
+            await db.createLogEntry(req.session.userId, `${employee.first_name} ${employee.last_name}`, `Student ${studentData.first_name} ${studentData.last_name} je potpuno uklonjen iz sistema.`, 'INFO', 'INFO', req.ip, userAgent);
+            res.status(200).send("Student je uspešno obrisan i svi povezani podaci su očišćeni.");
         } else {
-            await db.createLogEntry(id, `${employee.first_name} ${employee.last_name}`, `Neuspešan pokusaj brisanja korisničkog naloga za studenta sa ID ${id}.`, 'GREŠKA', 'INFO', req.ip, userAgent);
-            res.status(404).send("Student not found");
+            await db.createLogEntry(req.session.userId, `${employee.first_name} ${employee.last_name}`, `Pokušaj brisanja studenta ${studentData.first_name} ${studentData.last_name} nije uspeo jer student nije pronađen.`, 'GREŠKA', 'GREŠKA', req.ip, userAgent);
+            res.status(404).send("Student nije pronađen");
         }
     } catch (error) {
-        console.error("Error deleting student:", error);
-        res.status(500).send("Error deleting student");
+        console.error("Greška pri brisanju studenta i čišćenju podataka:", error);
+        await db.createLogEntry(req.session.userId, `${employee.first_name} ${employee.last_name}`, `Neuspeli pokušaj potpunog brisanja studenta ${id} zbog greške.`, 'KRITIČNO', 'SISTEM', req.ip, userAgent);
+        res.status(500).send("Greška pri brisanju studenta i čišćenju podataka");
     }
 });
 
@@ -254,6 +292,5 @@ router.get('/tests/:studentId', async (req, res) => {
         res.status(500).send("Error fetching test results");
     }
 });
-
 
 module.exports = router;
