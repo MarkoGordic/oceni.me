@@ -1,3 +1,6 @@
+const database = require('../database');
+const db = new database();
+
 const checkAuthForSubjects = async (req, res, next) => {
     const userId = req.session.userId;
     const subjectId = req.params.id || req.body.subject_id;

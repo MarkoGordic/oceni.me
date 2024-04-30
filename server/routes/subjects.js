@@ -56,10 +56,63 @@ router.get('/get/:id', async (req, res) => {
     }
 });
 
-router.post('/update', subjectActions, upload.none(), async (req, res) => {
-    const { subject_id, subject_name, code, professor_id, year, course_code } = req.body;
+router.get('/get_employees/:subjectId', async (req, res) => {
+    const { subjectId } = req.params;
+    try {
+        const employees = await db.getEmployeesForSubject(subjectId);
+        if (employees.length > 0) {
+            res.json(employees);
+        } else {
+            res.status(404).send('No employees found for the given subject.');
+        }
+    } catch (error) {
+        console.error('Error getting employees for subject:', error);
+        res.status(500).send('Internal server error while fetching employees.');
+    }
+});
 
-    if (!(subject_id && subject_name && code && professor_id && year && course_code)) {
+router.post('/assign_employee', subjectActions, async (req, res) => {
+    const { employee_id, subject_id } = req.body;
+    
+    try {
+        const employeeExists = await db.getEmployeeById(employee_id);
+        if (!employeeExists) {
+            return res.status(404).send('Employee not found.');
+        }
+
+        const subjectExists = await db.getSubjectById(subject_id);
+        if (!subjectExists) {
+            return res.status(404).send('Subject not found.');
+        }
+
+        const assignment = await db.assignEmployeeToSubject(employee_id, subject_id);
+        if (assignment) {
+            res.status(201).send('Employee assigned to subject successfully.');
+        } else {
+            res.status(400).send('Failed to assign employee to subject.');
+        }
+    } catch (error) {
+        console.error('Error assigning employee to subject:', error);
+        res.status(500).send('Internal server error while assigning employee to subject.');
+    }
+});
+
+router.post('/remove_employee', async (req, res) => {
+    const { employeeId, subjectId } = req.body;
+
+    try {
+        await db.removeEmployeeFromSubject(employeeId, subjectId);
+        res.status(200).send({ message: 'Employee removed from subject successfully.' });
+    } catch (error) {
+        console.error('Error removing employee from subject:', error);
+        res.status(500).send({ error: 'Failed to remove employee from subject.' });
+    }
+});
+
+router.post('/update', subjectActions, upload.none(), async (req, res) => {
+    const { subject_id, name, code, professor_id, year, course_code } = req.body;
+
+    if (!(subject_id && name && code && professor_id && year && course_code)) {
         return res.status(400).send("All fields are required.");
     }
 
@@ -74,7 +127,7 @@ router.post('/update', subjectActions, upload.none(), async (req, res) => {
             return res.status(400).send("Invalid course code provided.");
         }
 
-        await db.updateSubject(subject_id, { subject_name, code, professor_id, year, course_code });
+        await db.updateSubject(subject_id, { name, code, professor_id, year, course_code });
         res.status(200).send("Subject updated successfully");
     } catch (error) {
         console.error('Error updating subject:', error);

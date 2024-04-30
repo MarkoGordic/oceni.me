@@ -54,7 +54,7 @@ body, #root {
 .pagination {
     display: flex;
     justify-content: center;
-    margin-top: 20px;
+    margin-top: 10px;
     margin-bottom: 30px;
 }
 
@@ -102,4 +102,32 @@ body, #root {
     .logs-table th, .logs-table td {
         padding: 10px 5px;
     }
+}
+
+.filters {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px 0;
+    gap: 20px;
+}
+
+.filters select, .filters .date-picker {
+    padding: 8px 12px;
+    background-color: #2C2C2C;
+    border: 1px solid #444;
+    color: #F7F7FF;
+    border-radius: 5px;
+    font-family: "Jost", sans-serif;
+    margin-bottom: 0;
+}
+
+.filters select:hover, .filters .date-picker:hover {
+    border-color: #1993F0;
+}
+
+.filters select:focus, .filters .date-picker:focus {
+    outline: none;
+    border-color: #1993F0;
+    box-shadow: 0 0 0 2px rgba(25, 147, 240, 0.2);
 }

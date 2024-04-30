@@ -19,3 +19,197 @@ body, #root {
 
     text-align: center;
 }
+
+.subject-manage-wrap {
+    width: 100%;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.subject-manage-info {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.subject-manage-professor-image {
+    width: 100px;
+    height: 100px;
+    border-radius: 100%;
+    border: 3px solid #1993F0;
+
+    margin-right: 40px;
+}
+
+.subject-manage-info-details {
+    text-align: left;
+}
+
+.subject-manage-info p {
+    margin: 0;
+}
+
+.subject-manage-subject-name {
+    font-size: 30px;
+    font-weight: 700;
+}
+
+.subject-manage-subject-code-year {
+    font-size: 20px;
+    font-weight: 500;
+}
+
+.subject-manage-left-column {
+    width: 50%;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.subject-manage-employee {
+    display: block;
+    align-items: center;
+    width: 450px;
+    background-color: #0F0E0E;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    color: #F7F7FF;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    cursor: pointer;
+    display: inline-flex;
+    text-align: left;
+}
+
+.subject-manage-employee-details {
+    margin-right: auto;
+}
+
+.subject-manage-employee:hover {
+    box-shadow: 0 0 0 2px rgba(25, 147, 240, 0.5);
+}
+
+.subject-manage-employee-image {
+    height: 80px;
+    width: 80px;
+    border-radius: 100%;
+    border: 3px solid #1993F0;
+
+    margin-right: 20px;
+}
+
+.subject-manage-employee-name {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.subject-manage-employee-role {
+    font-size: 16px;
+    font-weight: 300;
+    margin: 0;
+}
+
+.subject-manage-right-column {
+    width: 50%;
+    
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+}
+
+.subject-manage-form {
+    margin-top: 20px;
+
+    width: 370px;
+}
+
+.subject-manage-search-bar {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.subject-manage-search-bar-input {
+    width: 100%;
+    border: none;
+    background-color: transparent;
+    color: #f7f7ff;
+    padding: 10px;
+    font-size: 16px;
+    border-bottom: 2px solid #f7f7ff;
+}
+
+.subject-manage-course-select {
+    width: 250px;
+}
+
+.subject-manage-year-select {
+    width: 100px;
+}
+
+.subjet-manage-submit-button,.subject-manage-add-employee-button {
+    width: 370px;
+    border-radius: 5px;
+    height: 40px;
+    margin-top: 10px;
+    
+    font-family: "Jost", sans-serif;
+    font-size: 20px;
+
+    cursor: pointer;
+    outline: none;
+    border: none;
+    background-color: #1993F0;
+    color: white;
+    transition: background-color 0.2s ease;
+}
+
+.subjet-manage-submit-button:hover,.subject-manage-add-employee-button:hover {
+    background-color: #1476d2;
+}
+
+.subject-manage-employee-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.subject-manage-employee-action {
+    background: none;
+    border: none;
+    color: #1993F0;
+    font-size: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out, background-color 0.3s, color 0.3s, box-shadow 0.3s;
+    width: 40px;
+    height: 40px;
+    margin: 10px;
+    border-radius: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.subject-manage-employee-action:hover {
+    transform: scale(1.1);
+    background-color: #1993F0;
+    color: #FFF;
+    box-shadow: 0 0 15px rgba(25, 147, 240, 0.7);
+}
+
+.subject-manage-employee-action i{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+}

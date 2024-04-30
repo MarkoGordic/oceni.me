@@ -261,7 +261,7 @@ function ModifySubjectModal({ isOpen, onClose, subject_id, onSubjectUpdated }) {
             setSubjectData({ 
               course_code: data.course_code, 
               year: data.year, 
-              subject_name: data.name, 
+              name: data.name, 
               code: data.code, 
               professor_id: data.professor_id,
               subject_id: data.id
@@ -397,8 +397,8 @@ function ModifySubjectModal({ isOpen, onClose, subject_id, onSubjectUpdated }) {
                 <form onSubmit={handleSubmit}>
                     <h2>Izmena predmeta</h2>
                     <div className='modify-subject-input-wrap'>
-                        <label htmlFor="subject_name">Naziv predmeta</label>
-                        <input id="subject_name" type="text" name="subject_name" placeholder="Unesite naziv predmeta" value={subjectData.subject_name} onChange={handleInputChange} />
+                        <label htmlFor="name">Naziv predmeta</label>
+                        <input id="name" type="text" name="name" placeholder="Unesite naziv predmeta" value={subjectData.name} onChange={handleInputChange} />
 
                         <label htmlFor="subject_code">Šifra predmeta</label>
                         <input id="subject_code" type="text" name="code" placeholder="Unesite šifru predmeta" value={subjectData.code} onChange={handleInputChange} />

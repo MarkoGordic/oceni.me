@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from '../../components/Sidebar/Sidebar';
 import { toast, ToastContainer } from 'react-toastify';
 import './systemLogs.css';
@@ -8,12 +8,39 @@ const SystemLogs = () => {
     const [page, setPage] = useState(0);
     const pageSize = 15;
     const [hasMore, setHasMore] = useState(false);
+    const [severity, setSeverity] = useState('');
+    const [startDate, setStartDate] = useState(null);
+    const [endDate, setEndDate] = useState(null);
+    const tableContainerRef = useRef(null);
+
+    useEffect(() => {
+        const adjustTableHeight = () => {
+            const contentHeight = document.querySelector('.content').clientHeight;
+            const filtersHeight = document.querySelector('.filters').clientHeight;
+            const paginationHeight = document.querySelector('.pagination').clientHeight;
+            const availableHeight = contentHeight - filtersHeight - paginationHeight - 130;
+            if (tableContainerRef.current) {
+                tableContainerRef.current.style.height = `${availableHeight}px`;
+            }
+        };
+
+        window.addEventListener('resize', adjustTableHeight);
+        adjustTableHeight();
+
+        return () => {
+            window.removeEventListener('resize', adjustTableHeight);
+        };
+    }, []);
 
     useEffect(() => {
         fetchLogs(page);
-    }, [page]);
+    }, [page, severity, startDate, endDate]);
 
     const fetchLogs = async (page) => {
+        const formatDate = (dateString) => {
+            return dateString ? new Date(dateString).toISOString() : null;
+        };
+    
         await fetch('http://localhost:8000/logs/fetch_logs', {
             method: 'POST',
             headers: {
@@ -22,7 +49,10 @@ const SystemLogs = () => {
             body: JSON.stringify({
                 employeeId: null,
                 offset: page * pageSize,
-                limit: pageSize + 1
+                limit: pageSize + 1,
+                startDate: formatDate(startDate),
+                endDate: formatDate(endDate),
+                severity: severity
             }),
             credentials: 'include'
         })
@@ -44,7 +74,7 @@ const SystemLogs = () => {
         .catch(error => {
             toast.error('Došlo je do greške prilikom preuzimanja istorije aktivnosti.');
         });
-    };    
+    };
 
     const handleNext = () => {
         setPage(page + 1);
@@ -78,7 +108,31 @@ const SystemLogs = () => {
             <Sidebar />
             <div className='content'>
                 <h1>Istorija Aktivnosti</h1>
-                <div className="logs-table-container">
+                <div className="filters">
+                    <select value={severity} onChange={e => setSeverity(e.target.value)}>
+                        <option value="">Sve Ozbiljnosti</option>
+                        <option value="DEBUG">DEBUG</option>
+                        <option value="INFO">INFO</option>
+                        <option value="UPOZORENJE">UPOZORENJE</option>
+                        <option value="GREŠKA">GREŠKA</option>
+                        <option value="KRITIČNO">KRITIČNO</option>
+                    </select>
+                    <input
+                        type="date"
+                        value={startDate}
+                        onChange={e => setStartDate(e.target.value)}
+                        className="date-picker"
+                        placeholder="Početni datum"
+                    />
+                    <input
+                        type="date"
+                        value={endDate}
+                        onChange={e => setEndDate(e.target.value)}
+                        className="date-picker"
+                        placeholder="Završni datum"
+                    />
+                </div>
+                <div className="logs-table-container" ref={tableContainerRef}>
                     <table className="logs-table">
                         <thead>
                             <tr>
@@ -113,10 +167,10 @@ const SystemLogs = () => {
                             ))}
                         </tbody>
                     </table>
-                    <div className="pagination">
+                </div>
+                <div className="pagination">
                         <button onClick={handlePrevious} disabled={page <= 0}><i class="fi fi-rr-angle-double-left"></i></button>
                         <button onClick={handleNext} disabled={!hasMore}><i class="fi fi-rr-angle-double-right"></i></button>
-                    </div>
                 </div>
             </div>
         </div>

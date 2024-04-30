@@ -641,9 +641,23 @@ class Database {
             return true;
         } catch (error) {
             console.error('Error assigning employee to subject:', error);
-            throw error;
+            return false;
         }
     }
+
+    async removeEmployeeFromSubject(employeeId, subjectId) {
+        const query = `
+            DELETE FROM employee_subjects
+            WHERE employee_id = ? AND subject_id = ?;
+        `;
+        try {
+            const [result] = await this.pool.query(query, [employeeId, subjectId]);
+            return result;
+        } catch (error) {
+            console.error('Failed to remove employee from subject:', error);
+            throw error;
+        }
+    };
 
     async getSubjectsForEmployee(employee_id) {
         const query = `
@@ -671,7 +685,28 @@ class Database {
             console.error('Error retrieving subjects for employee:', error);
             throw error;
         }
-    }      
+    }
+    
+    async getEmployeesForSubject(subjectId) {
+        const query = `
+            SELECT e.*
+            FROM employees e
+            JOIN employee_subjects es ON es.employee_id = e.id
+            WHERE es.subject_id = ?
+            UNION
+            SELECT e.*
+            FROM employees e
+            JOIN subjects s ON s.professor_id = e.id
+            WHERE s.id = ?
+        `;
+        try {
+            const [results] = await this.pool.query(query, [subjectId, subjectId]);
+            return results;
+        } catch (error) {
+            console.error('Error retrieving employees for subject:', error);
+            throw error;
+        }
+    }
 
     async subjectCodeExists(code) {
         const query = 'SELECT 1 FROM subjects WHERE code = ?';
@@ -798,26 +833,37 @@ class Database {
         }
     }
 
-    async getLogs(employeeId = null, offset = 0, limit = 15) {
-        let query;
+    async getLogs({ employeeId = null, severity = null, startDate = null, endDate = null, offset = 0, limit = 15 }) {
+        let conditions = [];
         const params = [];
     
         if (employeeId) {
-            query = `
-                SELECT * FROM system_activity_logs
-                WHERE user_id = ?
-                ORDER BY created_at DESC
-                LIMIT ? OFFSET ?
-            `;
-            params.push(employeeId, limit, offset);
-        } else {
-            query = `
-                SELECT * FROM system_activity_logs
-                ORDER BY created_at DESC
-                LIMIT ? OFFSET ?
-            `;
-            params.push(limit, offset);
+            conditions.push("employee_id = ?");
+            params.push(employeeId);
         }
+        if (severity) {
+            conditions.push("severity = ?");
+            params.push(severity);
+        }
+        if (startDate) {
+            conditions.push("created_at >= ?");
+            params.push(startDate);
+        }
+        if (endDate) {
+            conditions.push("created_at <= ?");
+            params.push(endDate);
+        }
+    
+        const conditionString = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    
+        const query = `
+            SELECT * FROM system_activity_logs
+            ${conditionString}
+            ORDER BY created_at DESC
+            LIMIT ? OFFSET ?
+        `;
+    
+        params.push(limit + 1, offset);
     
         try {
             const [results] = await this.pool.query(query, params);
@@ -826,7 +872,7 @@ class Database {
             console.error('Error retrieving logs:', error);
             throw error;
         }
-    }
+    }    
     
     async addNewTest(subjectId, name, test_no, employee_id, total_tasks, total_tests, total_points) {
         try {
