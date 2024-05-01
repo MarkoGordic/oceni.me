@@ -5,6 +5,7 @@ RUN apt-get install -y gcc-multilib
 RUN apt-get install -y g++-multilib
 RUN apt-get install -y make
 RUN apt-get install -y gdb
+RUN apt-get install expect diffutils grep sed
 RUN rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /src
