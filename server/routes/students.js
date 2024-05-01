@@ -8,6 +8,7 @@ const path = require('path');
 const fs = require('fs');
 const fsp = require('fs').promises;
 const checkIsAssistant = require('../middleware/isAssistant');
+const asyncHandler = require('express-async-handler');
 
 const storage = multer.diskStorage({
     destination: function(req, file, cb) {
@@ -96,6 +97,71 @@ router.post('/new', checkIsAssistant, upload.single('profile_image'), async (req
         res.status(500).send("Error adding student");
     }
 });
+
+router.post('/add-multiple', checkIsAssistant, asyncHandler(async (req, res) => {
+    const {students, subject_id} = req.body;
+    if (!Array.isArray(students) || students.length === 0) {
+        return res.status(400).send("Invalid input: 'students' must be a non-empty array.");
+    }
+
+    let results = [];
+    for (const student of students) {
+        let { first_name, last_name, index_number, email, password, course_code, gender } = student;
+
+        if(course_code){
+            const isValidCourseCode = await db.courseCodeExists(course_code);
+            if (!isValidCourseCode) {
+                return res.status(400).send("Invalid course code provided.");
+            }
+        } else {
+            console.log(subject_id);
+            subject = await db.getSubjectById(subject_id);
+            console.log(subject);
+            course_code = subject.course_code;
+        }
+
+        const validation = validateStudentData(first_name, last_name, index_number, email, password, course_code, gender);
+        if (!validation.isValid) {
+            results.push({ success: false, error: validation.error, index_number });
+            continue;
+        }
+
+        try {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const studentYear = new Date().getFullYear();
+            const studentId = await db.addStudent(first_name, last_name, index_number, studentYear, email, hashedPassword, course_code, gender);
+            results.push({ success: true, id: studentId, index_number });
+        } catch (error) {
+            results.push({ success: false, error: error.message, index_number });
+        }
+    }
+
+    res.json(results);
+}));
+
+function validateStudentData(first_name, last_name, index_number, email, password, course_code, gender) {
+    const indexPattern = /^([A-Za-z]{2})\s(\d{1,3})\/(\d{4})$/;
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{10,}$/;
+
+    if (!first_name || !last_name || !index_number || !email || !password || !course_code || !gender) {
+        return { isValid: false, error: "All fields must be filled." };
+    }
+    if (!indexPattern.test(index_number)) {
+        return { isValid: false, error: "Invalid index number format." };
+    }
+    if (!emailPattern.test(email)) {
+        return { isValid: false, error: "Invalid email format." };
+    }
+    if (!passwordPattern.test(password)) {
+        return { isValid: false, error: "Password does not meet criteria." };
+    }
+    if (['M', 'F', 'NP'].indexOf(gender) === -1) {
+        return { isValid: false, error: "Invalid gender." };
+    }
+
+    return { isValid: true };
+}
 
 router.post('/update', checkIsAssistant, async (req, res) => {
     const { id, first_name, last_name, index_number, email, password, gender } = req.body;

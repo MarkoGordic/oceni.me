@@ -1,11 +1,60 @@
 import React, { useState, useEffect } from "react";
 import { toast } from 'react-toastify';
 import SingleMissingStudent from "../SingleMissingStudent/SingleMissingStudent";
+import ConfirmationModal from "../../ConfirmationModal/ConfirmationModal";
 
-const StudentConfigureTab = ({ isLoading, studentData, missingIndexes, subjectID, setMissingStudents, confirmMissingStudents }) => {
-    useEffect(() => {
-        console.log("StudentConfigureTab.js: ", studentData, missingIndexes);
-    }, [studentData, missingIndexes]);
+const StudentConfigureTab = ({ isLoading, missingIndexes, subjectID, setMissingStudents, confirmMissingStudents }) => {
+    const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+
+    const handleBulkAddStudents = () => {
+        setShowConfirmationModal(true);
+    };
+
+    const confirmBulkAddStudents = async () => {
+        setShowConfirmationModal(false);
+        await addAllStudents();
+    };
+
+    const addAllStudents = async () => {
+        const formattedStudents = missingIndexes.map(student => ({
+            first_name: student.first_name,
+            last_name: student.last_name,
+            index_number: student.index,
+            email: `${student.first_name.toLowerCase()}.${student.last_name.toLowerCase()}@uns.ac.rs`,
+            password: "DefaultPassword123!",
+            subject_id: subjectID,
+            gender: "NP"
+        }));
+    
+        const response = await fetch('http://localhost:8000/students/add-multiple', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ students: formattedStudents, subject_id: subjectID }),
+            credentials: 'include',
+        });
+    
+        if (response.ok) {
+            const results = await response.json();
+            const successEntries = results.filter(result => result.success);
+            const failedEntries = results.filter(result => !result.success);
+    
+            if (failedEntries.length > 0) {
+                failedEntries.forEach(entry => {
+                    toast.error(`Došlo je do greške, ${entry.index_number}: ${entry.error}`);
+                });
+            }
+    
+            if (successEntries.length > 0) {
+                toast.success(`Uspešno kreiranje naloga za sve studente. (${successEntries.length})`);
+                setMissingStudents(missingIndexes.filter(index => !successEntries.some(entry => entry.index_number === index.index)));
+            }
+        } else {
+            toast.error("Došlo je do greške prilikom dodavanja studenata.");
+        }
+    };
+    
 
     const handleAddStudent = async (student) => {
         const { index, pc, first_name, last_name } = student;
@@ -26,14 +75,14 @@ const StudentConfigureTab = ({ isLoading, studentData, missingIndexes, subjectID
                 credentials: 'include',
             });
             if (response.ok) {
-                toast.success("Uspešno kreiran nalog za studenta " + first_name + " " + last_name + "!");
-                const newMissingIndexes = missingIndexes.filter(s => s.index !== student.index);
-                setMissingStudents(newMissingIndexes);
+                toast.success(`Uspešno kreiranje naloga za studenta ${first_name} ${last_name}.`);
+                setMissingStudents(prev => prev.filter(s => s.index !== student.index));
             } else {
-                toast.error("Došlo je do neočekivane greške prilikom kreiranja studentskog naloga.");
+                toast.error("Došlo je do neočekivane greške prilikom dodavanja studenta.");
             }
         } catch (error) {
             console.error("Error submitting form:", error);
+            toast.error("Došlo je do greške prilikom dodavanja studenta.");
         }
     };
 
@@ -42,10 +91,9 @@ const StudentConfigureTab = ({ isLoading, studentData, missingIndexes, subjectID
             <div className="loader"></div>
         ) : (
             <div className="newtest-wrap">
-                <h1>Konfiguracija novih studenata</h1>
-                <p style={{maxWidth: "900px"}}>
-                    U nastavku su prikazani svi studenti koji su evidentirani da su radili kolokvijum, 
-                    a nisu evidentirani u bazi podataka. Klikom na plus pored njihovog imena ih možete dodati u bazu.
+                <h1>Configure New Students</h1>
+                <p style={{ maxWidth: "900px" }}>
+                    U nastavku možete dodati studente koji nisu registrovani na platformi. Studenti će automatski biti prijavljeni na test.
                 </p>
 
                 {missingIndexes && missingIndexes.length > 0 && (
@@ -53,14 +101,21 @@ const StudentConfigureTab = ({ isLoading, studentData, missingIndexes, subjectID
                         {missingIndexes.map((student, index) => (
                             <SingleMissingStudent key={index} student={student} addStudent={handleAddStudent} />
                         ))}
+                        <button className="confirm-missing-students-btn" onClick={handleBulkAddStudents}>DODAJ SVE</button>
                     </div>
                 )}
 
                 {missingIndexes && missingIndexes.length === 0 && (
-                    <p>Nema studenata za dodavanje.</p>
+                    <p>No students to add.</p>
                 )}
 
-                <button className="confirm-missing-students-btn" onClick={confirmMissingStudents}>SAČUVAJ I NASTAVI</button>
+                <button className="confirm-missing-students-btn" onClick={confirmMissingStudents}>SACUVAJ I NASTAVI</button>
+                <ConfirmationModal
+                    isOpen={showConfirmationModal}
+                    onClose={() => setShowConfirmationModal(false)}
+                    onConfirm={confirmBulkAddStudents}
+                    message="Da li ste sigurni da želite da dodate sve studente odjednom?"
+                />
             </div>
         )
     );

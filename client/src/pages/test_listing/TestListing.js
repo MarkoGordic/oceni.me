@@ -4,6 +4,7 @@ import './testListing.css';
 import { toast, ToastContainer } from 'react-toastify';
 import SubjectSidebar from '../../components/SubjectSidebar/SubjectSidebar';
 import StudentUploadTestFilesModal from '../../components/StudentUploadTestFilesModal/StudentUploadTestFilesModal';
+import ConfirmationModal from '../../components/ConfirmationModal/ConfirmationModal';
 import { useNavigate } from 'react-router-dom';
 
 function TestListing() {
@@ -11,6 +12,10 @@ function TestListing() {
     const [isLoading, setIsLoading] = useState(true);
     const [students, setStudents] = useState([]);
     const [testData, setTestData] = useState({});
+
+    const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+    const [confirmationModalMessage, setConfirmationModalMessage] = useState('');
+    const [studentToTest, setStudentToTest] = useState(null);
 
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState(null);
@@ -63,7 +68,7 @@ function TestListing() {
                     const grading = gradingsMap[student.index];
                     let autotest_progress = 0;
 
-                    if (grading && grading.status === 'OCENJEN') {
+                    if (grading && (grading.status === 'OCENJEN' || grading.status === "AT OCENJEN")) {
                         autotest_progress = 100;
                     }
 
@@ -103,12 +108,14 @@ function TestListing() {
                 return 'TESTIRANJE';
             case 'OCENJEN':
                 return 'OCENJEN';
+            case "AT OCENJEN":
+                return 'AT_OCENJEN';
             default:
                 return '';
         }
     };
 
-    const handleStartStudentAutotest = (studentIndex, pc, fullName) => {
+    const startAutotest = (studentIndex, pc) => {
         const updatedStudents = students.map(student => {
             if (student.index === studentIndex) {
                 return { ...student, autotest_status: 'TESTIRANJE', autotest_progress: 0 };
@@ -126,21 +133,35 @@ function TestListing() {
             body: JSON.stringify({
                 testId: testid,
                 studentIndex,
-                pc: pc,
+                pc,
             }),
         }).then((response) => {
             if (response.ok) {
-                toast.success('Automatsko testiranje je pokrenuto za studenta ' + fullName + '.');
+                const studentToTestTmp = students.find(student => student.index === studentIndex);
+                toast.success(`Automatsko testiranje je pokrenuto za studenta ${studentToTestTmp.fullName}.`);
             } else {
-                toast.error('Neuspešno pokretanje automatskog testiranja.');
+                handleAutotestError(response);
             }
         }).catch((error) => {
-            toast.error('Failed to start autotest process.');
+            handleAutotestError(error);
             console.error(error);
         });
-    }
+    };
 
-    function handleStartAllAutotests() {
+    const handleStartAllAutotests = () => {
+        const studentsAtRisk = students.some(student => ['AT OCENJEN', 'OCENJEN'].includes(student.autotest_status));
+    
+        if (studentsAtRisk) {
+            setConfirmationModalMessage('Pokretanjem novog automatskog testiranja za sve studente, brišete trenutno ocenjivanje za one koji su već ocenjeni. Ova akcija nije reverzibilna.');
+            setShowConfirmationModal(true);
+            setStudentToTest(null);
+            return;
+        }
+    
+        startAutotestForAll();
+    };
+    
+    const startAutotestForAll = () => {
         const tasks = students.map(student => ({
             studentIndex: student.index,
             pc: student.pc
@@ -166,13 +187,17 @@ function TestListing() {
                 }));
                 setStudents(updatedStudents);
             } else {
-                toast.error('Neuspešno pokretanje automatskog testiranja za sve studente.');
+                if (response.status === 409) {
+                    toast.error('Automatsko testiranje je već pokrenuto za neke studente.');
+                }
+                else
+                    toast.error('Neuspešno pokretanje automatskog testiranja za sve studente.');
             }
         }).catch((error) => {
             toast.error('Failed to start autotest process for all students.');
             console.error(error);
         });
-    }
+    };
 
     const handleAutotestStatusUpdate = () => {
         const studentIndexes = students.filter(student => student.autotest_status === 'TESTIRANJE')
@@ -279,7 +304,35 @@ function TestListing() {
 
     const navigateToReview = (studentId) => {
         navigate(`./review/${studentId}`);
-    };    
+    };
+
+    const handleStartStudentAutotest = (studentIndex, pc, fullName) => {
+        const student = students.find(s => s.index === studentIndex);
+        setConfirmationModalMessage(`Pokretanjem novog automatskog testa za studenta ${fullName}, brišete trenutno ocenjivanje. Ova akcija nije reverzibilna.`);
+        if (['AT OCENJEN', 'OCENJEN'].includes(student.autotest_status)) {
+            setShowConfirmationModal(true);
+            setStudentToTest({ studentIndex, pc, fullName });
+            return;
+        }
+        startAutotest(studentIndex, pc);
+    };
+
+    const confirmStartAutotest = () => {
+        setShowConfirmationModal(false);
+        if (!studentToTest) {
+            startAutotestForAll();
+        } else {
+            startAutotest(studentToTest.studentIndex, studentToTest.pc);
+        }
+    };
+
+    const handleAutotestError = (response) => {
+        if (response.status === 409) {
+            toast.error('Automatsko testiranje je već pokrenuto za ovog studenta.');
+        } else {
+            toast.error('Neuspešno pokretanje automatskog testiranja.');
+        }
+    };
 
     if (isLoading) return <div className='loader'>Loading...</div>;
 
@@ -287,6 +340,13 @@ function TestListing() {
         <div className='wrap'>
             <ToastContainer theme="dark" />
             <SubjectSidebar />
+
+            <ConfirmationModal
+                isOpen={showConfirmationModal}
+                onClose={() => setShowConfirmationModal(false)}
+                onConfirm={confirmStartAutotest}
+                message={confirmationModalMessage}
+            />
 
             {showUploadModal && (
                 <StudentUploadTestFilesModal

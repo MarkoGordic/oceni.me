@@ -20,12 +20,18 @@ body, #root {
     text-align: center;
 }
 
-.content-wrap {
+.new-test-content-wrap {
+    display: block;
+    height: 100%;
+    width: 100%;
+}
+
+.newtest-wrap-upload {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100%;
+    height: 100dvh;
     width: 100%;
 }
 

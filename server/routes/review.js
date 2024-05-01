@@ -88,7 +88,8 @@ router.post('/grading/save', async (req, res) => {
     }
 
     try{
-        await db.updateFinalTestGrading(testId, studentId, total_points, grading, "OCENJEN")
+        const employee_id = req.session.userId;
+        await db.updateFinalTestGrading(testId, studentId, total_points, grading, "OCENJEN", employee_id);
         res.status(200).json({ message: 'Grading saved successfully' });
     } catch (error) {
         res.status(500).json({ error: 'Internal server error' });

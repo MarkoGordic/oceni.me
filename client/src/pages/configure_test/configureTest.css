@@ -79,6 +79,7 @@ body, #root {
 
 .confirm-tests-btn {
     margin-top: 20px;
+    margin-bottom: 40px;
     padding: 10px 20px;
     font-size: 16px;
     color: #f7f7ff;
@@ -134,10 +135,6 @@ body, #root {
     background-color: #f7f7ff;
     margin-top: 20px;
     margin-bottom: 20px;
-}
-
-.newtest-all-configurations {
-    max-height: 550px;
 }
 
 .config-wrap {

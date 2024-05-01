@@ -16,7 +16,6 @@ function CurrentStudentInfo({ student, currentPoints, maxPoints }) {
                 </div>
                 <div className='review-student-card-actions'>
                     <p className='review-student-card-points'>{currentPoints || 0}/{maxPoints || 0}</p>
-                    <button className='review-student-card-button'>OCENI</button>
                 </div>
             </div>
         </div>

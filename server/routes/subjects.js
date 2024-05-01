@@ -97,7 +97,7 @@ router.post('/assign_employee', subjectActions, async (req, res) => {
     }
 });
 
-router.post('/remove_employee', async (req, res) => {
+router.post('/remove_employee', subjectActions, async (req, res) => {
     const { employeeId, subjectId } = req.body;
 
     try {

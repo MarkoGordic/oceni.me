@@ -254,7 +254,7 @@ class Database {
                 initial_students TEXT,
                 final_students TEXT,
                 tasks TEXT,
-                status ENUM('DODATA_KONFIGURACIJA', 'DODAT_ZIP', 'PODESENI_STUDENTI', 'ZAVRSEN') NOT NULL,
+                status ENUM('DODATA_KONFIGURACIJA', 'DODAT_TAR', 'PODESENI_STUDENTI', 'ZAVRSEN') NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
                 FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE SET NULL
@@ -284,7 +284,7 @@ class Database {
                 employee_id INT,
                 total_points INT NOT NULL,
                 gradings TEXT,
-                status ENUM('NEMA_FAJLOVA', 'TESTIRANJE', 'OCENJEN') NOT NULL,
+                status ENUM('NEMA_FAJLOVA', 'TESTIRANJE', 'AT OCENJEN', 'OCENJEN') NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
                 FOREIGN KEY (test_id) REFERENCES tests(id) ON DELETE CASCADE,
@@ -1082,20 +1082,26 @@ class Database {
     
 
     async addNewTestGrading(studentId, testId, employeeId, total_points, status) {
+        const deleteQuery = `
+            DELETE FROM test_gradings
+            WHERE student_id = ? AND test_id = ?
+        `;
         const insertQuery = `
             INSERT INTO test_gradings (student_id, test_id, employee_id, total_points, gradings, status)
             VALUES (?, ?, ?, ?, NULL, ?)
         `;
-
+    
         try {
+            await this.pool.query(deleteQuery, [studentId, testId]);
+    
             await this.pool.query(insertQuery, [studentId, testId, employeeId, total_points, status]);
         } catch (error) {
-            console.error('Error adding test grading:', error);
+            console.error('Error handling test grading:', error);
             throw error;
         }
     }
 
-    async updateFinalTestGrading(testId, studentId, total_points, gradings, status) {
+    async updateFinalTestGrading(testId, studentId, total_points, gradings, status, employee_id) {
         const selectQuery = `
             SELECT COUNT(1) AS cnt
             FROM test_gradings
@@ -1103,8 +1109,8 @@ class Database {
         `;
     
         const insertQuery = `
-            INSERT INTO test_gradings (test_id, student_id, total_points, gradings, status)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO test_gradings (test_id, employee_id, student_id, total_points, gradings, status)
+            VALUES (?, 0, ?, ?, ?, ?)
         `;
     
         const updateQuery = `
@@ -1212,6 +1218,38 @@ class Database {
         }
     }    
       
+    async isTestRunningForStudent(studentId, testId) {
+        const query = `
+            SELECT COUNT(*) AS count
+            FROM test_gradings
+            WHERE student_id = ? AND status = 'TESTIRANJE AND test_id = ?'
+        `;
+        try {
+            const [results] = await this.pool.query(query, [studentId, testId]);
+            console.log(results[0].count > 0)
+            console.log(results)
+            return results[0].count > 0;
+        } catch (error) {
+            console.error('Error checking for running tests:', error);
+            throw error;
+        }
+    }
+
+    async areTestsRunningForStudents(studentIds, testId) {
+        const placeholders = studentIds.map(() => '?').join(',');
+        const query = `
+            SELECT COUNT(*) AS count
+            FROM test_gradings
+            WHERE student_id IN (${placeholders}) AND status = 'TESTIRANJE AND test_id = ?'
+        `;
+        try {
+            const [results] = await this.pool.query(query, studentIds, testId);
+            return results[0].count > 0;
+        } catch (error) {
+            console.error('Error checking for running tests for multiple students:', error);
+            throw error;
+        }
+    }
 
     async addNewAutoTestResult(studentId, testId, employeeId, result, taskNo, testNo) {
         const insertQuery = `

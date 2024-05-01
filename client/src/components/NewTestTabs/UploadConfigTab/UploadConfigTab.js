@@ -30,7 +30,7 @@ const UploadConfigTab = ({ setFileName, setTargetJSON, confirmUpload, isLoading 
         isLoading ? (
             <div className="loader"></div>
         ) : (
-            <div className="newtest-wrap">
+            <div className="newtest-wrap-upload">
                 <h1>Dodavanje novog kolokvijuma (1/2)</h1>
 
                     <p className="newtest-info">Dobro došli u čarobnjaka za dodavanje novog kolokvijuma. Ovaj čarobnjak će vas voditi kroz proces dodavanja svih neophodnih informacija o kolokvijumu.</p>

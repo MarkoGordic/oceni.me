@@ -88,6 +88,7 @@ body, #root {
     animation: fadeInOut 2s infinite;
 }
 .PRIPREMLJEN { color: green !important; }
+.AT_OCENJEN { color: #19f01d !important; }
 .OCENJEN {
     color: #1993F0 !important;
 }

@@ -11,7 +11,7 @@ import FinalStudentsTab from "../../components/NewTestTabs/FinalStudentsTab/Fina
 const NewTestWizard = () => {
     const { id, testid } = useParams();
     
-    const [targetZIP, setTargetZIP] = useState(null);
+    const [targetZIP, setTargetTAR] = useState(null);
     const [fileName, setFileName] = useState("");
     
     const [targetJSON, setTargetJSON] = useState(null);
@@ -45,7 +45,7 @@ const NewTestWizard = () => {
                 title: 'Upload ZIP',
                 content: <UploadTab
                             setFileName={setFileName}
-                            setTargetZIP={setTargetZIP}
+                            setTargetTAR={setTargetTAR}
                             confirmUpload={() => confirmUpload(targetZIP)}
                             isLoading={isLoading}
                         />
@@ -81,10 +81,9 @@ const NewTestWizard = () => {
     }, [testid]);
 
     useEffect(() => {
-        console.log("STATUS:", status);
         if (status === "DODATA_KONFIGURACIJA")
             setActiveTab('upload');
-        else if (status === "DODAT_ZIP")
+        else if (status === "DODAT_TAR")
             setActiveTab('configure_missing_students');
         else if (status === "PODESENI_STUDENTI")
             setActiveTab('final_students');
@@ -94,7 +93,6 @@ const NewTestWizard = () => {
     }, [status]);
 
     const fetchTestStatus = useCallback(() => {
-        console.log("KOJI KURAC");
         setIsLoading(true);
         fetch(`http://localhost:8000/tests/status?testId=${testid}`, {
             credentials: 'include'
@@ -120,16 +118,14 @@ const NewTestWizard = () => {
     const uploadFile = (file) => {
         setIsLoading(true);
 
-        console.log(file);
-
         if (!file) {
-            toast.error("Nema datoteke za učitavanje. Molimo odaberite ZIP datoteku.");
+            toast.error("Nema datoteke za učitavanje. Molimo odaberite TAR datoteku.");
             setIsLoading(false);
             return;
         }
 
         const formData = new FormData();
-        formData.append('zipFile', file);
+        formData.append('tarFile', file);
         formData.append('subjectId', id);
         formData.append('testId', testid);
 
@@ -163,8 +159,6 @@ const NewTestWizard = () => {
 
     const uploadConfigurationFile = (file) => {
         setIsLoading(true);
-
-        console.log(file);
 
         if (!file) {
             toast.error("Nema datoteke za učitavanje. Molimo odaberite JSON datoteku.");
@@ -247,7 +241,7 @@ const NewTestWizard = () => {
             <ToastContainer theme="dark" />
             <SubjectSidebar /> 
             <div className='content'>
-                <div className="content-wrap">
+                <div className="new-test-content-wrap">
                     {tabs.map(tab => (
                         <div key={tab.id} style={{ display: activeTab === tab.id ? 'block' : 'none' }}>
                             {tab.content}

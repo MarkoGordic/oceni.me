@@ -11,6 +11,7 @@ const unzipper = require('unzipper');
 const readline = require('readline');
 const archiver = require('archiver');
 const PdfPrinter = require('pdfmake');
+const tar = require('tar');
 const { generateTestirajSH } = require('../util/student_autotest');
 
 const fonts = {
@@ -425,39 +426,47 @@ function convertIndexFormat(index) {
 }
 
 async function getStudentList(testId) {
-  const filePath = path.join(__dirname, `../uploads/tests/${testId}/provera/spisak_stud_koji_trenutno_rade_proveru.txt`);
+  const directoryPath = path.join(__dirname, `../uploads/tests/${testId}/`);
 
   try {
-    await fsp.access(filePath, fs.constants.F_OK);
+      const files = await fsp.readdir(directoryPath);
+      const studentListFile = files.find(file => /spisak_stud_koji_trenutno_rade_proveru.*\.txt$/.test(file));
 
-    const fileStream = fs.createReadStream(filePath);
-    const rl = readline.createInterface({
-      input: fileStream,
-      crlfDelay: Infinity
-    });
-
-    const students = [];
-
-    for await (const line of rl) {
-      const parts = line.split(',').map(part => part.trim());
-      if (parts.length === 3 && parts[1] !== '') {
-        const indexFormatted = convertIndexFormat(parts[1]);
-        const [firstName, lastName] = parts[2].split(' ');
-        students.push({
-          index: indexFormatted,
-          pc: parts[0],
-          firstName: firstName,
-          lastName: lastName
-        });
+      if (!studentListFile) {
+          throw new Error("No matching student list file found.");
       }
-    }
 
-    rl.close();
-    return students;
+      const filePath = path.join(directoryPath, studentListFile);
+      await fsp.access(filePath, fs.constants.F_OK);
+
+      const fileStream = fs.createReadStream(filePath);
+      const rl = readline.createInterface({
+          input: fileStream,
+          crlfDelay: Infinity
+      });
+
+      const students = [];
+
+      for await (const line of rl) {
+          const parts = line.split(',').map(part => part.trim());
+          if (parts.length === 3 && parts[1] !== '') {
+              const indexFormatted = convertIndexFormat(parts[1]);
+              const [firstName, lastName] = parts[2].split(' ');
+              students.push({
+                  index: indexFormatted,
+                  pc: parts[0],
+                  firstName: firstName,
+                  lastName: lastName
+              });
+          }
+      }
+
+      rl.close();
+      return students;
 
   } catch (error) {
-    console.error(`Error accessing or reading the student list file: ${filePath}`, error);
-    throw new Error("File does not exist or cannot be accessed.");
+      console.error(`Error accessing or reading the student list file in directory: ${directoryPath}`, error);
+      return [];
   }
 }
 
@@ -538,30 +547,31 @@ router.post('/new', upload.single('configFile'), asyncHandler(async (req, res) =
         const fileFolderPath = path.join(folderPath, file.name.replace(/\.\w+$/, ''));
         await fsp.mkdir(fileFolderPath, { recursive: true });
 
-        let modifiedRunSh = runShTemplate.replace('<TASKNO_PLACEHOLDER>', test.folder);
+        let modifiedRunSh = runShTemplate.replace('<TASKNO_PLACEHOLDER>', test.folder); // done
         let modifiedGdb = gdbTemplate.replace('<OUTPUT_PATH_PLACEHOLDER>', '/output/results' + test.folder + file.name + '.json');
 
-        let TESTS_INPUTS = '';
+        let TESTS_INPUTS = 'TEST01=$(cat <<EOL\n';
         let INPUT_TXT = '';
-        const lines = file.content.split('\r\n');
+        const lines = file.content.replace('\r', '').split('\n');
         for (const line of lines) {
           if (line.startsWith('@')) {
             const input = line.slice(1);
-            TESTS_INPUTS += input + '\\n\\n';
+            TESTS_INPUTS += input + '\n';
             INPUT_TXT += input + '\n';
           }
         }
+        TESTS_INPUTS += 'EOL\n)\n';
 
-        const OUTPREFIX = "OUTP01";
-        TEST_OUTPUT = "";
-        TEST_OUTPUT += OUTPREFIX + '=$(cat <<EOL\n';
-        TEST_OUTPUT += file.result + '\n';
-        TEST_OUTPUT += 'EOL\n)\n\n';
+        const OUTPREFIX = "OUTP01=$(cat <<EOL\n";
+        TEST_OUTPUT = OUTPREFIX;
+        TEST_OUTPUT += file.result;
+        TEST_OUTPUT += "\nEOL\n)\n"; 
 
-        modifiedRunSh = modifiedRunSh.replaceAll('<TASK_INPUT_PLACEHOLDER>', TESTS_INPUTS.replace(/\\n/g, '\n'));
-        modifiedRunSh = modifiedRunSh.replaceAll('<COMPILE_STATUS_TASK_PLACEHOLDER>', test.folder + file.name);
-        modifiedRunSh = modifiedRunSh.replaceAll('<TEST_OUTPUT_PLACEHOLDER>', TEST_OUTPUT);
-        modifiedRunSh = modifiedRunSh.replaceAll('<EXPECTED_EXIT_CODE_PLACEHOLDER>', file.code);
+        let TEST_INPUTS_OUTPUTS = TESTS_INPUTS + "\n" + TEST_OUTPUT;
+
+        modifiedRunSh = modifiedRunSh.replaceAll('<TESTS_INPUT_OUTPUT_PLACEHOLDER>', TEST_INPUTS_OUTPUTS); // done
+        modifiedRunSh = modifiedRunSh.replaceAll('<COMPILE_STATUS_TASK_PLACEHOLDER>', test.folder + file.name); //done
+        modifiedRunSh = modifiedRunSh.replaceAll('<EXPECTED_EXIT_CODE_PLACEHOLDER>', file.code); // done
 
         await fsp.writeFile(path.join(fileFolderPath, `gdb.py`), modifiedGdb);
         await fsp.writeFile(path.join(fileFolderPath, `run.sh`), modifiedRunSh);
@@ -579,28 +589,29 @@ router.post('/new', upload.single('configFile'), asyncHandler(async (req, res) =
   }
 }));
 
-router.post('/upload_data', upload.single('zipFile'), asyncHandler(async (req, res) => {
+router.post('/upload_data', upload.single('tarFile'), asyncHandler(async (req, res) => {
   if (!req.file) {
-    return res.status(400).send('No file uploaded.');
+      return res.status(400).send('No file uploaded.');
   }
 
   const testId = req.body.testId;
-  const zipPath = req.file.path;
+  const tarPath = req.file.path;
 
   try {
-    await fs.createReadStream(zipPath)
-        .pipe(unzipper.Extract({ path: `uploads/tests/${testId}` }))
-        .promise();
-  
-    await fsp.unlink(zipPath);
+      await tar.extract({
+          file: tarPath,
+          cwd: `uploads/tests/${testId}`
+      });
 
-    const studentData = await getStudentList(testId);
-    await db.updateTestField(testId, 'initial_students', JSON.stringify(studentData));
-    await db.updateTestField(testId, 'status', 'DODAT_ZIP');
-    
-    const { studentsFromDB, missingIndexesWithPC } = await determineMissingStudents(testId);
+      await fsp.unlink(tarPath);
 
-    res.json({ testId, students: studentsFromDB, missingStudents: missingIndexesWithPC, status: 'DODAT_ZIP' });
+      const studentData = await getStudentList(testId);
+      await db.updateTestField(testId, 'initial_students', JSON.stringify(studentData));
+      await db.updateTestField(testId, 'status', 'DODAT_TAR');
+
+      const { studentsFromDB, missingIndexesWithPC } = await determineMissingStudents(testId);
+
+      res.json({ testId, students: studentsFromDB, missingStudents: missingIndexesWithPC, status: 'DODAT_TAR' });
   } catch (error) {
       console.error('Error processing student list:', error);
       res.status(500).send('Error processing student list.');
@@ -730,54 +741,76 @@ router.post('/complete', asyncHandler(async (req, res) => {
   const { testId, finalStudents } = req.body;
 
   if (!testId) {
-      return res.status(400).send('Test ID is required.');
+    return res.status(400).send('Test ID is required.');
   }
 
   if (!finalStudents || !Array.isArray(finalStudents) || finalStudents.length === 0) {
-      return res.status(400).send('A valid list of final students is required.');
+    return res.status(400).send('A valid list of final students is required.');
   }
 
   const basePath = path.join(__dirname, `../uploads/tests/${testId}`);
-  const proveraPath = path.join(basePath, 'provera');
   const dataPath = path.join(basePath, 'data');
 
   await fsp.mkdir(dataPath, { recursive: true });
 
   for (const student of finalStudents) {
-      const { pc, index } = student;
-      const studentFolderName = convertIndexToFolderName(index);
+    const { pc, index } = student;
+    const studentFolderName = convertIndexToFolderName(index);
 
-      const tgzFiles = await fsp.readdir(proveraPath);
-      const tgzFile = tgzFiles.find(file => file.endsWith(`_${pc}.tgz`));
+    const tgzFiles = await fsp.readdir(basePath);
+    const tgzFile = tgzFiles.find(file => file.endsWith(`_${pc}.tgz`));
 
-      if (!tgzFile) {
-          console.log(`No .tgz file found for student PC: ${pc}`);
-          let tmpStudent = await db.getStudentsByIndexes([index]);
-          db.addNewTestGrading(tmpStudent[0].id, testId, req.session.userId, 0, "NEMA_FAJLOVA");
-          continue;
+    if (!tgzFile) {
+      console.log(`No .tgz file found for student PC: ${pc}`);
+      let tmpStudent = await db.getStudentsByIndexes([index]);
+      db.addNewTestGrading(tmpStudent[0].id, testId, req.session.userId, 0, "NEMA_FAJLOVA");
+      continue;
+    }
+
+    const tgzFilePath = path.join(basePath, tgzFile);
+    const studentDataPath = path.join(dataPath, pc);
+
+    await fsp.mkdir(studentDataPath, { recursive: true });
+
+    try {
+      await tar.extract({
+        file: tgzFilePath,
+        cwd: studentDataPath
+      });
+
+      const possiblePaths = [
+        path.join(studentDataPath, 'home', 'provera', studentFolderName),
+        path.join(studentDataPath, 'home', 'provera', pc)
+      ];
+
+      let foundPath = null;
+      for (const possiblePath of possiblePaths) {
+        try {
+          await fsp.access(possiblePath, fs.constants.F_OK);
+          foundPath = possiblePath;
+          break;
+        } catch (error) {
+          console.log(`Checked path not found: ${possiblePath}`);
+        }
       }
 
-      const tgzFilePath = path.join(proveraPath, tgzFile);
-      const studentDataPath = path.join(dataPath, pc);
+      if (!foundPath) {
+        throw new Error("No valid directory found after extraction.");
+      }
 
-      await fsp.mkdir(studentDataPath, { recursive: true });
-
-      await fs.createReadStream(tgzFilePath)
-          .pipe(unzipper.Extract({ path: studentDataPath }))
-          .promise();
-
-      await fsp.unlink(tgzFilePath);
-
-      const indexFolderPath = path.join(studentDataPath, 'home', 'provera', studentFolderName);
-      const filesToMove = await fsp.readdir(indexFolderPath);
+      const filesToMove = await fsp.readdir(foundPath);
       for (const file of filesToMove) {
-          const srcFilePath = path.join(indexFolderPath, file);
-          const destFilePath = path.join(studentDataPath, file);
-          await fsp.rename(srcFilePath, destFilePath);
+        const srcFilePath = path.join(foundPath, file);
+        const destFilePath = path.join(studentDataPath, file);
+        await fsp.rename(srcFilePath, destFilePath);
       }
 
-      await fsp.rm(path.join(studentDataPath, '_MACOSX'), { recursive: true, force: true });
       await fsp.rm(path.join(studentDataPath, 'home'), { recursive: true, force: true });
+      await fsp.unlink(tgzFilePath);
+    } catch (error) {
+      console.error('Error extracting .tgz file:', error);
+      return res.status(500).send('Failed to extract .tgz file.');
+    }
   }
 
   res.send({ success: true, message: 'All student data processed.' });

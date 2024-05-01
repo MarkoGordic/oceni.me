@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { toast } from 'react-toastify';
 
-const UploadTab = ({ setFileName, setTargetZIP, confirmUpload, isLoading }) => {
+const UploadTab = ({ setFileName, setTargetTAR, confirmUpload, isLoading }) => {
     const [localFileName, setLocalFileName] = useState("");
     const fileInputRef = useRef(null);
 
@@ -15,13 +15,13 @@ const UploadTab = ({ setFileName, setTargetZIP, confirmUpload, isLoading }) => {
     };
 
     const validateAndSetFile = (file) => {
-        if (file && /\.(zip)$/i.test(file.name)) {
-            setTargetZIP(file);
+        if (file && /\.(tar)$/i.test(file.name)) {
+            setTargetTAR(file);
             setFileName(file.name);
             setLocalFileName(file.name);
             toast.success("Datoteka uspešno učitana!");
         } else {
-            toast.error("Molimo vas da izaberete ZIP datoteku.");
+            toast.error("Molimo vas da izaberete .tar datoteku.");
             setLocalFileName("");
         }
     };
@@ -30,7 +30,7 @@ const UploadTab = ({ setFileName, setTargetZIP, confirmUpload, isLoading }) => {
         isLoading ? (
             <div className="loader"></div>
         ) : (
-            <div className="newtest-wrap">
+            <div className="newtest-wrap-upload">
                 <h1>Dodavanje novog kolokvijuma (2/2)</h1>
 
                     <p className="newtest-info">Dobro došli u čarobnjaka za dodavanje novog kolokvijuma. Ovaj čarobnjak će vas voditi kroz proces dodavanja svih neophodnih informacija o kolokvijumu.</p>
@@ -41,12 +41,12 @@ const UploadTab = ({ setFileName, setTargetZIP, confirmUpload, isLoading }) => {
                             type="file"
                             hidden
                             onChange={handleFileSelect}
-                            accept=".zip"
+                            accept=".tar"
                         />
                         {localFileName ? (
                             <p className="newtest-file-name-display">Izabrana datoteka: {localFileName}</p>
                         ) : (
-                            <p className="newtest-file-name-display">Prevucite ZIP datoteku ovde ili kliknite za izbor</p>
+                            <p className="newtest-file-name-display">Prevucite TAR datoteku ovde ili kliknite za izbor</p>
                         )}
                     </div>
                     <button className="confirm-upload-btn" onClick={confirmUpload}>POTVRDI UČITAVANJE</button>
