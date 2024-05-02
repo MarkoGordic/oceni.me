@@ -7,13 +7,14 @@ const path = require('path');
 const fs = require('fs');
 const database = require('./database');
 const db = new database();
+require('dotenv').config();
 
 app.use(express.json());
 app.use(express.static('static'));
 router.use(express.urlencoded({extended: true}));
 
 app.use(session({
-  secret: 'NadjaImasNajlepseOciNaSvetu!',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
 }));
@@ -58,10 +59,12 @@ function ensureAuthenticated(req, res, next) {
 }
 
 
+const InitRoutes = require('./routes/init');
+app.use('/init', cors({origin: 'http://localhost:3000', credentials: true}), InitRoutes);
 const AuthRoutes = require('./routes/auth');
 app.use('/auth', cors({origin: 'http://localhost:3000', credentials: true}), AuthRoutes);
 const EmployeesRoutes = require('./routes/employees');
-app.use('/employees', cors({origin: 'http://localhost:3000', credentials: true}), EmployeesRoutes);
+app.use('/employees', cors({origin: 'http://localhost:3000', credentials: true}), ensureAuthenticated, EmployeesRoutes);
 const StudentRoutes = require('./routes/students');
 app.use('/students', cors({origin: 'http://localhost:3000', credentials: true}), ensureAuthenticated, StudentRoutes);
 const SubjectsRoutes = require('./routes/subjects');

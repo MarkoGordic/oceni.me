@@ -59,9 +59,6 @@ const CodePreview = ({ taskNo, testNo, pc, lineNumber, debbugFile, setBreakpoint
     
         const initializeFiles = async () => {
             await fetchTaskFiles();
-            if (taskFiles && taskFiles.length > 0) {
-                selectFile(taskFiles[0]);
-            }
         };
     
         initializeFiles();
@@ -70,6 +67,15 @@ const CodePreview = ({ taskNo, testNo, pc, lineNumber, debbugFile, setBreakpoint
     useEffect(() => {
         if (taskNo === null || pc === null || !selectedFile) return;
     
+        const fileName = selectedFile;
+        const extension = fileName.substring(fileName.lastIndexOf('.') + 1);
+        const allowedExtensions = ['c', 'S', 'sh'];
+        if (!allowedExtensions.includes(extension)){
+            setHighlightedCode(<div className="code-preview-blocked"><i class="fi fi-sr-cross-circle"></i><p>Nije moguće prikazati ovaj tip fajla.</p></div>);
+            return;
+        }
+
+        console.log("Selected file PASS:", selectedFile);
         selectFile(selectedFile);
     }, [taskNo, pc, testid, selectedFile]);
 
@@ -85,6 +91,13 @@ const CodePreview = ({ taskNo, testNo, pc, lineNumber, debbugFile, setBreakpoint
 
     useEffect(() => {
         if (!codeText || !selectedFile) return;
+        const fileName = selectedFile;
+        const extension = fileName.substring(fileName.lastIndexOf('.') + 1);
+        const allowedExtensions = ['c', 'S', 'sh'];
+        if (!allowedExtensions.includes(extension)){
+            setHighlightedCode(<div className="code-preview-blocked"><i class="fi fi-sr-cross-circle"></i><p>Nije moguće prikazati ovaj tip fajla.</p></div>);
+            return;
+        }
     
         const language = getLanguageByExtension(selectedFile);
         const highlighted = hljs.highlight(codeText, { language }).value;
@@ -141,7 +154,7 @@ const CodePreview = ({ taskNo, testNo, pc, lineNumber, debbugFile, setBreakpoint
                     {taskFiles && taskFiles.map((file, index) => (
                         <div key={index}
                             className={`code-preview-file ${file === selectedFile ? 'selected-file' : ''}`}
-                            onClick={() => selectFile(file)}>
+                            onClick={() => setSelectedFile(file)}>
                             {file}
                         </div>
                     ))}

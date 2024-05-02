@@ -8,6 +8,8 @@ const async = require('async');
 const fs = require('fs');
 const { parse } = require('path');
 const fsp = fs.promises;
+const checkAuthForAutoTest = require('../middleware/autotestActions');
+require('dotenv').config();
 
 const dockerQueue = async.queue(async (task, done) => {
   let container = null;
@@ -16,7 +18,7 @@ const dockerQueue = async.queue(async (task, done) => {
       Image: 'gcc-build',
       Cmd: [],
       Tty: false,
-      Volumes: {
+      Volumes: {  
         '/autotest/data': {},
         '/autotest/conf': {},
         '/output': {}
@@ -34,7 +36,6 @@ const dockerQueue = async.queue(async (task, done) => {
 
     await container.start();
 
-    // Set a manual timeout to force-stop the container
     const timeoutId = setTimeout(async () => {
       try {
         if (container) {
@@ -44,7 +45,7 @@ const dockerQueue = async.queue(async (task, done) => {
       } catch (error) {
         console.error('Error stopping container:', error);
       }
-    }, 30000); // 30 seconds timeout
+    }, 30000);
 
     const stream = await container.logs({
       follow: true,
@@ -57,7 +58,7 @@ const dockerQueue = async.queue(async (task, done) => {
     });
 
     stream.on('end', async () => {
-      clearTimeout(timeoutId); // Clear the timeout if the container ends naturally
+      clearTimeout(timeoutId);
       const resultsPath = `${process.cwd()}/uploads/tests/${task.testId}/data/${task.pc}/results/compile_status${task.taskNo}${task.testNo}.json`;
       const resultsData = await fsp.readFile(resultsPath, 'utf8');
       const results = JSON.parse(resultsData);
@@ -73,13 +74,13 @@ const dockerQueue = async.queue(async (task, done) => {
 
   } catch (error) {
     console.error('Error running Docker process:', error);
-    // Ensure to handle failed case
+
     await db.addNewAutoTestResult(task.student_id, parseInt(task.testId), task.employee_id, 0, task.taskNo, task.testNo, "Docker operation failed or timed out");
     if (container) {
       await container.remove();
     }
   }
-}, 5);
+}, process.env.MAX_DOCKER_CONTAINERS || 5);
 
 
 dockerQueue.saturated = () => {
@@ -88,7 +89,7 @@ dockerQueue.saturated = () => {
   }
 };
 
-router.post('/run/student', async (req, res) => {
+router.post('/run/student', checkAuthForAutoTest, async (req, res) => {
   const { testId, studentIndex, pc } = req.body;
   const employee_id = req.session.userId;
   const student = await db.getStudentsByIndexes([studentIndex]);
@@ -121,7 +122,7 @@ router.post('/run/student', async (req, res) => {
       });
     });
 
-    await db.addNewTestGrading(student_id, parseInt(testId), employee_id, -1, 'TESTIRANJE');
+    await db.addNewTestGrading(student_id, parseInt(testId), null, -1, 'TESTIRANJE');
     res.status(202).send('Docker process queued successfully.');
   } catch (error) {
     console.error('Error processing request:', error);
@@ -129,7 +130,7 @@ router.post('/run/student', async (req, res) => {
   }
 });
 
-router.post('/run/group', async (req, res) => {
+router.post('/run/group', checkAuthForAutoTest, async (req, res) => {
   const { testId, tasks } = req.body;
   const employee_id = req.session.userId;
 
@@ -167,7 +168,7 @@ router.post('/run/group', async (req, res) => {
             });
         });
 
-        await db.addNewTestGrading(student_id, parseInt(testId), employee_id, -1, 'TESTIRANJE');
+        await db.addNewTestGrading(student_id, parseInt(testId), null, -1, 'TESTIRANJE');
     }
 
     res.status(202).send('Docker process queued successfully for all students.');
@@ -177,7 +178,7 @@ router.post('/run/group', async (req, res) => {
   }
 });
 
-router.post('/progress', async (req, res) => {
+router.post('/progress', checkAuthForAutoTest, async (req, res) => {
   const { testId, studentIndexes } = req.body;
   
   try {
@@ -212,7 +213,7 @@ router.post('/progress', async (req, res) => {
           total_points += totalPoints;
         });
 
-        await db.updateFinalTestGrading(testId, student_id, total_points, JSON.stringify(taskResults), "AT OCENJEN");
+        await db.updateFinalTestGrading(testId, student_id, total_points, JSON.stringify(taskResults), "AT OCENJEN", null);
         await db.clearAutoTestResultsForStudent(student_id, testId);
         
         let autotest_progress = 100;

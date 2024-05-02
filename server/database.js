@@ -1,10 +1,11 @@
 const mysql = require("mysql2/promise");
+require('dotenv').config();
 
 const pool = mysql.createPool({
-    host: 'localhost',
-    user: 'gordic',
-    password: 'NadjaNajlepsaSi<3!',
-    database: 'oceni.me'
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE,
 });
 
 class Database {
@@ -20,6 +21,14 @@ class Database {
 
     async migrate() {
         console.info("[INFO] : Database migration started.");
+
+        const createConfigTable = `
+            CREATE TABLE IF NOT EXISTS ocenime_config (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                config_key VARCHAR(255) UNIQUE NOT NULL,
+                config_value VARCHAR(255)
+            );
+        `;
 
         const createeemployeesTable = `
             CREATE TABLE IF NOT EXISTS employees (
@@ -309,12 +318,14 @@ class Database {
         `;
 
         try {
+            await this.pool.execute(createConfigTable);
+            console.info("[INFO] : Config table created successfully.");
             await this.pool.execute(createeemployeesTable);
             console.info("[INFO] : Employees table created successfully.");
             await this.pool.execute(createCoursesTable);
             console.info("[INFO] : Courses table created successfully.");
-            //await this.pool.execute(populateCoursesTable);
-            //console.info("[INFO] : Courses table populated successfully.");
+            await this.pool.execute(populateCoursesTable);
+            console.info("[INFO] : Courses table populated successfully.");
             await this.pool.execute(createStudentsTable);
             console.info("[INFO] : Students table created successfully.");
             await this.pool.execute(createSubjectsTable);
@@ -333,6 +344,56 @@ class Database {
             console.info("[INFO] : Auto test results table created successfully.");
         } catch (err) {
             console.error("[ERROR] : Error while running SQL.", err);
+        }
+    }
+
+    async initDB() {
+        const initializeConfig = `
+            INSERT INTO ocenime_config (config_key, config_value) VALUES
+                ('registration_open', NULL);
+        `;
+        const initializeEmployees = `
+            INSERT INTO employees (first_name, last_name, email, password, role, gender) VALUES
+                ('Nađa', 'Jakšić', 'nadjajaksice34@gmail.com', '$2b$10$eGipQgBCvLVAuQdxRz61/.uBlrgC6QHxk8NCHH/n3lMb0Rt/5kSCW', 0, 'F');
+        `;
+
+        try {
+            await this.pool.execute(initializeConfig);
+            console.info("[INFO] : Config table initialized successfully.");
+            await this.pool.execute(initializeEmployees);
+            console.info("[INFO] : Employees table initialized successfully.");
+        } catch (error) {
+            console.error('Error initializing database:', error);
+        }
+    }
+
+    async checkIsDBInitialized() {
+        try {
+            const [rows] = await this.pool.query("SELECT config_value FROM ocenime_config WHERE config_key = 'registration_open'");
+            return rows;
+        } catch (error) {
+            console.error('Error checking if DB is initialized:', error);
+            return false;
+        }
+    }
+
+    async setConfigValue(key, value) {
+        try {
+            const [result] = await this.pool.query('INSERT INTO ocenime_config (config_key, config_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE config_value = ?', [key, value, value]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('Error setting config value:', error);
+            return false;
+        }
+    }
+
+    async getConfigValue(key) {
+        try{
+            const [rows] = await this.pool.query('SELECT config_value FROM ocenime_config WHERE config_key = ?', [key]);
+            return rows.length > 0 ? rows[0].config_value : null;
+        } catch (error) {
+            console.error('Error getting config value:', error);
+            return null;
         }
     }
 
@@ -526,7 +587,7 @@ class Database {
         }
     }
 
-    async searchStudents(searchString, courseCode = null) {
+    async searchStudents(searchString, courseCode, page, limit = 20) {
         let query = `
             SELECT * FROM students
             WHERE (index_number LIKE CONCAT('%', ? COLLATE utf8mb4_unicode_ci, '%') 
@@ -542,33 +603,41 @@ class Database {
         }
     
         query += ' ORDER BY index_number';
-
+        query += ' LIMIT ? OFFSET ?';
+    
+        const offset = (page - 1) * limit;
+        params.push(limit, offset);
+    
         try {
+            console.log(query, params);
             const [results] = await this.pool.query(query, params);
             if (results.length === 0) {
                 return [];
             }
     
-            const courseCodes = [...new Set(results.map(student => student.course_code))];
-            const coursesQuery = 'SELECT code, name FROM courses WHERE code IN (?)';
-            const [courseNames] = await this.pool.query(coursesQuery, [courseCodes]);
+            const courseCodes = results.map(student => student.course_code);
+            if (courseCodes.length > 0) {
+                const coursesQuery = 'SELECT code, name FROM courses WHERE code IN (?)';
+                const [courseNames] = await this.pool.query(coursesQuery, [courseCodes]);
     
-            const courseCodeToNameMap = courseNames.reduce((map, course) => {
-                map[course.code] = course.name;
-                return map;
-            }, {});
+                const courseCodeToNameMap = courseNames.reduce((map, course) => {
+                    map[course.code] = course.name;
+                    return map;
+                }, {});
     
-            const modifiedResults = results.map(student => ({
-                ...student,
-                course_name: courseCodeToNameMap[student.course_code] || 'Nepoznat studijski program'
-            }));
+                const modifiedResults = results.map(student => ({
+                    ...student,
+                    course_name: courseCodeToNameMap[student.course_code] || 'Nepoznat studijski program'
+                }));
     
-            return modifiedResults;
+                return modifiedResults;
+            }
+            return results;
         } catch (error) {
             console.error('Error searching for students:', error);
             throw error;
         }
-    }
+    }    
 
     async getStudentsFromSubject(subjectId) {
         const subjectQuery = `
@@ -1110,19 +1179,19 @@ class Database {
     
         const insertQuery = `
             INSERT INTO test_gradings (test_id, employee_id, student_id, total_points, gradings, status)
-            VALUES (?, 0, ?, ?, ?, ?)
+            VALUES (?, NULL, ?, ?, ?, ?)
         `;
     
         const updateQuery = `
             UPDATE test_gradings
-            SET total_points = ?, gradings = ?, status = ?
+            SET total_points = ?, gradings = ?, status = ?, employee_id = ?
             WHERE test_id = ? AND student_id = ?
         `;
     
         try {
             const [results] = await this.pool.query(selectQuery, [testId, studentId]);
             if (results[0].cnt > 0) {
-                await this.pool.query(updateQuery, [total_points, gradings, status, testId, studentId]);
+                await this.pool.query(updateQuery, [total_points, gradings, status, employee_id, testId, studentId]);
             } else {
                 await this.pool.query(insertQuery, [testId, studentId, total_points, gradings, status]);
             }
@@ -1175,6 +1244,24 @@ class Database {
         }
     }
 
+    async getTestGradingsReport(testId) {
+        const query = `
+            SELECT tg.*, s.index_number, e.first_name, e.last_name
+            FROM test_gradings tg
+            JOIN students s ON tg.student_id = s.id
+            JOIN employees e ON tg.employee_id = e.id
+            WHERE tg.test_id = ?
+        `;
+        try {
+            const [results] = await this.pool.query(query, [testId]);
+            return results;
+        } catch (error) {
+            console.error('Error retrieving test gradings with student indexes:', error);
+            throw error;
+        }
+    }
+    
+
     async getTestGradingForStudent(testId, studentId) {
         const query = `
             SELECT * FROM test_gradings
@@ -1222,7 +1309,7 @@ class Database {
         const query = `
             SELECT COUNT(*) AS count
             FROM test_gradings
-            WHERE student_id = ? AND status = 'TESTIRANJE AND test_id = ?'
+            WHERE student_id = ? AND status = 'TESTIRANJE' AND test_id = ?
         `;
         try {
             const [results] = await this.pool.query(query, [studentId, testId]);
@@ -1240,10 +1327,10 @@ class Database {
         const query = `
             SELECT COUNT(*) AS count
             FROM test_gradings
-            WHERE student_id IN (${placeholders}) AND status = 'TESTIRANJE AND test_id = ?'
+            WHERE student_id IN (${studentIds}) AND status = 'TESTIRANJE' AND test_id = ?
         `;
         try {
-            const [results] = await this.pool.query(query, studentIds, testId);
+            const [results] = await this.pool.query(query, testId);
             return results[0].count > 0;
         } catch (error) {
             console.error('Error checking for running tests for multiple students:', error);
@@ -1293,6 +1380,24 @@ class Database {
             throw error;
         }
     }
+
+    async checkEmployeeSubjectRelation(employeeId, subjectId) {
+        const query = `
+            SELECT 1 FROM employee_subjects
+            WHERE employee_id = ? AND subject_id = ?
+            UNION
+            SELECT 1 FROM subjects
+            WHERE id = ? AND professor_id = ?
+        `;
+        try {
+            const [results] = await this.pool.query(query, [employeeId, subjectId, subjectId, employeeId]);
+            return results.length > 0;
+        } catch (error) {
+            console.error('Error checking employee-subject relation:', error);
+            throw error;
+        }
+    }
+    
     
 }
 

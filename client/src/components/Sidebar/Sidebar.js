@@ -9,7 +9,7 @@ function Sidebar() {
     return (
         <div className="sidebar">
             <div className='sidebar-app-logo'>
-                <h1>oceni.me</h1>
+                <h1 className='app-logo-text'>oceni.me</h1>
             </div>
 
             <div className='sidebar-delim'></div>

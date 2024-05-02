@@ -232,12 +232,14 @@ router.post('/update', checkIsAssistant, async (req, res) => {
 });
 
 router.post('/search', async (req, res) => {
-    const { search, course_code } = req.body;
+    const { search, course_code, page } = req.body;
 
-    if (!search) {return res.status(400).json({ message: 'Search parameter is required' });}
+    if (!search) {
+        return res.status(400).json({ message: 'Search parameter is required' });
+    }
 
     try {
-        const students = await db.searchStudents(search, course_code);
+        const students = await db.searchStudents(search, course_code, page);
         res.json(students);
     } catch (error) {
         res.status(500).json({ message: 'Error searching for students', error: error.message });

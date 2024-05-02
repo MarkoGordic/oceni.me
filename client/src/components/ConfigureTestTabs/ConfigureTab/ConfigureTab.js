@@ -45,7 +45,7 @@ const ConfigureTab = ({ isLoading, testFiles, setTestsConfig, setConfigStatus })
         isLoading ? (
             <div className="loader">Loading...</div>
         ) : (
-            <div className="newtest-wrap">
+            <div className="newtest-config-wrap">
                 <h1>Konfiguracija test primera</h1>
                 <p className="newtest-info">U nastavku je potrebno da postavite bodovnu vrednost za svaki test primer koji je učitan.</p>
                 

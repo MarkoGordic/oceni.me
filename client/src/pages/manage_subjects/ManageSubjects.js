@@ -365,7 +365,7 @@ function ManageSubjects() {
             if (response.ok) {
                 setModalOpen(false);
                 fetchSubjects();
-                toast.success("Uspešno kreiran predemt " + subjectData.subject_name + " - " + subjectData.code + " !");
+                toast.success("Uspešno kreiran predmet " + subjectData.subject_name + " - " + subjectData.code + " !");
                 return;
             }
     

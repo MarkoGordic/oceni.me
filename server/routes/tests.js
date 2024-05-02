@@ -961,77 +961,88 @@ router.get('/generate-pdf', asyncHandler(async (req, res) => {
 
   try {
     const testDetails = await db.getTestById(testId);
+    const gradings = await db.getTestGradings(testId);
     const studentList = JSON.parse(testDetails.final_students);
-    
-    if (!testDetails || !studentList) {
-      return res.status(404).send('Test or student list not found.');
-    }
+
+    const studentIdsIndexes = await db.getStudentIdsByIndexes(studentList.map(s => s.index));
+
+    const indexToIdMap = studentIdsIndexes.reduce((acc, cur) => {
+      acc[cur.index_number] = cur.id;
+      return acc;
+    }, {});
+
+    const gradingMap = gradings.reduce((map, item) => {
+      if (item.employee_id === null) {
+        item.first_name = "AT";
+        item.last_name = "BOT";
+      }
+      map[item.student_id] = item;
+      return map;
+    }, {});
 
     const docDefinition = {
-        content: [
-            {
-                text: 'Arhitektura Računara - T1234',
-                style: 'header'
-            },
-            {
-                text: `Datum: ${new Date(testDetails.created_at).toLocaleDateString('sr-Latn-RS', { year: 'numeric', month: 'long', day: 'numeric' })}`,
-                style: 'subheader'
-            },
-            {
-                style: 'tableExample',
-                table: {
-                    widths: ['auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
-                    body: [
-                        ['Broj', 'Indeks', 'PC', 'Ime i Prezime', 'Poeni / Max', 'Ocenio'].map(header => ({ text: header, style: 'tableHeader' })),
-                        ...studentList.map((item, index) => [
-                            index + 1,
-                            item.index,
-                            item.pc,
-                            `${item.firstName} ${item.lastName}`,
-                            `0 / ${testDetails.total_points}`,
-                            'Radovan Turović'
-                        ])
-                    ]
-                },
-                layout: 'lightHorizontalLines'
-            }
-        ],
-        footer: function(currentPage, pageCount) {
-            return {
-                  text: currentPage.toString() + ' od ' + pageCount + ' | Generisano pomoću oceni.me | © FTN, Marko Gordić 2024 | N <3',
-                  alignment: 'center',
-            };
-        },
-        styles: {
-            header: {
-              fontSize: 18,
-              bold: true,
-              margin: [0, 0, 0, 10],
-              color: '#005b96'
-            },
-            tableExample: {
-                margin: [0, 5, 0, 15]
-            },
-            tableHeader: {
-              bold: true,
-              fontSize: 13,
-              color: '#4d4d4d'
-            },
-            footer: {
-                fontSize: 10
-            }
-        },
-        defaultStyle: {
-            alignment: 'justify'
-        }
-    };
+      content: [
+          {
+              text: 'Arhitektura Računara - T1234',
+              style: 'header'
+          },
+          {
+              text: `Datum: ${new Date(testDetails.created_at).toLocaleDateString('sr-Latn-RS', { year: 'numeric', month: 'long', day: 'numeric' })}`,
+              style: 'subheader'
+          },
+          {
+              style: 'tableExample',
+              table: {
+                  widths: ['auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
+                  body: [
+                      ['Broj', 'Indeks', 'PC', 'Ime i Prezime', 'Poeni / Max', 'Ocenio'].map(header => ({ text: header, style: 'tableHeader' })),
+                      ...studentList.map((item, index) => [
+                        index + 1,
+                        item.index,
+                        item.pc,
+                        `${item.firstName} ${item.lastName}`,
+                        `${gradingMap[indexToIdMap[item.index]] ? gradingMap[indexToIdMap[item.index]].total_points : 0} / ${testDetails.total_points}`,
+                        `${gradingMap[indexToIdMap[item.index]] ? gradingMap[indexToIdMap[item.index]].first_name + ' ' + gradingMap[indexToIdMap[item.index]].last_name : '/'}`
+                    ])                        
+                  ]
+              },
+              layout: 'lightHorizontalLines'
+          }
+      ],
+      footer: function(currentPage, pageCount) {
+          return {
+                text: currentPage.toString() + ' od ' + pageCount + ' | Generisano pomoću oceni.me | © FTN, Marko Gordić 2024 | N <3',
+                alignment: 'center',
+          };
+      },
+      styles: {
+          header: {
+            fontSize: 18,
+            bold: true,
+            margin: [0, 0, 0, 10],
+            color: '#005b96'
+          },
+          tableExample: {
+              margin: [0, 5, 0, 15]
+          },
+          tableHeader: {
+            bold: true,
+            fontSize: 13,
+            color: '#4d4d4d'
+          },
+          footer: {
+              fontSize: 10
+          }
+      },
+      defaultStyle: {
+          alignment: 'justify'
+      }
+  };
 
     const pdfDoc = printer.createPdfKitDocument(docDefinition);
-
     const filename = 'acs_izvestaj.pdf';
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-
     pdfDoc.pipe(res);
     pdfDoc.end();
   } catch (error) {
@@ -1039,5 +1050,6 @@ router.get('/generate-pdf', asyncHandler(async (req, res) => {
     res.status(500).send('An error occurred while generating the PDF.');
   }
 }));
+
 
 module.exports = router;

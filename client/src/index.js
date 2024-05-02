@@ -23,6 +23,7 @@ import Welcome from './pages/welcome/Welcome';
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify';
 import ConfigureTest from './pages/configure_test/ConfigureTest';
+import WelcomeSara from './pages/welcome_sara/WelcomeSara';
 import { UserProvider } from './contexts/UserContext';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -33,6 +34,7 @@ root.render(
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/welcome" element={<Welcome />}/>
+          <Route path="/welcome_sara" element={<WelcomeSara />}/>
           <Route path="/app" element={<ProtectedRoute><UserProvider><App /></UserProvider></ProtectedRoute>} />
 
           <Route path="/subjects" element={<ProtectedRoute><UserProvider><MySubjects /></UserProvider></ProtectedRoute>} />

@@ -57,6 +57,25 @@
     position: relative;
 }
 
+.code-preview-blocked {
+    height: 90%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    font-family: "Jost", sans-serif;
+}
+
+.code-preview-blocked i {
+    font-size: 100px;
+    color: #007bff;
+}
+
+.code-preview-blocked p {
+    font-size: 25px;
+}
+
 .code-line {
     display: flex;
     align-items: center;

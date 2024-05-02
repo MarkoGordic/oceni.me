@@ -64,9 +64,16 @@
 
 .welcome-app-info {
   margin-top: 0;
-  margin-bottom: 50px;
+  margin-bottom: 0;
   font-size: 18px;
   color: #1e90ff;
+}
+
+.welcome-app-warning {
+  margin-top: 0;
+  margin-bottom: 50px;
+  font-size: 18px;
+  color: red;
 }
 
 .fade-in {
@@ -115,7 +122,7 @@
 
 .welcome-account-form {
     width: 80%;
-    max-width: 370px;
+    max-width: 670px;
     color: #F7F7FF;
     padding: 20px;
     border-radius: 8px;
@@ -124,14 +131,30 @@
     font-family: "Jost", sans-serif;
 }
 
+.welcome-account-form-row {
+  display: inline-flex;
+  justify-content: space-around;
+}
+
 .welcome-account-form form {
     display: flex;
     flex-direction: column;
 }
 
+.welcome-account-form input {
+    width: 300px;
+}
+
 .welcome-account-form label {
     font-size: 16px;
     margin-bottom: 8px;
+}
+
+.welcome-account-gender-select {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .welcome-account-form button {
@@ -148,4 +171,21 @@
 
 .welcome-account-form button:hover {
     background-color: #1476d2;
+}
+
+.welcome-app-button {
+  background-color: #1e90ff;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s;
+  font-family: "Jost", sans-serif;
+  margin-top: 20px;
+}
+
+.welcome-app-button:hover {
+  background-color: #1476d2;
 }

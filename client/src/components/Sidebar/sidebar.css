@@ -16,6 +16,10 @@
     align-items: center;
 }
 
+.app-logo-text {
+    font-family: "Jost", sans-serif;
+}
+
 .sidebar-delim{
     width: 65%;
     height: 2px;

@@ -51,11 +51,12 @@ function Login() {
             </div>
 
             <button type="submit" id="login-button">PRIJAVI SE</button>
-            <p className='info'>Zaboravili ste lozinku? <a href="/reset-password">Postavite novu.</a></p>
+            <p className='info'>Svaki neovlaščeni pokušaj pristupa je kažnjiv</p>
+            <p className='info'>u skladu sa odredbana Krivičnog zakona Republike Srbije</p>
           </form>
         </div>
         <div className="footer">
-            <p>made by Gordic with 💙</p>
+            <p>💙</p>
         </div>
       </div>
     </div>

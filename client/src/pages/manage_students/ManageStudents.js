@@ -59,6 +59,10 @@ function ManageStudents() {
     const [searchString, setSearchString] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [selectedCourseFilter, setSelectedCourseFilter] = useState(null);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const [loading, setLoading] = useState(false);
+
     const [isModalOpen, setModalOpen] = useState(false);
     const animatedComponents = makeAnimated();
     const [studentData, setStudentData] = useState({
@@ -115,31 +119,69 @@ function ManageStudents() {
     };
 
     useEffect(() => {
+        const handleScroll = () => {
+            const scrollPosition = window.innerHeight + document.documentElement.scrollTop;
+            const threshold = document.documentElement.offsetHeight * 0.9;
+    
+            if (scrollPosition >= threshold && hasMore && !loading) {
+                setPage(prevPage => prevPage + 1);
+            }
+        };
+    
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [hasMore, loading]);
+    
+
+    useEffect(() => {
+        setSearchResults([]);
+        setPage(1);
+        setHasMore(true);
+
         if (searchString.trim() !== '' || selectedCourseFilter) {
-            performSearch();
+            performSearch(1);
         }
     }, [searchString, selectedCourseFilter]);
 
-    const performSearch = async () => {
+    useEffect(() => {
+        if (page >= 2) {
+            performSearch(page);
+        }
+    }, [page]);
+    
+    const performSearch = async (page) => {
+        if (loading) return;
+        setLoading(true);
+    
         try {
-            const response = await fetch('http://localhost:8000/students/search', {
+            const response = await fetch(`http://localhost:8000/students/search`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ search: searchString, course_code: selectedCourseFilter?.value }),
+                body: JSON.stringify({ search: searchString, course_code: selectedCourseFilter?.value, page: page }),
                 credentials: 'include',
             });
             if (response.ok) {
                 const data = await response.json();
-                setSearchResults(data);
+                if (data.length < 20) {
+                    setHasMore(false);
+                }
+                if (data.length === 0) {
+                    setSearchResults(prev => [...prev]);
+                } else {
+                    setSearchResults(prev => [...prev, ...data]);
+                }
             } else {
-                console.error("Failed to search students");
+                toast.error("Došlo je do neočekivane greške prilikom pretrage studenata.")
             }
         } catch (error) {
             console.error("Error searching students:", error);
+            toast.error("Došlo je do neočekivane greške prilikom pretrage studenata.")
+        } finally {
+            setLoading(false);
         }
-    };
+    };    
 
     const handleOpenModal = () => setModalOpen(true);
     const handleCloseModal = () => setModalOpen(false);

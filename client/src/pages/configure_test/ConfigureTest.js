@@ -212,13 +212,11 @@ function ConfigureTest() {
         <ToastContainer theme="dark" />
         <SubjectSidebar />
         <div className='content'>
-            <div className="content-wrap">
-                    {tabs.map(tab => (
-                        <div key={tab.id} style={{ display: activeTab === tab.id ? 'block' : 'none', width: '100%'}}>
-                            {tab.content}
-                        </div>
-                    ))}
-            </div>
+            {tabs.map(tab => (
+                <div key={tab.id} style={{ display: activeTab === tab.id ? 'block' : 'none', width: '100%'}}>
+                    {tab.content}
+                </div>
+            ))}
         </div>
     </div>
     )
