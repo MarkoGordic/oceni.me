@@ -1,19 +1,25 @@
 import React from 'react';
 import './sidebarRoute.css';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate instead of useHistory
+import { NavLink, useNavigate } from 'react-router-dom';
 
-function SidebarRoute({ icon, text, path }) {
+function SidebarRoute({ icon, text, path, exact }) {
     const navigate = useNavigate();
 
-    const handleRouteClick = () => {
+    const handleRouteClick = (e) => {
+        e.preventDefault(); // Prevent default link behavior
         navigate(path); // Use navigate with the provided path
     };
 
     return (
-        <div className='sidebar-route active' onClick={handleRouteClick}>
+        <NavLink 
+            to={path}
+            end={exact} // This ensures the link is only active when the location is exactly this path.
+            className={({ isActive }) => isActive ? "sidebar-route active" : "sidebar-route"}
+            onClick={handleRouteClick}
+        >
             <i className={icon}></i>
-            <span className='sidebar-route-text'>{text}</span> {/* Changed from <a> to <span> */}
-        </div>
+            <span className='sidebar-route-text'>{text}</span>
+        </NavLink>
     );
 }
 

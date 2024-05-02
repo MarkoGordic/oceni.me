@@ -8,6 +8,7 @@ import CodeSelector from "../../components/TestReview/CodeSelector/CodeSelector"
 import CodeSelectorInfo from "../../components/TestReview/CodeSelectorInfo/CodeSelectorInfo";
 import EmulatorDebuggerTab from "../../components/TestReview/EmulatorDebuggerTab/EmulatorDebuggerTab";
 import './reviewTest.css';
+import { useNavigate } from 'react-router-dom';
 
 const ReviewTest = () => {
     const { id, testid, studentId } = useParams();
@@ -31,6 +32,8 @@ const ReviewTest = () => {
     const [breakpoints, setBreakpoints] = useState([]);
 
     const [openTabs, setOpenTabs] = useState({});
+    const navigate = useNavigate();
+
     const tabComponents = {
         'EMULATOR & DEBUGGER': EmulatorDebuggerTab,
     };
@@ -189,6 +192,8 @@ const ReviewTest = () => {
                     />
                     <CodeSelector testData={testData} setCode={setTargetTaskNo} setCodeTest={setTargetTestNo}/>
     
+                    <button className="test-review-grade-button" onClick={() => {navigate('./../../');}}>OCENI I SAČUVAJ</button>
+
                     {Object.entries(tabComponents).map(([tab, Component]) => (
                         <div className="review-tab-wrap" key={tab}>
                             <div className={`review-tab ${openTabs[tab] ? 'review-tab-active' : ''}`} onClick={() => toggleTab(tab)}>

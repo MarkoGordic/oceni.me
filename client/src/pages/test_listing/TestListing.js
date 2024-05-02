@@ -138,7 +138,7 @@ function TestListing() {
         }).then((response) => {
             if (response.ok) {
                 const studentToTestTmp = students.find(student => student.index === studentIndex);
-                toast.success(`Automatsko testiranje je pokrenuto za studenta ${studentToTestTmp.fullName}.`);
+                toast.success(`Automatsko testiranje je pokrenuto za studenta ${studentToTestTmp.firstName} ${studentToTestTmp.lastName}.`);
             } else {
                 handleAutotestError(response);
             }

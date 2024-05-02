@@ -20,6 +20,11 @@ const CodePreview = ({ taskNo, testNo, pc, lineNumber, debbugFile, setBreakpoint
     const [taskFiles, setTaskFiles] = React.useState(null);
     const [selectedFile, setSelectedFile] = React.useState(null);
 
+    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+    const [pendingFileContent, setPendingFileContent] = useState('');
+    const [showContent, setShowContent] = useState(false);
+
+
     useEffect(() => {
         console.log(taskFiles);
     }, [taskFiles]);
@@ -38,7 +43,7 @@ const CodePreview = ({ taskNo, testNo, pc, lineNumber, debbugFile, setBreakpoint
             console.error("Error fetching task files:", error);
             toast.error("Došlo je do greške prilikom učitavanja fajlova.");
         }
-    }
+    }   
 
     const selectFile = async (fileName) => {
         setSelectedFile(fileName);
@@ -47,12 +52,24 @@ const CodePreview = ({ taskNo, testNo, pc, lineNumber, debbugFile, setBreakpoint
                 credentials: 'include',
             });
             const text = await response.text();
+            const blacklistedWords = ['kurac', 'kurčina', 'kurčić', 'govno', 'jebem', 'jebati', 'jebote', 'penis', 'pička', 'pizda', 'sranje', 'kurvin', 'kurva', 'drolja', 'pickica', 'picka', 'drkadzija', 'drkadžija', 'drkati', 'pičkin', 'jebac', 'jebač', 'jebanje', 'jebiga', 'jebala', 'jebeno', 'jebeni', 'jebačina', 'jebach', 'jebachina', 'pičketina', 'pičkica', 'šupak', 'supak', 'šupčić', 'šupcic', 'supčić', 'kurvetina', 'kurvetina', 'muda', 'budala', 'idiot', 'glupan', 'glupson', 'kreten', 'debil', 'prokletnik', 'gnjida', 'govno', 'seronja', 'usrani', 'prcati', 'džukela', 'dzukela', 'čmar', 'šupčina', 'proseravanje', 'prosrati', 'usrati', 'čmarina', 'cmarina'];
+    
+            const words = text.toLowerCase().split(/\s+/);
+            const containsBlacklisted = words.some(word => blacklistedWords.includes(word));
+    
+            if (containsBlacklisted) {
+                setPendingFileContent(text);
+                setShowConfirmDialog(true);
+                return;
+            }
+            
+            setShowContent(true);
             setCodeText(text);
         } catch (error) {
             console.error("Error fetching code for file:", error);
             toast.error("Došlo je do greške prilikom učitavanja koda.");
         }
-    };    
+    };
 
     useEffect(() => {
         if (taskNo === null || pc === null) return;
@@ -90,7 +107,7 @@ const CodePreview = ({ taskNo, testNo, pc, lineNumber, debbugFile, setBreakpoint
     };
 
     useEffect(() => {
-        if (!codeText || !selectedFile) return;
+        if (!codeText || !selectedFile || !showContent) return;
         const fileName = selectedFile;
         const extension = fileName.substring(fileName.lastIndexOf('.') + 1);
         const allowedExtensions = ['c', 'S', 'sh'];
@@ -117,7 +134,7 @@ const CodePreview = ({ taskNo, testNo, pc, lineNumber, debbugFile, setBreakpoint
             );
         });
         setHighlightedCode(lines);
-    }, [codeText, selectedFile, lineNumber, breakpoints]);    
+    }, [codeText, selectedFile, lineNumber, breakpoints, showContent]);    
 
     const isBreakpointAllowed = (fileName) => {
         const allowedExtensions = ['.c', '.S'];
@@ -149,6 +166,20 @@ const CodePreview = ({ taskNo, testNo, pc, lineNumber, debbugFile, setBreakpoint
 
     return (
         <div className="code-preview">
+            {showConfirmDialog && (
+                <div className='confirmation-dialog-overlay'>
+                    <div className="confirmation-dialog">
+                        <p>Ovaj fajl sadrži izraze koji mogu biti uvredljivi nekim korisnicima. Da li ste sigurni da želite da ga prikažete?</p>
+                        <button onClick={() => {
+                            setCodeText(pendingFileContent);
+                            setShowContent(true);
+                            setShowConfirmDialog(false);
+                        }}>PRIKAŽI FAJL</button>
+                        <button onClick={() => {setShowConfirmDialog(false);setShowContent(false);setHighlightedCode(<div className="code-preview-blocked"><i class="fi fi-sr-cross-circle"></i><p>Fajl sadrži neprimerene izraze i neće biti prikazan.</p></div>);}}>OTKAŽI</button>
+                    </div>
+                </div>
+            )}
+    
             <pre className="code-preview-code">
                 <div className='code-preview-files'>
                     {taskFiles && taskFiles.map((file, index) => (
@@ -159,11 +190,11 @@ const CodePreview = ({ taskNo, testNo, pc, lineNumber, debbugFile, setBreakpoint
                         </div>
                     ))}
                 </div>
-
                 {highlightedCode}
             </pre>
         </div>
     );
+    
 }
 
 export default CodePreview;

@@ -39,7 +39,7 @@ const UploadTab = ({ setFileName, setTargetZIP, confirmUpload, isLoading, setCon
         isLoading ? (
             <div className="loader"></div>
         ) : (
-            <div className="newtest-wrap">
+            <div className="newtest-wrap-config">
                 <h1>Kreiranje nove konfiguracije</h1>
                 <p className="newtest-info">Kako bi kreirali konfiguraciju za novi kolokvijum, molimo vas da unesete naziv ove konfiguracije i otpremite ZIP datoteku koja sadrži test primere.</p>
                 <p className="newtest-info">Naziv konfiguracije treba da odgovara nazivu kolokvijuma.</p>

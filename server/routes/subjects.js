@@ -17,7 +17,7 @@ router.post('/new', checkIsDekan, upload.none(), async (req, res) => {
 
     const isUniqueCode = await db.subjectCodeExists(code);
     if (isUniqueCode) {
-        return res.status(400).send("Subject code already exists.");
+        return res.status(409).send("Subject code already exists.");
     }
 
     const isValidProfessor = await db.professorExists(professorId);

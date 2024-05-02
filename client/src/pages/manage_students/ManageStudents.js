@@ -238,6 +238,7 @@ function ManageStudents() {
                 toast.error("Došlo je do neočekivane greške prilikom kreiranja studentskog naloga.");
             }
         } catch (error) {
+            toast.error("Došlo je do neočekivane greške prilikom kreiranja studentskog naloga.");
             console.error("Error submitting form:", error);
         }
     };
@@ -412,7 +413,7 @@ function ManageStudents() {
                 <NewStudentModal isOpen={isModalOpen} onClose={handleCloseModal} onSubmit={handleSubmit} onChange={handleInputChange} studentData={studentData} selectOnChange={handleSelectChange} onSelectGenderChange={handleGenderSelectChange}/>
 
                 <div className='student-list-wrap'>
-                    {searchResults.length > 0 ? (
+                    {(
                         searchResults.map((student) => (
                             <StudentCard
                                 key={student.id}
@@ -423,8 +424,6 @@ function ManageStudents() {
                                 onClick={() => handleStudentClick(student.id)}
                             />
                         ))
-                    ) : (
-                        <p>Nije pronađen ni jedan student.</p>
                     )}
                 </div>
 

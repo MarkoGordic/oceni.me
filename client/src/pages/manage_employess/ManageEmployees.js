@@ -175,7 +175,7 @@ function ManageEmployees() {
                 <button className='new-employee-button' onClick={handleOpenModal}><div className='new-button-content'><i className="fi fi-rs-add"></i> DODAJ ZAPOSLENOG</div></button>
 
                 <div className='users-list-wrap'>
-                    {searchResults.length > 0 ? (
+                    {(
                         searchResults.map((employee) => (
                             <UserCard
                                 key={employee.id}
@@ -186,8 +186,6 @@ function ManageEmployees() {
                                 onClick={() => handleEmployeeClick(employee.id)}
                             />
                         ))
-                    ) : (
-                        <p>Nije pronađen ni jedan zaposleni.</p>
                     )}
                 </div>
 

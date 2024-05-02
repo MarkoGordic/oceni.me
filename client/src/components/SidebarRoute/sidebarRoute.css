@@ -11,6 +11,7 @@
     padding: 8px;
     transition: 0.3s;
     cursor: pointer;
+    color: #F7F7FF;
 }
 
 .active {
@@ -27,6 +28,10 @@
     color: #BAD5E6;
 }
 
+.logout-route a{
+    color: white;
+}
+
 i {
     display: flex;
     align-items: center;
@@ -37,6 +42,5 @@ i {
 .sidebar-route-text {
     font-size: 16px;
     text-decoration: none;
-    color: #F7F7FF;
     transition: 0.3s;
 }

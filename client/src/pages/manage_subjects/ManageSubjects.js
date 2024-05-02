@@ -362,13 +362,16 @@ function ManageSubjects() {
                 credentials: 'include',
             });
     
-            if (response.ok) {
+            if (response.status === 201) {
                 setModalOpen(false);
                 fetchSubjects();
                 toast.success("Uspešno kreiran predmet " + subjectData.subject_name + " - " + subjectData.code + " !");
                 return;
+            } else if (response.status === 409) {
+                toast.error("Predmet sa unetim kodom već postoji.");
+                return;
             }
-    
+            
             toast.error("Došlo je do neočekivane greške prilikom kreiranja novog predmeta.");
         } catch (error) {
             console.error('Error adding subject:', error);

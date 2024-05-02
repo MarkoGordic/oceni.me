@@ -23,7 +23,7 @@ function SubjectSidebar() {
 
             <div className='sidebar-routes'>
                 <SidebarRoute icon='fi fi-bs-home' text='Pregled predmeta' path={`${basePath}/overview`} />
-                <SidebarRoute icon='fi fi-rr-list-check' text='Kolokvijumi' path={`${basePath}/tests`} />
+                <SidebarRoute icon='fi fi-rr-list-check' text='Kolokvijumi' path={`${basePath}/tests`} exact/>
                 <SidebarRoute icon='fi fi-br-plus' text='Novi kolokvijum' path={`${basePath}/tests/new`} />
                 <SidebarRoute icon='fi fi-ss-settings' text='Konfiguracije' path={`${basePath}/tests/configurations`} />
                 <SidebarRoute icon='fi fi-sr-add-document' text='Kreiraj konfiguraciju' path={`${basePath}/tests/configure`} />
@@ -39,7 +39,7 @@ function SubjectSidebar() {
             <div className='sidebar-delim'></div>
 
             <div className='sidebar-routes'>
-                <SidebarRoute icon='fi fi-br-exit' text='Napusti predmet' path='/subjects' />
+                <SidebarRoute icon='fi fi-br-exit' text='Napusti predmet' path='/subjects' exact/>
             </div>
 
             <div className='sidebar-user-wrap'>
