@@ -356,7 +356,7 @@ class Database {
             INSERT INTO employees (first_name, last_name, email, password, role, gender) VALUES
                 ('Nađa', 'Jakšić', 'nadjajaksice34@gmail.com', '$2b$10$eGipQgBCvLVAuQdxRz61/.uBlrgC6QHxk8NCHH/n3lMb0Rt/5kSCW', 0, 'F');
         `;
-
+        
         try {
             await this.pool.execute(initializeConfig);
             console.info("[INFO] : Config table initialized successfully.");
@@ -416,6 +416,18 @@ class Database {
             throw error;
         }
     }
+
+    async getEmployeesByIds(employeeIds) {
+        const placeholders = employeeIds.map(() => '?').join(',');
+        const query = `SELECT id, first_name, last_name FROM employees WHERE id IN (${placeholders})`;
+        try {
+          const [results] = await this.pool.query(query, employeeIds);
+          return results;
+        } catch (error) {
+          console.error('Error retrieving employees by IDs:', error);
+          throw error;
+        }
+      }      
 
     async deleteEmployeeById(id) {
         const query = 'DELETE FROM employees WHERE id = ?';

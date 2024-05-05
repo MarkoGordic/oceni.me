@@ -1,6 +1,5 @@
 .code-selector {
     width: 90%;
-    padding: 10px;
     margin-bottom: 20px;
 }
 
@@ -8,7 +7,7 @@
     display: inline-flex;
     width: 90%;
     text-align: left;
-    padding: 10px;
+    padding: 5px;
 }
 
 .code-selector-single-task-no {

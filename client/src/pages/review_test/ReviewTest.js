@@ -7,6 +7,8 @@ import CurrentStudentInfo from "../../components/TestReview/CurrentStudentInfo/C
 import CodeSelector from "../../components/TestReview/CodeSelector/CodeSelector";
 import CodeSelectorInfo from "../../components/TestReview/CodeSelectorInfo/CodeSelectorInfo";
 import EmulatorDebuggerTab from "../../components/TestReview/EmulatorDebuggerTab/EmulatorDebuggerTab";
+import CompilerTab from "../../components/TestReview/CompilerTab/CompilerTab";
+import RealtimeInterpreterTab from "../../components/TestReview/RealtimeInterpreterTab/RealtimeInterpreterTab";
 import './reviewTest.css';
 import { useNavigate } from 'react-router-dom';
 
@@ -28,6 +30,7 @@ const ReviewTest = () => {
     const [isLoading, setIsLoading] = useState(false);
 
     const [debbugLine, setDebbugLine] = useState([]);
+    const [debbugLineContent, setDebbugLineContent] = useState('');
     const [debbugFile, setDebbugFile] = useState(null);
     const [breakpoints, setBreakpoints] = useState([]);
 
@@ -35,10 +38,20 @@ const ReviewTest = () => {
     const navigate = useNavigate();
 
     const tabComponents = {
+        "PRIKAZ UZIVO": RealtimeInterpreterTab,
         'EMULATOR & DEBUGGER': EmulatorDebuggerTab,
+        'COMPILER': CompilerTab,
+    };
+    const tabHeights = {
+        "PRIKAZ UZIVO": "50px",
+        'EMULATOR & DEBUGGER': "310px",
+        'COMPILER': "200px",
+
     };
     const tabProps = {
-        'EMULATOR & DEBUGGER': { taskNo: targetTaskNo, testNo: targetTestNo, pc: pc, setDebbugLine: setDebbugLine, setDebbugFile: setDebbugFile, breakpoints: breakpoints},
+        "PRIKAZ UZIVO": { currentDebbugLine: debbugLineContent },
+        'EMULATOR & DEBUGGER': { taskNo: targetTaskNo, testNo: targetTestNo, pc: pc, setDebbugLine: setDebbugLine, setDebbugFile: setDebbugFile, breakpoints: breakpoints, setDebbugLineContent: setDebbugLineContent},
+        'COMPILER': { taskNo: targetTaskNo, testNo: targetTestNo, pc: pc, testId: testid },
     };
 
     useEffect(() => {
@@ -202,7 +215,7 @@ const ReviewTest = () => {
                                 <i className="fi fi-rr-angle-small-down"></i>
                             </div>
                             {openTabs[tab] && (
-                                <div className="tab-content">
+                                <div className="tab-content" style={{ height: openTabs[tab] ? tabHeights[tab] : '50px' }}>
                                     <Component {...tabProps[tab]} />
                                 </div>
                             )}

@@ -52,7 +52,7 @@ function Login() {
 
             <button type="submit" id="login-button">PRIJAVI SE</button>
             <p className='info'>Svaki neovlaščeni pokušaj pristupa je kažnjiv</p>
-            <p className='info'>u skladu sa odredbana Krivičnog zakona Republike Srbije</p>
+            <p className='info'>u skladu sa odredbama Krivičnog zakona Republike Srbije</p>
           </form>
         </div>
         <div className="footer">

@@ -23,26 +23,28 @@ body, #root {
 
 .left-column {
     width: 50%;
-    height: 100%;
+    height: 90dvh;
     display: inline-block;
     float: left;
 }
 
 .right-column {
     width: 50%;
-    height: 100%;
+    height: 90dvh;
     display: inline-block;
     float: right;
+    overflow-y: auto;
 }
 
 .review-tab-wrap {
     margin-bottom: 20px;
+    margin-left: 5px;
 }
 
 .review-tab {
     width: 90%;
     height: 40px;
-    padding: 10px;
+    padding: 0px 10px;
     background-color: #0F0E0E;
     box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
     cursor: pointer;
@@ -73,7 +75,6 @@ body, #root {
     color: #ccc;
     margin-top: 0px;
     box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
-    height: 260px;
 }
 
 .review-tab-active {

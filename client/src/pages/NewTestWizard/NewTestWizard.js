@@ -227,7 +227,7 @@ const NewTestWizard = () => {
             setMissingStudents([]);
             setStatus("PODESENI_STUDENTI");
     
-            toast.success('Missing students have been successfully confirmed.');
+            toast.success('Uspešno potvrđeni studenti!');
         } catch (error) {
             console.error('Error confirming missing students:', error);
             toast.error(error.message || 'Došlo je do greške prilikom potvrđivanja studenata.');

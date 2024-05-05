@@ -1,0 +1,84 @@
+.compiler-tab {
+    padding: 5px;
+    margin-top: -15px;
+    border-radius: 8px;
+    font-family: 'Jost', sans-serif;
+    overflow: hidden;
+    height: 210px;
+}
+
+.compiler-tab p {
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.compiler-data-wrap {
+    height: 100%;
+    width: 100%;
+    display: inline-flex;
+    overflow-y: hidden;
+}
+
+.compiler-outputs {
+    width: 90%;
+    height: 100%;
+    text-align: left;
+    margin-top: 10px;
+    overflow-y: auto;
+}
+
+.compiler-outputs pre {
+    font-size: 14px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.compiler-exit-codes {
+    width: 10%;
+    display: flex;
+    flex-direction: column;
+    font-weight: bold;
+    overflow-y: hidden;
+}
+
+.compiler-exit-codes p {
+    margin: 9px;
+}
+
+.compiler-output {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    text-align: left;
+    text-wrap: wrap;
+}
+
+.compiler-error {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    text-align: left;
+    max-width: 100%;
+    text-wrap: wrap;
+}
+
+.compiler-error pre {
+    color: red;
+}
+
+.compiler-error h3, .compiler-output h3 {
+    font-weight: bold;
+    margin: 0px;
+}
+
+.compiler-select-text {
+    height: 170px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 25px !important;
+}

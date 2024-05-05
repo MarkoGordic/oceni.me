@@ -260,7 +260,7 @@ router.post('/update', async (req, res) => {
 
         res.status(200).json({ message: 'Employee updated successfully' });
     } catch (error) {
-        await db.createLogEntry(req.session.userId, `${user.first_name} ${user.last_name}`, `Neuspešan pokusaj promene podataka za zaposlenog sa ID ${id}.`, 'GREŠKA', 'GREŠKA', req.ip, userAgent);
+        await db.createLogEntry(req.session.userId, `${user.first_name} ${user.last_name}`, `Neuspešan pokusaj promene podataka za zaposlenog sa ID ${id}.`, 'GREŠKA', 'GREŠKA', req.ip, req.headers['user-agent']);
         console.error("Error updating employee:", error);
         res.status(500).json({ error: 'Internal server error' });
     }

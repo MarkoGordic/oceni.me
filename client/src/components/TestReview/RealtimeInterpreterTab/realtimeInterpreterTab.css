@@ -1,0 +1,26 @@
+.interpreter-tab {
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 20px;
+    overflow: auto;
+}
+
+.interpreter-tab span {
+    font-weight: bold;
+}
+
+.interpreter-tab .add {
+    color: #2ba92b;
+}
+
+.interpreter-tab .sub {
+    color: red;
+}
+
+.interpreter-tab .mul {
+    color: #2ba92b; 
+}
+
+.interpreter-tab .div {
+    color: red; 
+}

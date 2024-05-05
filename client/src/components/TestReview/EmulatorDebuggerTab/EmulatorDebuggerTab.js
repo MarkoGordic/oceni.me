@@ -1,11 +1,10 @@
-import React, { useEffect } from "react";
-import { useState } from "react";
+import React, { useEffect, useState } from 'react';
 import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import "./emulatorDebuggerTab.css";
 
-const EmulatorDebuggerTab = ({taskNo, testNo, pc, setDebbugLine, setDebbugFile, breakpoints}) => {
-    const { id, testid, studentId } = useParams();
+const EmulatorDebuggerTab = ({ taskNo, testNo, pc, setDebbugLine, setDebbugFile, breakpoints, setDebbugLineContent }) => {
+    const { testid } = useParams();
 
     const [gdbData, setGdbData] = useState(null);
     const [debuggerRunning, setDebuggerRunning] = useState(false);
@@ -22,15 +21,17 @@ const EmulatorDebuggerTab = ({taskNo, testNo, pc, setDebbugLine, setDebbugFile, 
         esi: "auto",
         edi: "auto"
     });
+    const eflags = ["CF", "PF", "AF", "ZF", "SF", "TF", "IF", "DF", "OF"];
+    const [currentEFlagsValues, setCurrentEFlagsValues] = useState([]);
 
     useEffect(() => {
-        console.log(gdbData, debuggerRunning, currentInstruction, currentRegisterValues);
         if (gdbData === null) return;
     
         if (!debuggerRunning) {
             setCurrentInstruction(0);
             setCurrentRegisterValues(null);
             setCurrentStringRegisterValues(null);
+            setCurrentEFlagsValues([]);
             setDebbugLine(null);
             setDebbugFile(null);
         } else {
@@ -38,6 +39,8 @@ const EmulatorDebuggerTab = ({taskNo, testNo, pc, setDebbugLine, setDebbugFile, 
             if (currentInst) {
                 setCurrentRegisterValues(currentInst.registers);
                 setCurrentStringRegisterValues(currentInst.register_strings);
+                setCurrentEFlagsValues(currentInst.registers.eflags || []);
+                setDebbugLineContent(currentInst.instruction);
                 setDebbugLine(currentInst.source.line);
                 setDebbugFile(currentInst.source.file);
             }
@@ -64,7 +67,7 @@ const EmulatorDebuggerTab = ({taskNo, testNo, pc, setDebbugLine, setDebbugFile, 
 
     const handleTypeChange = (register, type) => {
         setRegisterTypes(prev => ({ ...prev, [register]: type }));
-      };
+    };
 
     const formatValueByType = (register, type) => {
         if (type === "string") {
@@ -72,36 +75,45 @@ const EmulatorDebuggerTab = ({taskNo, testNo, pc, setDebbugLine, setDebbugFile, 
         } else {
             const value = currentRegisterValues ? currentRegisterValues[register] : "N/A";
             switch (type) {
-            case "int":
-                return parseInt(value).toString();
-            case "float":
-                return parseFloat(value).toFixed(2);
-            case "hex":
-                return "0x" + parseInt(value).toString(16);
-            default:
-                return value;
+                case "int":
+                    return parseInt(value).toString();
+                case "float":
+                    return parseFloat(value).toFixed(2);
+                case "hex":
+                    return "0x" + parseInt(value).toString(16);
+                default:
+                    return value;
             }
         }
     };
-    
+
+    const renderFlags = () => {
+        return eflags.map(flag => (
+            <div className="gdb-single-flag" key={flag}>
+                <div className={`gdb-status-${currentEFlagsValues.includes(flag) ? 'on' : 'off'}`}></div>
+                <p className="gdb-flag-name">{flag}</p>
+            </div>
+        ));
+    };
+
     const runToBreakpoint = () => {
         if (!gdbData || !breakpoints || breakpoints.length === 0) {
             toast.info("Nema postavljenih tačaka prekida ili podataka.");
             return;
         }
-    
+
         if (!debuggerRunning) {
             toast.info("Debugger nije pokrenut.");
             return;
         }
-    
+
         const breakpointLines = breakpoints.flat();
-    
+
         const startSearchIndex = currentInstruction + 1;
         const breakpointIndex = gdbData.slice(startSearchIndex).findIndex(instruction => 
             breakpointLines.includes(instruction.source.line)
         );
-    
+
         if (breakpointIndex !== -1) {
             const realIndex = startSearchIndex + breakpointIndex;
             setCurrentInstruction(realIndex);
@@ -121,14 +133,14 @@ const EmulatorDebuggerTab = ({taskNo, testNo, pc, setDebbugLine, setDebbugFile, 
             toast.info("Dostignut je kraj instrukcija.");
         }
     };
-    
+
     const handlePrevInstruction = () => {
         if (currentInstruction > 0) {
             setCurrentInstruction(prev => Math.max(0, prev - 1));
         } else {
             toast.info("Već ste na prvoj instrukciji.");
         }
-    };    
+    };
 
     return (
         <div className="emuldbg-tab-wrap">
@@ -136,9 +148,13 @@ const EmulatorDebuggerTab = ({taskNo, testNo, pc, setDebbugLine, setDebbugFile, 
                 <div className="dbg-controls">
                     <button className="dbg-run-btn" onClick={() => {if(testNo !== null && taskNo !== null){setDebuggerRunning(true);} else toast.error("Morate odabrati test primer.");}}>POKRENI</button>
                     <button className="dbg-stop-btn" onClick={() => {setDebuggerRunning(false);}}>ZAUSTAVI</button>
-                    <button className="dbg-step-btn" onClick={handleNextInstruction}>KORAK</button>
-                    <button className="dbg-step-back-btn" onClick={handlePrevInstruction}>KORAK UNAZAD</button>
-                    <button className="dbg-run-to-brk-btn" onClick={runToBreakpoint}>POKRENI DO TAČKE PREKIDA</button>
+                    <button className="dbg-blue-btn" onClick={handleNextInstruction}>KORAK</button>
+                    <button className="dbg-blue-btn" onClick={handlePrevInstruction}>KORAK UNAZAD</button>
+                    <button className="dbg-blue-btn" onClick={runToBreakpoint}>POKRENI DO TAČKE PREKIDA</button>
+                </div>
+
+                <div className="gdb-flags">
+                    {renderFlags()}
                 </div>
 
                 <div className="gdb-registers">

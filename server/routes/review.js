@@ -26,7 +26,6 @@ router.get('/files/:testId/:pc/:taskNo', async (req, res) => {
 router.get('/code/:testId/:pc/:taskNo/:fileName', async (req, res) => {
     const { testId, pc, taskNo, fileName } = req.params;
 
-    // Validate fileName to include more typical file naming conventions
     if (!/^[a-zA-Z0-9_.-]+$/.test(fileName)) {
         return res.status(400).send("Invalid filename.");
     }
@@ -51,6 +50,20 @@ router.get('/debugger/:testId/:pc/:taskNo/:testNo', async (req, res) => {
     const { testId, pc, taskNo, testNo } = req.params;
 
     const filePath = path.join(__dirname, '..', 'uploads', 'tests', testId, 'data', pc, 'results', `resultsz${taskNo}${testNo}.json`);
+
+    try {
+        const data = await fsp.readFile(filePath, 'utf8');
+        res.send(data);
+    } catch (err) {
+        console.error("Error reading the file:", err);
+        res.status(404).send("Datoteka nije pronađena.");
+    }
+});
+
+router.get('/compiler/:testId/:pc/:taskNo/:testNo', async (req, res) => {
+    const { testId, pc, taskNo, testNo } = req.params;
+
+    const filePath = path.join(__dirname, '..', 'uploads', 'tests', testId, 'data', pc, 'results', `compile_statusz${taskNo}${testNo}.json`);
 
     try {
         const data = await fsp.readFile(filePath, 'utf8');

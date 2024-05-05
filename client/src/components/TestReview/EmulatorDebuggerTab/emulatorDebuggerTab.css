@@ -26,27 +26,11 @@
     background-color: #cc0000;
 }
 
-.dbg-step-btn {
+.dbg-blue-btn {
     background-color: #1993F0;
 }
 
-.dbg-step-btn:hover {
-    background-color: #1476d2;
-}
-
-.dbg-step-back-btn {
-    background-color: #1993F0;
-}
-
-.dbg-step-back-btn:hover {
-    background-color: #1476d2;
-}
-
-.dbg-run-to-brk-btn {
-    background-color: #1993F0;
-}
-
-.dbg-run-to-brk-btn:hover {
+.dbg-blue-btn:hover {
     background-color: #1476d2;
 }
 
@@ -91,4 +75,38 @@
 .gdb-register-type-select:hover {
     border-color: #0056b3;
     background-color: #090909;
+}
+
+.gdb-flags {
+    width: 100%;
+    display: inline-flex;
+    justify-content: space-around;
+    align-items: center;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.gdb-single-flag {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.gdb-status-on {
+    width: 20px;
+    height: 20px;
+    background-color: #2ba92b;
+    border-radius: 5px;
+}
+
+.gdb-status-off {
+    width: 20px;
+    height: 20px;
+    background-color: #ff0033;
+    border-radius: 5px;
+}
+
+.gdb-flag-name {
+    margin-top: 5px;
+    margin-bottom: 0px;
 }

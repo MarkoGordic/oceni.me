@@ -971,12 +971,17 @@ router.get('/generate-pdf', asyncHandler(async (req, res) => {
       return acc;
     }, {});
 
+    const employeeIds = gradings.map(gr => gr.employee_id).filter(id => id != null);
+    const employees = await db.getEmployeesByIds(employeeIds);
+
+    const employeeMap = employees.reduce((map, emp) => {
+      map[emp.id] = `${emp.first_name} ${emp.last_name}`;
+      return map;
+    }, {});
+
     const gradingMap = gradings.reduce((map, item) => {
-      if (item.employee_id === null) {
-        item.first_name = "AT";
-        item.last_name = "BOT";
-      }
-      map[item.student_id] = item;
+      const employeeName = item.employee_id ? employeeMap[item.employee_id] : "AT BOT";
+      map[item.student_id] = { ...item, employeeName };
       return map;
     }, {});
 
@@ -1002,7 +1007,7 @@ router.get('/generate-pdf', asyncHandler(async (req, res) => {
                         item.pc,
                         `${item.firstName} ${item.lastName}`,
                         `${gradingMap[indexToIdMap[item.index]] ? gradingMap[indexToIdMap[item.index]].total_points : 0} / ${testDetails.total_points}`,
-                        `${gradingMap[indexToIdMap[item.index]] ? gradingMap[indexToIdMap[item.index]].first_name + ' ' + gradingMap[indexToIdMap[item.index]].last_name : '/'}`
+                        `${gradingMap[indexToIdMap[item.index]] ? gradingMap[indexToIdMap[item.index]].employeeName : '/'}`
                     ])                        
                   ]
               },

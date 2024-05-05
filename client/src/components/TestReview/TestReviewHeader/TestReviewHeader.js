@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import './testReviewHeader.css';
+import { useUser } from '../../../contexts/UserContext';
 
 const TestReviewHeader = () => {
     const [currentTime, setCurrentTime] = useState(new Date());
+    const { user } = useUser();
 
     setInterval(() => {
         setCurrentTime(new Date());
@@ -18,10 +20,10 @@ const TestReviewHeader = () => {
             </div>
 
             <div className="review-header-student">
-                <img className="review-header-student-pfp" src="http://localhost:8000/user_pfp/1.jpg"></img>
+                <img className="review-header-student-pfp" src={user.avatar}></img>
                 <div className="review-header-student-info">
-                    <p className="review-header-student-name">Nađa Jakšić</p>
-                    <p className="review-header-student-email">nadjajaksice34@gmail.com</p>
+                    <p className="review-header-student-name">{user.firstName} {user.lastName}</p>
+                    <p className="review-header-student-email">{user.email}</p>
                 </div>
             </div>
         </div>

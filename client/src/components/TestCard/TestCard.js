@@ -42,8 +42,8 @@ function TestCard({ testData, onDeleteSuccess }) {
             <img src={`http://localhost:8000/user_pfp/${employee_id}.jpg`} alt='User' />
             <div className='test-configuration-card-info'>
                 <p className='test-configuration-card-name'>{name}</p>
-                <p className='test-configuration-card-total'>Tasks/Tests/Points: {total_tasks} | {total_tests} | {total_points}</p>
-                <p className='test-configuration-card-date'>Created: {formattedDate} {formattedTime}</p>
+                <p className='test-configuration-card-total'>Zadataka/Testova/Bodova: {total_tasks} | {total_tests} | {total_points}</p>
+                <p className='test-configuration-card-date'>Kreirano: {formattedDate} {formattedTime}</p>
             </div>
             
             <div className='test-configuration-card-actions'>
