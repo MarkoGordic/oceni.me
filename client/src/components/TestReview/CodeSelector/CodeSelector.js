@@ -1,7 +1,7 @@
 import {React, useEffect, useState} from "react";
 import './codeSelector.css';
 
-function CodeSelector({ testData, setCode, setCodeTest }) {
+function CodeSelector({ testData, selectTaskAndTest }) {
     const [data, setData] = useState({});
 
     useEffect(() => {
@@ -19,7 +19,7 @@ function CodeSelector({ testData, setCode, setCodeTest }) {
                         <button 
                             key={taskNo}
                             className="code-selector-single-task-no-button"
-                            onClick={() => {setCode(zone[1]);setCodeTest(taskNo);}}
+                            onClick={() => {selectTaskAndTest(zone[1], taskNo);}}
                         >
                             {taskNo.toUpperCase()}
                         </button>

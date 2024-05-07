@@ -762,7 +762,7 @@ router.post('/complete', asyncHandler(async (req, res) => {
 
     if (!tgzFile) {
       console.log(`No .tgz file found for student PC: ${pc}`);
-      let tmpStudent = await db.getStudentsByIndexes([index]);
+      const tmpStudent = await db.getStudentsByIndexes([index]);
       db.addNewTestGrading(tmpStudent[0].id, testId, req.session.userId, 0, "NEMA_FAJLOVA");
       continue;
     }
@@ -802,7 +802,12 @@ router.post('/complete', asyncHandler(async (req, res) => {
       for (const file of filesToMove) {
         const srcFilePath = path.join(foundPath, file);
         const destFilePath = path.join(studentDataPath, file);
-        await fsp.rename(srcFilePath, destFilePath);
+
+        try {
+          await fsp.rename(srcFilePath, destFilePath);
+        } catch (error) {
+          console.warn(`Failed to rename file ${srcFilePath} to ${destFilePath}. Ignoring error and continuing.`);
+        }
       }
 
       await fsp.rm(path.join(studentDataPath, 'home'), { recursive: true, force: true });

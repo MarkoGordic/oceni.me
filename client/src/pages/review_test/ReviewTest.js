@@ -9,6 +9,7 @@ import CodeSelectorInfo from "../../components/TestReview/CodeSelectorInfo/CodeS
 import EmulatorDebuggerTab from "../../components/TestReview/EmulatorDebuggerTab/EmulatorDebuggerTab";
 import CompilerTab from "../../components/TestReview/CompilerTab/CompilerTab";
 import RealtimeInterpreterTab from "../../components/TestReview/RealtimeInterpreterTab/RealtimeInterpreterTab";
+import CodeEditTab from "../../components/TestReview/CodeEditTab/CodeEditTab";
 import './reviewTest.css';
 import { useNavigate } from 'react-router-dom';
 
@@ -29,30 +30,77 @@ const ReviewTest = () => {
 
     const [isLoading, setIsLoading] = useState(false);
 
+    const [codeText, setCodeText] = useState('');
+    const [selectedFile, setSelectedFile] = useState(null);
+
     const [debbugLine, setDebbugLine] = useState([]);
     const [debbugLineContent, setDebbugLineContent] = useState('');
     const [debbugFile, setDebbugFile] = useState(null);
     const [breakpoints, setBreakpoints] = useState([]);
 
-    const [openTabs, setOpenTabs] = useState({});
+    const [isVariationModeActive, setIsVariationModeActive] = useState(false);
+    const [selectedVariation, setSelectedVariation] = useState('');
+    const [openTabs, setOpenTabs] = useState({
+        "PRIKAZ UŽIVO": true,
+        'EMULATOR & DEBUGGER': false,
+        'COMPILER': false,
+        "VARIJACIJE KODA": false
+    });
+    const [hasPendingChanges, setHasPendingChanges] = useState(false);
+
+    // CodePreview variables
+    const [pendingFileContent, setPendingFileContent] = useState('');
+    const [showContent, setShowContent] = useState(false);
+    const [pendingAction, setPendingAction] = useState({});
+    const [confirmDiscardChanges, setConfirmDiscardChanges] = useState(false);
+    const [mode, setMode] = useState('view'); // view, edit
+    const [showConfirmInappropriateDialog, setShowConfirmInappropriateDialog] = useState(false);
     const navigate = useNavigate();
 
     const tabComponents = {
         "PRIKAZ UZIVO": RealtimeInterpreterTab,
         'EMULATOR & DEBUGGER': EmulatorDebuggerTab,
         'COMPILER': CompilerTab,
+        "VARIJACIJE KODA": CodeEditTab,
     };
     const tabHeights = {
         "PRIKAZ UZIVO": "50px",
         'EMULATOR & DEBUGGER': "310px",
         'COMPILER': "200px",
+        "VARIJACIJE KODA": "150px",
 
     };
     const tabProps = {
         "PRIKAZ UZIVO": { currentDebbugLine: debbugLineContent },
-        'EMULATOR & DEBUGGER': { taskNo: targetTaskNo, testNo: targetTestNo, pc: pc, setDebbugLine: setDebbugLine, setDebbugFile: setDebbugFile, breakpoints: breakpoints, setDebbugLineContent: setDebbugLineContent},
+        'EMULATOR & DEBUGGER': { taskNo: targetTaskNo, testNo: targetTestNo, pc: pc, setDebbugLine: setDebbugLine, setDebbugFile: setDebbugFile, breakpoints: breakpoints, setDebbugLineContent: setDebbugLineContent, isVariationModeActive: isVariationModeActive, selectedVariation: selectedVariation},
         'COMPILER': { taskNo: targetTaskNo, testNo: targetTestNo, pc: pc, testId: testid },
+        "VARIJACIJE KODA": { taskNo: targetTaskNo, testNo: targetTestNo, pc: pc, testId: testid, setIsVariationModeActive: setIsVariationModeActive, setVariationName: setSelectedVariation, hasPendingChanges: hasPendingChanges, saveFileChanges: saveFileChanges },
     };
+
+    const requestAction = (requestedAction) => {
+        if (hasPendingChanges) {
+            setPendingAction(requestedAction);
+            setConfirmDiscardChanges(true);
+        } else {
+            switch (requestedAction.type) {
+                case 'mode':
+                    setMode(requestedAction.action);
+                    break;
+                case 'file':
+                    selectFile(requestedAction.action);
+                    break;
+                case 'task':
+                    selectTaskAndTest(requestedAction.action.task, requestedAction.action.test);
+                    break;
+                default:
+                    console.table("Unknown action requested:", requestedAction);
+            }
+        }
+    }
+
+    useEffect(() => {
+        setSelectedVariation('');
+    }, [targetTaskNo, targetTestNo]);
 
     useEffect(() => {
         if(studentId)
@@ -177,10 +225,96 @@ const ReviewTest = () => {
         } 
    }
 
+   const selectFile = async (fileName) => {
+        setSelectedFile(fileName);
+        try {
+            const endpoint = isVariationModeActive
+                ? `http://localhost:8000/review/edits/getfile`
+                : `http://localhost:8000/review/code/${testid}/${pc}/${targetTaskNo}/${fileName}`;
+
+            const response = await fetch(endpoint, {
+                credentials: 'include',
+                method: isVariationModeActive ? "POST" : "GET",
+                headers: isVariationModeActive ? { "Content-Type": "application/json" } : undefined,
+                body: isVariationModeActive ? JSON.stringify({ testId: testid, pc, taskNo: targetTaskNo, varijationName: selectedVariation, fileName }) : undefined
+            });
+
+            if (!response.ok) {
+                toast.error("Došlo je do greške prilikom učitavanja koda.");
+                return;
+            }
+
+            const text = await response.text();
+            const blacklistedWords = ['kurac', 'kurčina', 'kurčić', 'govno', 'jebem', 'jebati', 'jebote', 'penis', 'pička', 'pizda', 'sranje', 'kurvin', 'kurva', 'drolja', 'pickica', 'picka', 'drkadzija', 'drkadžija', 'drkati', 'pičkin', 'jebac', 'jebač', 'jebanje', 'jebiga', 'jebala', 'jebeno', 'jebeni', 'jebačina', 'jebach', 'jebachina', 'pičketina', 'pičkica', 'šupak', 'supak', 'šupčić', 'šupcic', 'supčić', 'kurvetina', 'kurvetina', 'muda', 'budala', 'idiot', 'glupan', 'glupson', 'kreten', 'debil', 'prokletnik', 'gnjida', 'govno', 'seronja', 'usrani', 'prcati', 'džukela', 'dzukela', 'čmar', 'šupčina', 'proseravanje', 'prosrati', 'usrati', 'čmarina', 'cmarina'];
+
+            const words = text.toLowerCase().split(/\s+/);
+            const containsBlacklisted = words.some(word => blacklistedWords.includes(word));
+
+            if (containsBlacklisted) {
+                setPendingFileContent(text);
+                setShowConfirmInappropriateDialog(true);
+                return;
+            }
+
+            setShowContent(true);
+            setCodeText(text);
+        } catch (error) {
+            console.error("Error fetching code for file:", error);
+            toast.error("Došlo je do greške prilikom učitavanja koda.");
+        }
+    };
+
+   async function saveFileChanges() {
+        try {
+            const response = await fetch(`http://localhost:8000/review/edits/updatefile`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ testId: testid, taskNo: targetTaskNo, pc: pc, variationName: selectedVariation, newContent: codeText, fileName: selectedFile }),
+            });
+            if (!response.ok) {
+                toast.error("Došlo je do greške prilikom čuvanja promena u fajlu.", response.type);
+                return;
+            }
+            toast.success("Promene su uspešno sačuvane.");
+            setHasPendingChanges(false);
+        } catch (error) {
+            console.log("Error saving file changes:", error);
+            toast.error("Došlo je do greške prilikom čuvanja promena u fajlu.", error);
+        }
+    }
+
     const toggleTab = (tabName) => {
         setOpenTabs(prev => ({ ...prev, [tabName]: !prev[tabName] }));
     };
 
+    const selectTaskAndTest = (task, test) => {
+        if (hasPendingChanges) {
+            setPendingAction({ type: 'task', action: {task, test}});
+            setConfirmDiscardChanges(true);
+            return;
+        }
+
+        setTargetTaskNo(task);
+        setTargetTestNo(test);
+    };
+
+    const saveAndExit = () => {
+        if (hasPendingChanges) {
+            setPendingAction({ type: 'mode', action: 'save' });
+            setConfirmDiscardChanges(true);
+            return;
+        }
+
+        const totalPoints = Object.values(JSON.parse(studentGrading.gradings)).reduce((acc, taskGrades) => {
+            return acc + Object.values(taskGrades).reduce((sum, num) => sum + num, 0);
+        }, 0);
+
+        savePoints(studentGrading.gradings, totalPoints);
+        navigate('./../../');
+    };
 
     if (isLoading) return <p>Loading...</p>;
 
@@ -190,10 +324,10 @@ const ReviewTest = () => {
             <TestReviewHeader />
             <div className='review-content'>
                 <div className="left-column">
-                    <CodePreview pc={pc} taskNo={targetTaskNo} testNo={targetTestNo} lineNumber={debbugLine} debbugFile={debbugFile} setBreakpoints={setBreakpoints} />
+                    <CodePreview pc={pc} taskNo={targetTaskNo} testNo={targetTestNo} lineNumber={debbugLine} debbugFile={debbugFile} setBreakpoints={setBreakpoints} isVariationModeActive={isVariationModeActive} selectedVariation={selectedVariation} hasPendingChanges={hasPendingChanges} setHasPendingChanges={setHasPendingChanges} codeText={codeText} setCodeText={setCodeText} selectedFile={selectedFile} setSelectedFile={setSelectedFile} pendingAction={pendingAction} setPendingAction={setPendingAction} saveFileChanges={saveFileChanges} requestAction={requestAction} confirmDiscardChanges={confirmDiscardChanges} setConfirmDiscardChanges={setConfirmDiscardChanges} mode={mode} setMode={setMode} selectFile={selectFile} showContent={showContent} setShowContent={setShowContent} showConfirmDialog={showConfirmInappropriateDialog} setShowConfirmDialog={setShowConfirmInappropriateDialog} pendingFileContent={pendingFileContent} />
                 </div>
                 <div className="right-column">
-                    <CurrentStudentInfo student={studentData} currentPoints={currentPoints} maxPoints={maxPoints}/>
+                    <CurrentStudentInfo student={studentData} currentPoints={currentPoints} maxPoints={maxPoints} />
                     <CodeSelectorInfo
                         testData={testData}
                         codeTask={targetTaskNo}
@@ -203,9 +337,9 @@ const ReviewTest = () => {
                         setStudentGradingResults={setStudentGradingResults}
                         setTotalPoints={setCurrentPoints}
                     />
-                    <CodeSelector testData={testData} setCode={setTargetTaskNo} setCodeTest={setTargetTestNo}/>
-    
-                    <button className="test-review-grade-button" onClick={() => {navigate('./../../');}}>OCENI I SAČUVAJ</button>
+                    <CodeSelector testData={testData} selectTaskAndTest={selectTaskAndTest} />
+
+                    <button className="test-review-grade-button" onClick={() => saveAndExit()}>OCENI I SAČUVAJ</button>
 
                     {Object.entries(tabComponents).map(([tab, Component]) => (
                         <div className="review-tab-wrap" key={tab}>
@@ -214,11 +348,9 @@ const ReviewTest = () => {
                                 <h2 className="review-tab-name">{tab}</h2>
                                 <i className="fi fi-rr-angle-small-down"></i>
                             </div>
-                            {openTabs[tab] && (
-                                <div className="tab-content" style={{ height: openTabs[tab] ? tabHeights[tab] : '50px' }}>
-                                    <Component {...tabProps[tab]} />
-                                </div>
-                            )}
+                            <div className="tab-content" style={{ display: openTabs[tab] ? 'block' : 'none', height: tabHeights[tab] }}>
+                                <Component {...tabProps[tab]} />
+                            </div>
                         </div>
                     ))}
                 </div>
