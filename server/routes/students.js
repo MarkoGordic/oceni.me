@@ -165,6 +165,7 @@ function validateStudentData(first_name, last_name, index_number, email, passwor
 
 router.post('/update', checkIsAssistant, async (req, res) => {
     const { id, first_name, last_name, index_number, email, password, gender } = req.body;
+    const userAgent = req.headers['user-agent'] || 'Unknown User Agent';
 
     if (!id) {
         return res.status(400).send("Student ID is required.");
@@ -225,7 +226,7 @@ router.post('/update', checkIsAssistant, async (req, res) => {
         await db.createLogEntry(req.session.userId, `${employee.first_name} ${employee.last_name}`, `Promenjeni su podaci za studenta ${updateData.first_name} ${updateData.last_name}.`, 'INFO', 'INFO', req.ip, userAgent);
         res.status(200).send("Student updated successfully");
     } catch (error) {
-        await db.createLogEntry(req.session.userId, `${user.first_name} ${user.last_name}`, `Neuspešan pokusaj promene podataka za studenta sa ID ${id}.`, 'GREŠKA', 'INFO', req.ip, userAgent);
+        await db.createLogEntry(req.session.userId, `${employee.first_name} ${employee.last_name}`, `Neuspešan pokusaj promene podataka za studenta sa ID ${id}.`, 'GREŠKA', 'INFO', req.ip, userAgent);
         console.error("Error updating student:", error);
         res.status(500).send("Error updating student");
     }
@@ -238,13 +239,16 @@ router.post('/search', async (req, res) => {
         return res.status(400).json({ message: 'Search parameter is required' });
     }
 
+    const pageNumber = Number.isInteger(page) && page > 0 ? page : 1;
+
     try {
-        const students = await db.searchStudents(search, course_code, page);
+        const students = await db.searchStudents(search, course_code, pageNumber);
         res.json(students);
     } catch (error) {
         res.status(500).json({ message: 'Error searching for students', error: error.message });
     }
 });
+
 
 router.get('/get/:id', async (req, res) => {
     const { id } = req.params;

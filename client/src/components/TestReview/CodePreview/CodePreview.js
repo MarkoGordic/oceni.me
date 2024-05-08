@@ -13,17 +13,13 @@ hljs.registerLanguage('x86asm', x86asm);
 hljs.registerLanguage('c', c);
 hljs.registerLanguage('shell', shell);
 
-const CodePreview = ({ taskNo, testNo, pc, lineNumber, debbugFile, setBreakpoints, isVariationModeActive, selectedVariation, hasPendingChanges, setHasPendingChanges, codeText, setCodeText, selectedFile, setSelectedFile, pendingAction, setPendingAction, saveFileChanges, requestAction, confirmDiscardChanges, setConfirmDiscardChanges, mode, setMode, selectFile, showContent, setShowContent, showConfirmDialog, setShowConfirmDialog, pendingFileContent }) => {
+const CodePreview = ({ taskNo, testNo, pc, lineNumber, debbugFile, setBreakpoints, isVariationModeActive, selectedVariationID, hasPendingChanges, setHasPendingChanges, codeText, setCodeText, selectedFile, setSelectedFile, pendingAction, setPendingAction, saveFileChanges, requestAction, confirmDiscardChanges, setConfirmDiscardChanges, mode, setMode, selectFile, showContent, setShowContent, showConfirmDialog, setShowConfirmDialog, pendingFileContent }) => {
     const { testid } = useParams();
     const [highlightedCode, setHighlightedCode] = useState(null);
     const [breakpoints, setLocalBreakpoints] = useState([]);
     const [taskFiles, setTaskFiles] = useState(null);
     const [containerHeight, setContainerHeight] = useState('100%');
     const editorRef = useRef(null)
-
-    useEffect(() => {
-        console.log(taskFiles);
-    }, [taskFiles]);
 
     useEffect(() => {
         setSelectedFile(null);
@@ -84,22 +80,22 @@ const CodePreview = ({ taskNo, testNo, pc, lineNumber, debbugFile, setBreakpoint
 
     async function fetchTaskFiles() {
         try {
-            const endpoint = isVariationModeActive && selectedVariation
+            const endpoint = isVariationModeActive && selectedVariationID
                 ? `http://localhost:8000/review/edits/getfiles`
                 : `http://localhost:8000/review/files/${testid}/${pc}/${taskNo}`;
-
+    
             const response = await fetch(endpoint, {
                 credentials: 'include',
                 method: isVariationModeActive ? "POST" : "GET",
                 headers: isVariationModeActive ? { "Content-Type": "application/json" } : undefined,
-                body: isVariationModeActive ? JSON.stringify({ testId: testid, pc, taskNo, varijationName: selectedVariation }) : undefined
+                body: isVariationModeActive ? JSON.stringify({ testId: testid, pc, taskNo, variationId: selectedVariationID }) : undefined
             });
-
+    
             if (!response.ok) {
                 toast.error("Došlo je do greške prilikom učitavanja fajlova.");
                 return;
             }
-
+    
             const data = await response.json();
             setTaskFiles(data || []);
         } catch (error) {
@@ -107,6 +103,7 @@ const CodePreview = ({ taskNo, testNo, pc, lineNumber, debbugFile, setBreakpoint
             toast.error("Došlo je do greške prilikom učitavanja fajlova.");
         }
     }
+    
 
     useEffect(() => {
         if (taskNo === null || pc === null) return;
@@ -115,9 +112,9 @@ const CodePreview = ({ taskNo, testNo, pc, lineNumber, debbugFile, setBreakpoint
             await fetchTaskFiles();
         };
 
-        if (!isVariationModeActive || (isVariationModeActive && selectedVariation !== ''))
+        if (!isVariationModeActive || (isVariationModeActive && selectedVariationID !== null))
             initializeFiles();
-    }, [taskNo, pc, testid, isVariationModeActive, selectedVariation]);
+    }, [taskNo, pc, testid, isVariationModeActive, selectedVariationID]);
 
     const getLanguageByExtension = (fileName) => {
         const extension = fileName.substring(fileName.lastIndexOf('.') + 1);
@@ -195,13 +192,12 @@ const CodePreview = ({ taskNo, testNo, pc, lineNumber, debbugFile, setBreakpoint
     };
 
     useEffect(() => {
-        console.log("Breakpoints for files:", breakpoints);
         setBreakpoints(breakpoints[selectedFile] || []);
     }, [breakpoints, selectedFile, setBreakpoints]);
 
     return (
         <div className="code-preview">
-            {isVariationModeActive && !selectedVariation ? (
+            {isVariationModeActive && !selectedVariationID ? (
                 <div className="variation-select-message">
                     <p>Pregled koda je trenutno onemogućen.</p>
                     <p>Morate odabrati željenu varijaciju ili isključiti režim varijacija kako bi videli kod.</p>

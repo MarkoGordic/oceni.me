@@ -1,6 +1,7 @@
 import React from 'react';
 import Select from 'react-select';
 import makeAnimated from 'react-select/animated';
+import { ToastContainer } from 'react-toastify';
 import './newStudentModal.css';
 
 const customSelectStyles = {
@@ -207,6 +208,7 @@ const NewStudentModal = ({ isOpen, onClose, onSubmit, onChange, studentData, sel
 
   return (
     <div className="new-student-modal-overlay" onClick={onClose}>
+      <ToastContainer theme='dark'/>
       <div className="new-student-modal-content" onClick={(e) => e.stopPropagation()}>
         <form onSubmit={onSubmit}>
           <h2>Dodaj novog studenta</h2>

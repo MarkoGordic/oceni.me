@@ -16,7 +16,6 @@ function CodeSelectorInfo({ testData, codeTask, codeTest, grading, setStudentGra
 
         if (grading !== null && grading !== undefined && codeTask !== null && codeTest !== null) {
             try{
-                console.log("GRADING", grading.gradings);
                 const gradings = JSON.parse(grading.gradings);
                 const currPoints = gradings['z' + codeTask][codeTest];
                 setCurrentPoints(currPoints);

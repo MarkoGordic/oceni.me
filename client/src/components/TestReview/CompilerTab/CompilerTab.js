@@ -26,10 +26,8 @@ const CompilerTab = ({ taskNo, testNo, pc, testId }) => {
             const data = await response.json();
             if (data.compile_output) {
                 data.compile_output = atob(data.compile_output);
-                console.log("Decoded compile output:", data.compile_output);
             }
             setCompilerData(data);
-            console.log("Compiler data:", data);
         } catch (error) {
             console.error("Error fetching compiler data:", error);
             toast.error("Došlo je do greške prilikom učitavanja podataka.");

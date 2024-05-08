@@ -14,23 +14,41 @@ require('dotenv').config();
 const dockerQueue = async.queue(async (task, done) => {
   let container = null;
   try {
+    let taskPath, confPath, outputPath;
+
+    if (task.testType === 'variation') {
+      taskPath = `${process.cwd()}/uploads/tests/${task.testId}/data/${task.pc}/edits/${task.taskNo}/${task.variationId}`;
+      confPath = `${process.cwd()}/uploads/tests/${task.testId}/autotestConf/${task.taskNo}/${task.testNo}`;
+      outputPath = `${process.cwd()}/uploads/tests/${task.testId}/data/${task.pc}/edits/${task.taskNo}/${task.variationId}/results`;
+    } else {
+      taskPath = `${process.cwd()}/uploads/tests/${task.testId}/data/${task.pc}/${task.taskNo}`;
+      confPath = `${process.cwd()}/uploads/tests/${task.testId}/autotestConf/${task.taskNo}/${task.testNo}`;
+      outputPath = `${process.cwd()}/uploads/tests/${task.testId}/data/${task.pc}/results`;
+    }
+
+    console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+    console.table(task)
+    console.log(taskPath);
+    console.log(confPath);
+    console.log(outputPath);
+
     container = await docker.createContainer({
       Image: 'gcc-build',
       Cmd: [],
       Tty: false,
-      Volumes: {  
-        '/autotest/data': {},
+      Volumes: {
+        '/autotest/task': {},
         '/autotest/conf': {},
         '/output': {}
       },
       HostConfig: {
         Binds: [
-          `${process.cwd()}/uploads/tests/${task.testId}/data/${task.pc}/${task.taskNo}:/autotest/task`,
-          `${process.cwd()}/uploads/tests/${task.testId}/autotestConf/${task.taskNo}/${task.testNo}:/autotest/conf`,
-          `${process.cwd()}/uploads/tests/${task.testId}/data/${task.pc}/results:/output`
+          `${taskPath}:/autotest/task`,
+          `${confPath}:/autotest/conf`,
+          `${outputPath}:/output`
         ],
-        Memory: 500000000, // Limit to 500 MB
-        NanoCpus: 500000000 // Limit to 50% of a CPU
+        Memory: 500_000_000, // 500 MB
+        NanoCpus: 500_000_000 // 50% of a CPU
       }
     });
 
@@ -53,20 +71,31 @@ const dockerQueue = async.queue(async (task, done) => {
       stderr: true
     });
 
-    stream.on('data', data => {
-      console.log(data.toString());
-    });
+    stream.on('data', data => console.log(data.toString()));
 
     stream.on('end', async () => {
       clearTimeout(timeoutId);
-      const resultsPath = `${process.cwd()}/uploads/tests/${task.testId}/data/${task.pc}/results/compile_status${task.taskNo}${task.testNo}.json`;
-      const resultsData = await fsp.readFile(resultsPath, 'utf8');
-      const results = JSON.parse(resultsData);
+      const resultsFilePath = `${outputPath}/compile_status${task.taskNo}${task.testNo}.json`;
 
-      if (results.output_status === 'success') {
-        await db.addNewAutoTestResult(task.student_id, parseInt(task.testId), task.employee_id, task.points, task.taskNo, task.testNo);
-      } else {
-        await db.addNewAutoTestResult(task.student_id, parseInt(task.testId), task.employee_id, 0, task.taskNo, task.testNo);
+      try {
+        const resultsData = await fsp.readFile(resultsFilePath, 'utf8');
+        const results = JSON.parse(resultsData);
+
+        if (results.output_status === 'success') {
+          if (task.testType === 'variation') {
+            await db.addNewVariationAutoTestResult(task.variationId, task.points, task.testNo);
+          } else {
+            await db.addNewAutoTestResult(task.student_id, parseInt(task.testId), task.employee_id, task.points, task.taskNo, task.testNo);
+          }
+        } else {
+          if (task.testType === 'variation') {
+            await db.addNewVariationAutoTestResult(task.variationId, 0, task.testNo);
+          } else {
+            await db.addNewAutoTestResult(task.student_id, parseInt(task.testId), task.employee_id, 0, task.taskNo, task.testNo);
+          }
+        }
+      } catch (err) {
+        console.error("Error reading the results file:", err);
       }
 
       await container.remove();
@@ -75,13 +104,17 @@ const dockerQueue = async.queue(async (task, done) => {
   } catch (error) {
     console.error('Error running Docker process:', error);
 
-    await db.addNewAutoTestResult(task.student_id, parseInt(task.testId), task.employee_id, 0, task.taskNo, task.testNo, "Docker operation failed or timed out");
+    if (task.testType === 'variation') {
+      await db.addNewVariationAutoTestResult(task.variationId, 0, task.testNo);
+    } else {
+      await db.addNewAutoTestResult(task.student_id, parseInt(task.testId), task.employee_id, 0, task.taskNo, task.testNo);
+    }
+
     if (container) {
       await container.remove();
     }
   }
 }, process.env.MAX_DOCKER_CONTAINERS || 5);
-
 
 dockerQueue.saturated = () => {
   if (dockerQueue.length() === 250) {
@@ -115,7 +148,8 @@ router.post('/run/student', checkAuthForAutoTest, async (req, res) => {
           pc,
           studentIndex,
           employee_id,
-          student_id
+          student_id,
+          testType: 'regular'
         };
 
         dockerQueue.push(dockerTask);
@@ -161,7 +195,8 @@ router.post('/run/group', checkAuthForAutoTest, async (req, res) => {
                     pc,
                     studentIndex: task.studentIndex,
                     employee_id,
-                    student_id
+                    student_id,
+                    testType: 'regular'
                 };
 
                 dockerQueue.push(dockerTask);
@@ -175,6 +210,49 @@ router.post('/run/group', checkAuthForAutoTest, async (req, res) => {
   } catch (error) {
       console.error('Error processing group request:', error);
       res.status(500).send('Failed to process group request.');
+  }
+});
+
+router.post('/run/variation', checkAuthForAutoTest, async (req, res) => {
+  const { variationId, testId, pc } = req.body;
+  const employee_id = req.session.userId;
+
+  try {
+    const variation = await db.getVariationById(variationId);
+
+    const variationRunning = await db.isTestRunningForVariation(variationId);
+    if (variationRunning) {
+      return res.status(409).send('A variation test is already running for this variation.');
+    }
+
+    const testDetails = await db.getTestById(testId);
+    const tasks = JSON.parse(testDetails.tasks);
+
+    Object.entries(tasks).forEach(([taskNo, tests]) => {
+      if (taskNo === 'z' + variation.task_no.toString()) {
+        Object.entries(tests).forEach(([testNo, points]) => {
+          const dockerTask = {
+            testId,
+            taskNo,
+            testNo,
+            points,
+            pc,
+            employee_id,
+            variationId,
+            testType: 'variation'
+          };
+
+          dockerQueue.push(dockerTask);
+        });
+      }
+    });
+
+    await db.addNewVariationFinalResult(variationId, -1, "TESTIRANJE");
+
+    res.status(202).send('Docker process queued successfully for the variation.');
+  } catch (error) {
+    console.error('Error processing variation test:', error);
+    res.status(500).send('Failed to process variation test.');
   }
 });
 
@@ -241,5 +319,57 @@ router.post('/progress', checkAuthForAutoTest, async (req, res) => {
     res.status(500).send('Failed to process request.');
   }
 });
+
+router.post('/progress/variation', checkAuthForAutoTest, async (req, res) => {
+  const { variationId, testId } = req.body;
+
+  if (!variationId) {
+    return res.status(400).json({ error: 'Missing variation ID' });
+  }
+
+  try {
+    const testData = await db.getTestById(testId);
+    const tasks = JSON.parse(testData.tasks);
+    const variationData = await db.getVariationById(variationId);
+    const totalTasks = Object.keys(tasks['z' + variationData['task_no']]).length;
+
+    const variationResults = await db.getResultsForVariation(variationId);
+    const completedTasks = variationResults.length;
+
+    console.log(completedTasks, totalTasks);
+
+    if (completedTasks === totalTasks) {
+      let finalResults = {};
+      let totalPoints = 0;
+
+      variationResults.forEach(result => {
+        finalResults[result.test_no] = result.result;
+      });
+
+      Object.values(finalResults).forEach(points => {
+        totalPoints += points;
+      });
+
+      await db.updateFinalVariationResults(variationId, JSON.stringify(finalResults), totalPoints, 'AT OCENJEN');
+      await db.clearVariationAutoTestResults(variationId);
+
+      return res.json({
+        status: 'AT OCENJEN',
+        totalPoints
+      });
+    } else {
+      console.table(variationResults);
+      const tmpGrading = await db.getFinalVariationResults(variationId);
+      return res.json({
+        status: tmpGrading.status || 'TESTIRANJE',
+        totalPoints: -1
+      });
+    }
+  } catch (error) {
+    console.error('Error processing variation progress check:', error);
+    return res.status(500).send('Failed to process request.');
+  }
+});
+
 
 module.exports = router;

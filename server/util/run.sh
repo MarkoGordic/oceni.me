@@ -37,6 +37,7 @@ gdb_exit_code=-1
 for prg in "expect" "sed" "diff" "grep"; do
     if ! which $prg &>/dev/null; then
         error_msg="Nedostaje program: $prg"
+        error_msg=$(echo $error_msg | base64 -w 0)
         echo "{\"compile\": \"$compile_status\", \"compile_output\": \"$compile_output\", \"error_msg\": \"$error_msg\", \"output_status\": \"$output_status\", \"program_output\": \"$program_output\", \"program_exit_code\": $program_exit_code, \"program_expected_code\": $program_expected_code, \"program_exit_status\": \"$program_exit_status\", \"gdb_exit_code\": $gdb_exit_code}" > /output/compile_status<COMPILE_STATUS_TASK_PLACEHOLDER>.json
         exit 1
     fi
@@ -47,6 +48,7 @@ if [ $filename != "" ] && [ -f $filename ]; then
     grep ".text" $filename 1>/dev/null 2>/dev/null && (grep ".globl" $filename 1>/dev/null 2>/dev/null || grep ".global" $filename 1>/dev/null 2>/dev/null)
     if [ $? -ne 0 ]; then
         error_msg="GREŠKA: Odabrani fajl nije asemblerski program!"
+        error_msg=$(echo $error_msg | base64 -w 0)
         echo "{\"compile\": \"$compile_status\", \"compile_output\": \"$compile_output\", \"error_msg\": \"$error_msg\", \"output_status\": \"$output_status\", \"program_output\": \"$program_output\", \"program_exit_code\": $program_exit_code, \"program_expected_code\": $program_expected_code, \"program_exit_status\": \"$program_exit_status\", \"gdb_exit_code\": $gdb_exit_code}" > /output/compile_status<COMPILE_STATUS_TASK_PLACEHOLDER>.json
         exit 1
     fi
@@ -61,10 +63,11 @@ if [ $filename != "" ] && [ -f $filename ]; then
 
     gcc -g -m32 -o zad $GLAVNI $filename 1>$OUT1 2>&1
 
-    compile_output=$(echo "$compile_output" | base64)
+    compile_output=$(echo "$compile_output" | base64 -w 0)
 
     if [ ! -f zad ]; then
         error_msg="Greška u kompajliranju ili izvršna datoteka nije kreirana!"
+        error_msg=$(echo $error_msg | base64 -w 0)
         echo "{\"compile\": \"failure\", \"compile_output\": \"$compile_output\", \"error_msg\": \"$error_msg\", \"output_status\": \"failure\", \"program_output\": \"\", \"program_exit_code\": 0, \"program_expected_code\": 0, \"program_exit_status\": \"failure\", \"gdb_exit_code\": 0}" > /output/compile_status<COMPILE_STATUS_TASK_PLACEHOLDER>.json
         rm -f $OUT1
         exit 1
@@ -72,13 +75,15 @@ if [ $filename != "" ] && [ -f $filename ]; then
     
     if [ $? -ne 0 ]; then
         error_msg="Greška u kompajliranju!"
+        error_msg=$(echo $error_msg | base64 -w 0)
         echo "{\"compile\": \"$compile_status\", \"compile_output\": \"$compile_output\", \"error_msg\": \"$error_msg\", \"output_status\": \"$output_status\", \"program_output\": \"$program_output\", \"program_exit_code\": $program_exit_code, \"program_expected_code\": $program_expected_code, \"program_exit_status\": \"$program_exit_status\", \"gdb_exit_code\": $gdb_exit_code}" > /output/compile_status<COMPILE_STATUS_TASK_PLACEHOLDER>.json
         rm -f $OUT1
         exit 1
     fi
 else
     if [ $filename != "" ]; then
-        error_msg="Fajl \"$filename\" nije nađen!"
+        error_msg="Fajl '$filename' nije nađen!"
+        error_msg=$(echo $error_msg | base64 -w 0)
     fi
 
     echo "{\"compile\": \"$compile_status\", \"compile_output\": \"$compile_output\", \"error_msg\": \"$error_msg\", \"output_status\": \"$output_status\", \"program_output\": \"$program_output\", \"program_exit_code\": $program_exit_code, \"program_expected_code\": $program_expected_code, \"program_exit_status\": \"$program_exit_status\", \"gdb_exit_code\": $gdb_exit_code}" > /output/compile_status<COMPILE_STATUS_TASK_PLACEHOLDER>.json
@@ -96,6 +101,7 @@ gdb_exit_code=$?
 
 if [ $gdb_exit_code -eq 99 ]; then
     error_msg="Prekoračen je maksimalan broj instrukcija tokom izvršavanja!"
+    error_msg=$(echo $error_msg | base64 -w 0)
     echo "{\"compile\": \"$compile_status\", \"compile_output\": \"$compile_output\", \"error_msg\": \"$error_msg\", \"output_status\": \"$output_status\", \"program_output\": \"$program_output\", \"program_exit_code\": $program_exit_code, \"program_expected_code\": $program_expected_code, \"program_exit_status\": \"$program_exit_status\", \"gdb_exit_code\": $gdb_exit_code}" > /output/compile_status<COMPILE_STATUS_TASK_PLACEHOLDER>.json
     exit 1
 fi
@@ -201,6 +207,7 @@ for n in "${TESTS[@]}"; do
         if [ $code -eq 8 ]; then sig=" (SIGFPE - Floating point exception)"; fi
         if [ $code -eq 11 ]; then sig=" (SIGSEGV - Invalid memory segment access)"; fi
         error_msg="Program je vratio Fatal error signal $code$sig!"
+        error_msg=$(echo $error_msg | base64 -w 0)
         ok=0
         SIG="(zbog \e[01;31mexception\e[00m-a) "
     elif [ $code -eq $tcode ]; then
@@ -229,7 +236,7 @@ else
     rm -f run 1>/dev/null 2>/dev/null
 fi
 
-compile_output=$(echo "$compile_output" | base64)
+compile_output=$(echo "$compile_output" | base64 -w 0)
 echo "{\"compile\": \"$compile_status\", \"compile_output\": \"$compile_output\", \"error_msg\": \"$error_msg\", \"output_status\": \"$output_status\", \"program_output\": \"$program_output\", \"program_exit_code\": $program_exit_code, \"program_expected_code\": $program_expected_code, \"program_exit_status\": \"$program_exit_status\", \"gdb_exit_code\": $gdb_exit_code}" > /output/compile_status<COMPILE_STATUS_TASK_PLACEHOLDER>.json
 
 exit 0

@@ -136,73 +136,46 @@ router.post('/edits/get', async (req, res) => {
         return res.status(400).json({ error: 'Missing required details' });
     }
 
-    const editsDirPath = path.join(__dirname, '..', 'uploads', 'tests', testId, 'data', pc, 'edits', `z${taskNo}`);
-
     try {
-        let items;
-        try {
-            items = await fsp.readdir(editsDirPath, { withFileTypes: true });
-        } catch (readError) {
-            if (readError.code === 'ENOENT') {
-                return res.status(200).json({ variations: [] });
-            }
-            console.error('Error reading directory:', readError);
-            return res.status(500).json({ error: 'Internal server error while reading directory' });
-        }
+        const variations = await db.getVariations(testId, taskNo);
 
-        const varijationNames = items
-            .filter(item => item.isDirectory())
-            .map(item => item.name);
-
-        return res.status(200).json({ variations: varijationNames });
-
+        return res.status(200).json({ variations });
     } catch (error) {
-        console.error('Error retrieving subfolders:', error);
+        console.error('Error retrieving variations:', error);
         return res.status(500).json({ error: 'Internal server error' });
     }
 });
 
 router.post('/edits/new', async (req, res) => {
-    const { testId, taskNo, pc, varijationName } = req.body;
+    const { testId, taskNo, pc, variationName } = req.body;
 
-    if (!testId || !taskNo || !pc || !varijationName) {
+    if (!testId || !taskNo || !pc || !variationName) {
         return res.status(400).json({ error: 'Missing required details' });
     }
 
-    const validName = varijationName.trim().replace(/[^a-zA-Z0-9 ]+/g, '');
+    const validName = variationName.trim();
     if (!validName) {
-        return res.status(400).json({ error: 'Invalid varijation name' });
+        return res.status(400).json({ error: 'Invalid variation name' });
     }
 
-    const editsDirPath = path.join(__dirname, '..', 'uploads', 'tests', testId, 'data', pc, 'edits', `z${taskNo}`);
-    const newSubfolderPath = path.join(editsDirPath, validName);
-    const sourceDirPath = path.join(__dirname, '..', 'uploads', 'tests', testId, 'data', pc, `z${taskNo}`);
-
     try {
-        await fsp.mkdir(editsDirPath, { recursive: true });
-
-        let items;
-        try {
-            items = await fsp.readdir(editsDirPath, { withFileTypes: true });
-        } catch (readError) {
-            console.error('Error reading directory:', readError);
-            return res.status(500).json({ error: 'Internal server error while reading directory' });
+        const variationId = await db.addVariation(testId, taskNo, validName);
+        if (!variationId) {
+            return res.status(500).json({ error: 'Failed to add variation to the database' });
         }
 
-        const varijationExists = items.some(item => item.isDirectory() && item.name === validName);
-        if (varijationExists) {
-            return res.status(409).json({ error: `Varijation with name "${validName}" already exists` });
-        }
+        const editsDirPath = path.join(__dirname, '..', 'uploads', 'tests', testId, 'data', pc, 'edits', `z${taskNo}`);
+        const newSubfolderPath = path.join(editsDirPath, String(variationId));
+        const sourceDirPath = path.join(__dirname, '..', 'uploads', 'tests', testId, 'data', pc, `z${taskNo}`);
 
         try {
-            await fsp.mkdir(newSubfolderPath);
+            await fsp.mkdir(newSubfolderPath, { recursive: true });
             await copyFiles(sourceDirPath, newSubfolderPath);
-            return res.status(200).json({ message: `Varijation "${validName}" created and files copied successfully` });
+            return res.status(200).json({ message: `Variation "${validName}" created and files copied successfully`, variationId });
         } catch (mkdirError) {
-            console.error('Error creating varijation or copying files:', mkdirError);
-            return res.status(500).json({ error: 'Internal server error while creating varijation or copying files' });
+            console.error('Error creating variation or copying files:', mkdirError);
+            return res.status(500).json({ error: 'Internal server error while creating variation or copying files' });
         }
-
     } catch (error) {
         console.error('Error creating main edits directory:', error);
         return res.status(500).json({ error: 'Internal server error' });
@@ -210,53 +183,50 @@ router.post('/edits/new', async (req, res) => {
 });
 
 router.post('/edits/delete', async (req, res) => {
-    const { testId, taskNo, pc, varijationName } = req.body;
+    const { variationId, pc } = req.body;
 
-    if (!testId || !taskNo || !pc || !varijationName) {
-        return res.status(400).json({ error: 'Missing required details' });
-    }
-
-    const validName = varijationName.trim().replace(/[^a-zA-Z0-9 ]+/g, '');
-    if (!validName) {
-        return res.status(400).json({ error: 'Invalid varijation name' });
-    }
-
-    const editsDirPath = path.join(__dirname, '..', 'uploads', 'tests', testId, 'data', pc, 'edits', `z${taskNo}`);
-    const varijationToDelete = path.join(editsDirPath, validName);
-
-    if (!varijationToDelete.startsWith(editsDirPath)) {
-        return res.status(403).json({ error: 'Access denied' });
+    if (!variationId) {
+        return res.status(400).json({ error: 'Missing variation ID' });
     }
 
     try {
-        const varijationExists = await fsp.access(varijationToDelete).then(() => true).catch(() => false);
+        const variation = await db.getVariationById(variationId);
 
-        if (!varijationExists) {
-            return res.status(404).json({ error: `Varijation "${validName}" not found` });
+        if (!variation) {
+            return res.status(404).json({ error: 'Variation not found' });
         }
 
-        await fsp.rm(varijationToDelete, { recursive: true, force: true });
-        return res.status(200).json({ message: `Varijation "${validName}" deleted successfully` });
+        const editsDirPath = path.join(__dirname, '..', 'uploads', 'tests', String(variation.test_id), 'data', pc, 'edits', `z${variation.task_no}`);
+        const variationToDelete = path.join(editsDirPath, String(variationId));
+
+        if (!variationToDelete.startsWith(editsDirPath)) {
+            return res.status(403).json({ error: 'Access denied' });
+        }
+
+        const isDeletedFromDB = await db.removeVariationById(variationId);
+        console.log('isDeletedFromDB:', isDeletedFromDB)
+
+        if (isDeletedFromDB) {
+            await fsp.rm(variationToDelete, { recursive: true, force: true });
+            return res.status(200).json({ message: `Variation "${variation.name}" deleted successfully` });
+        } else {
+            return res.status(500).json({ error: 'Failed to remove variation from the database' });
+        }
 
     } catch (error) {
-        console.error('Error deleting varijation:', error);
+        console.error('Error deleting variation:', error);
         return res.status(500).json({ error: 'Internal server error' });
     }
 });
 
 router.post('/edits/getfiles', async (req, res) => {
-    const { testId, taskNo, pc, varijationName } = req.body;
+    const { testId, taskNo, pc, variationId } = req.body;
 
-    if (!testId || !taskNo || !pc || !varijationName) {
+    if (!testId || !taskNo || !pc || !variationId) {
         return res.status(400).json({ error: 'Missing required details' });
     }
 
-    const validName = varijationName.trim().replace(/[^a-zA-Z0-9 ]+/g, '');
-    if (!validName) {
-        return res.status(400).json({ error: 'Invalid variation name' });
-    }
-
-    const editsDirPath = path.join(__dirname, '..', 'uploads', 'tests', testId, 'data', pc, 'edits', `z${taskNo}`, validName);
+    const editsDirPath = path.join(__dirname, '..', 'uploads', 'tests', testId, 'data', pc, 'edits', `z${taskNo}`, String(variationId));
 
     try {
         let files;
@@ -264,7 +234,7 @@ router.post('/edits/getfiles', async (req, res) => {
             files = await fsp.readdir(editsDirPath, { withFileTypes: true });
         } catch (readError) {
             if (readError.code === 'ENOENT') {
-                return res.status(404).json({ error: `Variation "${validName}" not found` });
+                return res.status(404).json({ error: `Variation "${variationId}" not found` });
             }
             console.error('Error reading directory:', readError);
             return res.status(500).json({ error: 'Internal server error while reading directory' });
@@ -283,18 +253,13 @@ router.post('/edits/getfiles', async (req, res) => {
 });
 
 router.post('/edits/getfile', async (req, res) => {
-    const { testId, taskNo, pc, varijationName, fileName } = req.body;
+    const { testId, taskNo, pc, variationId, fileName } = req.body;
 
-    if (!testId || !taskNo || !pc || !varijationName || !fileName) {
+    if (!testId || !taskNo || !pc || !variationId || !fileName) {
         return res.status(400).send("Missing required details.");
     }
 
-    const validVarijationName = varijationName.trim().replace(/[^a-zA-Z0-9 ]+/g, '');
-    if (!validVarijationName || !fileName.trim()) {
-        return res.status(400).send("Invalid input data.");
-    }
-
-    const editsDirPath = path.join(__dirname, '..', 'uploads', 'tests', testId, 'data', pc, 'edits', `z${taskNo}`, validVarijationName);
+    const editsDirPath = path.join(__dirname, '..', 'uploads', 'tests', testId, 'data', pc, 'edits', `z${taskNo}`, String(variationId));
     const filePath = path.join(editsDirPath, fileName);
 
     if (!filePath.startsWith(editsDirPath)) {
@@ -318,18 +283,17 @@ router.post('/edits/getfile', async (req, res) => {
 });
 
 router.post('/edits/updatefile', async (req, res) => {
-    const { testId, taskNo, pc, variationName, fileName, newContent } = req.body;
+    const { testId, taskNo, pc, variationId, fileName, newContent } = req.body;
 
-    if (!testId || !taskNo || !pc || !variationName || !fileName || typeof newContent === 'undefined') {
+    if (!testId || !taskNo || !pc || !variationId || !fileName || typeof newContent === 'undefined') {
         return res.status(400).json({ error: 'Missing required details' });
     }
 
-    const validVariationName = variationName.trim().replace(/[^a-zA-Z0-9 ]+/g, '');
-    if (!validVariationName || !fileName.trim()) {
-        return res.status(400).json({ error: 'Invalid variation or file name' });
+    if (!fileName.trim()) {
+        return res.status(400).json({ error: 'Invalid file name' });
     }
 
-    const editsDirPath = path.join(__dirname, '..', 'uploads', 'tests', testId, 'data', pc, 'edits', `z${taskNo}`, validVariationName);
+    const editsDirPath = path.join(__dirname, '..', 'uploads', 'tests', testId, 'data', pc, 'edits', `z${taskNo}`, String(variationId));
     const filePath = path.join(editsDirPath, fileName);
 
     if (!filePath.startsWith(editsDirPath)) {
@@ -344,17 +308,16 @@ router.post('/edits/updatefile', async (req, res) => {
 
         await fsp.writeFile(filePath, newContent, 'utf8');
         return res.status(200).json({ message: `File "${fileName}" successfully updated` });
-
     } catch (error) {
-        console.error('Error updating the file content:', error);
+        console.error('Error updating file content:', error);
         return res.status(500).json({ error: 'Internal server error' });
     }
 });
 
 router.post('/edits/debugger', async (req, res) => {
-    const { testId, pc, taskNo, testNo } = req.body;
+    const { testId, pc, taskNo, testNo, variationId } = req.body;
 
-    const filePath = path.join(__dirname, '..', 'uploads', 'tests', testId, 'data', pc, 'edits', 'results', `resultsz${taskNo}${testNo}.json`);
+    const filePath = path.join(__dirname, '..', 'uploads', 'tests', testId, 'data', pc, 'edits', 'z' + String(taskNo), String(variationId), 'results', `resultsz${taskNo}${testNo}.json`);
 
     try {
         const data = await fsp.readFile(filePath, 'utf8');
@@ -362,6 +325,27 @@ router.post('/edits/debugger', async (req, res) => {
     } catch (err) {
         console.error("Error reading the file:", err);
         res.status(404).send("Datoteka nije pronađena.");
+    }
+});
+
+router.post('/edits/get_variation_results', async (req, res) => {
+    const { variationId } = req.body;
+
+    if (!variationId) {
+        return res.status(400).json({ error: 'Missing variation ID' });
+    }
+
+    try {
+        const results = await db.getFinalVariationResults(variationId);
+
+        if (!results) {
+            return res.status(404).json({ error: 'Results not found for the given variation.' });
+        }
+
+        res.json(results);
+    } catch (error) {
+        console.error('Error retrieving variation results:', error);
+        return res.status(500).json({ error: 'Internal server error' });
     }
 });
 

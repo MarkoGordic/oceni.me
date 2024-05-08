@@ -5,7 +5,7 @@ import Select from 'react-select';
 import makeAnimated from 'react-select/animated';
 import NewStudentModal from "../../components/NewStudentModal/NewStudentModal";
 import StudentCard from '../../components/StudentCard/StudentCard';
-import { toast } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
 import ModifyStudentModal from '../../components/ModifyStudentModal/ModifyStudentModal';
 
 const customSelectStyles = {
@@ -58,13 +58,13 @@ const customSelectStyles = {
 function ManageStudents() {
     const [searchString, setSearchString] = useState('');
     const [searchResults, setSearchResults] = useState([]);
-    const [selectedCourseFilter, setSelectedCourseFilter] = useState(null);
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(false);
 
     const [isModalOpen, setModalOpen] = useState(false);
     const animatedComponents = makeAnimated();
+    const [selectedCourseFilter, setSelectedCourseFilter] = useState(null);
     const [studentData, setStudentData] = useState({
         first_name: '',
         last_name: '',
@@ -79,12 +79,6 @@ function ManageStudents() {
     const [modifyModalOpen, setModifyModalOpen] = useState(false);
     const [selectedStudentId, setSelectedStudentId] = useState(null);
     const [deletionCount, setDeletionCount] = useState(0);
-
-    useEffect(() => {
-        if (deletionCount > 0) {
-            performSearch();
-        }
-    }, [deletionCount]);
 
     const handleStudentClick = (studentId) => {
         setSelectedStudentId(studentId);
@@ -148,6 +142,10 @@ function ManageStudents() {
             performSearch(page);
         }
     }, [page]);
+
+    const handleStudentDeleted = (studentId) => {
+        setSearchResults(prevResults => prevResults.filter(student => student.id !== studentId));
+    };
     
     const performSearch = async (page) => {
         if (loading) return;
@@ -173,6 +171,9 @@ function ManageStudents() {
                     setSearchResults(prev => [...prev, ...data]);
                 }
             } else {
+                if(response.status == 400)
+                    return;
+                
                 toast.error("Došlo je do neočekivane greške prilikom pretrage studenata.")
             }
         } catch (error) {
@@ -190,7 +191,7 @@ function ManageStudents() {
     
         const indexNumberPattern = /^[A-Z]{2}\s\d{1,3}\/\d{4}$/;
         const emailPattern = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
-        const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_])[A-Za-z\d\W_]{10,}$/;
+        const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{10,}$/;
     
         if (!indexNumberPattern.test(studentData.index_number)) {
             toast.error("Neuspešno kreiranje studenta. Proverite format broja indeksa. Primer: IN 22/2023.");
@@ -391,6 +392,7 @@ function ManageStudents() {
     return (
         <div className='wrap'>
             <Sidebar />
+            <ToastContainer theme='dark'/>
             <div className='content'>
                 <h1>Upravljanje studentima</h1>
                 <div className="search-bar">
@@ -431,7 +433,7 @@ function ManageStudents() {
                     isOpen={modifyModalOpen}
                     onClose={() => setModifyModalOpen(false)}
                     studentId={selectedStudentId}
-                    onStudentDeleted={() => setDeletionCount(count => count + 1)}
+                    onStudentDeleted={handleStudentDeleted}
                     onComplete={handleStudentUpdated}
                 />
             </div>

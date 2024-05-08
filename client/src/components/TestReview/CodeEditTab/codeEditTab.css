@@ -21,7 +21,7 @@
     height: 100%;
     margin: 10px;
     font-family: "Jost", sans-serif;
-    margin-top: -10px;
+    margin-top: -5px;
 }
 
 .code-edit-tab-row {
@@ -136,4 +136,53 @@
 
 .code-edit-deactivate-button:hover {
     background-color: #CC0000;
+}
+
+.code-edit-docker-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.code-edit-results {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.code-edit-single-result {
+    background-color: #1476d2;
+    color: #F7F7FF;
+    border: none;
+    padding: 5px 20px;
+    font-size: 16px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+    font-family: "Jost", sans-serif;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.TESTIRANJE {
+    color: #1993F0;
+    animation: fadeInOut 2s infinite;
+}
+
+.PRIPREMLJEN {
+    color: green;
+}
+
+.AT_OCENJEN {
+    color: #19f01d;
+}
+
+.OCENJEN {
+    color: #1993F0;
+}
+
+@keyframes fadeInOut {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
 }

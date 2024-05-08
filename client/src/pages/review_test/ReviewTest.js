@@ -39,7 +39,8 @@ const ReviewTest = () => {
     const [breakpoints, setBreakpoints] = useState([]);
 
     const [isVariationModeActive, setIsVariationModeActive] = useState(false);
-    const [selectedVariation, setSelectedVariation] = useState('');
+    const [selectedVariationName, setSelectedVariationName] = useState('');
+    const [selectedVariationId, setSelectedVariationId] = useState(null);
     const [openTabs, setOpenTabs] = useState({
         "PRIKAZ UŽIVO": true,
         'EMULATOR & DEBUGGER': false,
@@ -67,14 +68,14 @@ const ReviewTest = () => {
         "PRIKAZ UZIVO": "50px",
         'EMULATOR & DEBUGGER': "310px",
         'COMPILER': "200px",
-        "VARIJACIJE KODA": "150px",
+        "VARIJACIJE KODA": "260px",
 
     };
     const tabProps = {
         "PRIKAZ UZIVO": { currentDebbugLine: debbugLineContent },
-        'EMULATOR & DEBUGGER': { taskNo: targetTaskNo, testNo: targetTestNo, pc: pc, setDebbugLine: setDebbugLine, setDebbugFile: setDebbugFile, breakpoints: breakpoints, setDebbugLineContent: setDebbugLineContent, isVariationModeActive: isVariationModeActive, selectedVariation: selectedVariation},
+        'EMULATOR & DEBUGGER': { taskNo: targetTaskNo, testNo: targetTestNo, pc: pc, setDebbugLine: setDebbugLine, setDebbugFile: setDebbugFile, breakpoints: breakpoints, setDebbugLineContent: setDebbugLineContent, isVariationModeActive: isVariationModeActive, selectedVariationID: selectedVariationId},
         'COMPILER': { taskNo: targetTaskNo, testNo: targetTestNo, pc: pc, testId: testid },
-        "VARIJACIJE KODA": { taskNo: targetTaskNo, testNo: targetTestNo, pc: pc, testId: testid, setIsVariationModeActive: setIsVariationModeActive, setVariationName: setSelectedVariation, hasPendingChanges: hasPendingChanges, saveFileChanges: saveFileChanges },
+        "VARIJACIJE KODA": { taskNo: targetTaskNo, testNo: targetTestNo, pc: pc, testId: testid, setIsVariationModeActive: setIsVariationModeActive, setVariationName: setSelectedVariationName, hasPendingChanges: hasPendingChanges, saveFileChanges: saveFileChanges, selectedVariationId: selectedVariationId, setSelectedVariationId: setSelectedVariationId},
     };
 
     const requestAction = (requestedAction) => {
@@ -99,8 +100,9 @@ const ReviewTest = () => {
     }
 
     useEffect(() => {
-        setSelectedVariation('');
-    }, [targetTaskNo, targetTestNo]);
+        setSelectedVariationId(null);
+        setSelectedVariationName('');
+    }, [targetTaskNo]);
 
     useEffect(() => {
         if(studentId)
@@ -123,7 +125,6 @@ const ReviewTest = () => {
 
     useEffect(() => {
         if(studentGrading){
-            console.log("STUDENT GRADING", studentGrading);
             setCurrentPoints(studentGrading.total_points);
         }
     }, [studentGrading]);
@@ -236,7 +237,9 @@ const ReviewTest = () => {
                 credentials: 'include',
                 method: isVariationModeActive ? "POST" : "GET",
                 headers: isVariationModeActive ? { "Content-Type": "application/json" } : undefined,
-                body: isVariationModeActive ? JSON.stringify({ testId: testid, pc, taskNo: targetTaskNo, varijationName: selectedVariation, fileName }) : undefined
+                body: isVariationModeActive
+                    ? JSON.stringify({ testId: testid, pc, taskNo: targetTaskNo, variationId: selectedVariationId, fileName })
+                    : undefined
             });
 
             if (!response.ok) {
@@ -264,7 +267,7 @@ const ReviewTest = () => {
         }
     };
 
-   async function saveFileChanges() {
+    async function saveFileChanges() {
         try {
             const response = await fetch(`http://localhost:8000/review/edits/updatefile`, {
                 method: 'POST',
@@ -272,17 +275,17 @@ const ReviewTest = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ testId: testid, taskNo: targetTaskNo, pc: pc, variationName: selectedVariation, newContent: codeText, fileName: selectedFile }),
+                body: JSON.stringify({ testId: testid, taskNo: targetTaskNo, pc, variationId: selectedVariationId, newContent: codeText, fileName: selectedFile }),
             });
             if (!response.ok) {
-                toast.error("Došlo je do greške prilikom čuvanja promena u fajlu.", response.type);
+                toast.error("Došlo je do greške prilikom čuvanja promena u fajlu.");
                 return;
             }
             toast.success("Promene su uspešno sačuvane.");
             setHasPendingChanges(false);
         } catch (error) {
             console.log("Error saving file changes:", error);
-            toast.error("Došlo je do greške prilikom čuvanja promena u fajlu.", error);
+            toast.error("Došlo je do greške prilikom čuvanja promena u fajlu.");
         }
     }
 
@@ -324,7 +327,7 @@ const ReviewTest = () => {
             <TestReviewHeader />
             <div className='review-content'>
                 <div className="left-column">
-                    <CodePreview pc={pc} taskNo={targetTaskNo} testNo={targetTestNo} lineNumber={debbugLine} debbugFile={debbugFile} setBreakpoints={setBreakpoints} isVariationModeActive={isVariationModeActive} selectedVariation={selectedVariation} hasPendingChanges={hasPendingChanges} setHasPendingChanges={setHasPendingChanges} codeText={codeText} setCodeText={setCodeText} selectedFile={selectedFile} setSelectedFile={setSelectedFile} pendingAction={pendingAction} setPendingAction={setPendingAction} saveFileChanges={saveFileChanges} requestAction={requestAction} confirmDiscardChanges={confirmDiscardChanges} setConfirmDiscardChanges={setConfirmDiscardChanges} mode={mode} setMode={setMode} selectFile={selectFile} showContent={showContent} setShowContent={setShowContent} showConfirmDialog={showConfirmInappropriateDialog} setShowConfirmDialog={setShowConfirmInappropriateDialog} pendingFileContent={pendingFileContent} />
+                    <CodePreview pc={pc} taskNo={targetTaskNo} testNo={targetTestNo} lineNumber={debbugLine} debbugFile={debbugFile} setBreakpoints={setBreakpoints} isVariationModeActive={isVariationModeActive} selectedVariationID={selectedVariationId} hasPendingChanges={hasPendingChanges} setHasPendingChanges={setHasPendingChanges} codeText={codeText} setCodeText={setCodeText} selectedFile={selectedFile} setSelectedFile={setSelectedFile} pendingAction={pendingAction} setPendingAction={setPendingAction} saveFileChanges={saveFileChanges} requestAction={requestAction} confirmDiscardChanges={confirmDiscardChanges} setConfirmDiscardChanges={setConfirmDiscardChanges} mode={mode} setMode={setMode} selectFile={selectFile} showContent={showContent} setShowContent={setShowContent} showConfirmDialog={showConfirmInappropriateDialog} setShowConfirmDialog={setShowConfirmInappropriateDialog} pendingFileContent={pendingFileContent} />
                 </div>
                 <div className="right-column">
                     <CurrentStudentInfo student={studentData} currentPoints={currentPoints} maxPoints={maxPoints} />

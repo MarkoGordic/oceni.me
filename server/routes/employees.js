@@ -147,8 +147,8 @@ router.post('/reset_password', async (req, res) => {
     try {
         const user = await db.getEmployeeById(req.session.userId);
 
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+        if (!user || !user.password) {
+            return res.status(404).json({ error: 'User or user password not found' });
         }
 
         const match = await bcrypt.compare(oldPassword, user.password);
@@ -163,10 +163,11 @@ router.post('/reset_password', async (req, res) => {
 
         res.json({ message: 'Password updated successfully' });
     } catch (error) {
-        console.error("[ERROR] : Error resetting password:", error);
+        console.error("[ERROR]: Error resetting password:", error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+
 
 router.post('/new', upload.single('profile_image'), async (req, res) => {
     const { first_name, last_name, email, password, role, gender } = req.body;

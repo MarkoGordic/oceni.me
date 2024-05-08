@@ -317,6 +317,41 @@ class Database {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         `;
 
+        const createVariationsTable = `
+            CREATE TABLE IF NOT EXISTS variations (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                test_id INT NOT NULL,
+                task_no INT NOT NULL,
+                name VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (test_id) REFERENCES tests(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        `;
+
+        const createVariationTestResultsTable = `
+            CREATE TABLE IF NOT EXISTS variation_test_results (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                variation_id INT NOT NULL,
+                test_no VARCHAR(10) NOT NULL,
+                result INT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (variation_id) REFERENCES variations(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        `;
+
+        const createFinalVariationResultsTable = `
+            CREATE TABLE IF NOT EXISTS final_variation_results (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                variation_id INT NOT NULL,
+                results TEXT,
+                total_points INT NOT NULL,
+                status ENUM('TESTIRANJE', 'AT OCENJEN') NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (variation_id) REFERENCES variations(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        `;
+
         try {
             await this.pool.execute(createConfigTable);
             console.info("[INFO] : Config table created successfully.");
@@ -342,6 +377,12 @@ class Database {
             console.info("[INFO] : Test gradings table created successfully.");
             await this.pool.execute(createAutoTestResultsTable);
             console.info("[INFO] : Auto test results table created successfully.");
+            await this.pool.execute(createVariationsTable);
+            console.info("[INFO] : Variations table created successfully.");
+            await this.pool.execute(createVariationTestResultsTable);
+            console.info("[INFO] : Variation test results table created successfully.");
+            await this.pool.execute(createFinalVariationResultsTable);
+            console.info("[INFO] : Final variation results table created successfully.");
         } catch (err) {
             console.error("[ERROR] : Error while running SQL.", err);
         }
@@ -408,7 +449,7 @@ class Database {
     }
 
     async getEmployeeById(id) {
-        const query = 'SELECT first_name, last_name, email, id, role, gender FROM employees WHERE id = ?';
+        const query = 'SELECT first_name, last_name, email, id, role, gender, password FROM employees WHERE id = ?';
         try {
             const [results] = await this.pool.query(query, [id]);
             return results.length > 0 ? results[0] : null;
@@ -621,7 +662,6 @@ class Database {
         params.push(limit, offset);
     
         try {
-            console.log(query, params);
             const [results] = await this.pool.query(query, params);
             if (results.length === 0) {
                 return [];
@@ -1409,8 +1449,197 @@ class Database {
             throw error;
         }
     }
+
+    async getVariations(testId, taskNo) {
+        const query = `
+            SELECT id, name
+            FROM variations
+            WHERE test_id = ? AND task_no = ?
+        `;
+        try {
+            const [results] = await this.pool.query(query, [testId, taskNo]);
+            return results;
+        } catch (error) {
+            console.error('Error retrieving variations:', error);
+            throw error;
+        }
+    }
+
+    async getVariationById(id) {
+        const query = `
+            SELECT id, test_id, task_no, name
+            FROM variations
+            WHERE id = ?
+        `;
+        try {
+            const [results] = await this.pool.query(query, [id]);
+            return results.length > 0 ? results[0] : null;
+        } catch (error) {
+            console.error('Error retrieving variation by ID:', error);
+            throw error;
+        }
+    }
+
+    async addVariation(testId, taskNo, variationName) {
+        const query = `
+            INSERT INTO variations (test_id, task_no, name)
+            VALUES (?, ?, ?)
+        `;
+        try {
+            const [result] = await this.pool.query(query, [testId, taskNo, variationName]);
+            return result.insertId;
+        } catch (error) {
+            console.error('Error adding variation to the database:', error);
+            return null;
+        }
+    }
+
+    async removeVariationById(id) {
+        const query = `
+            DELETE FROM variations
+            WHERE id = ?
+        `;
+        try {
+            const [result] = await this.pool.query(query, [id]);
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('Error removing variation:', error);
+            throw error;
+        }
+    }
+
+    async variationExists(testId, taskNo, variationName) {
+        const query = `
+            SELECT 1
+            FROM variations
+            WHERE test_id = ? AND task_no = ? AND name = ?
+        `;
+        try {
+            const [results] = await this.pool.query(query, [testId, taskNo, variationName]);
+            return results.length > 0;
+        } catch (error) {
+            console.error('Error checking variation existence:', error);
+            return false;
+        }
+    }
     
+    async addNewVariationAutoTestResult(variationId, result, testNo) {
+        const insertQuery = `
+            INSERT INTO variation_test_results (variation_id, result, test_no)
+            VALUES (?, ?, ?)
+        `;
+        try {
+            await this.pool.query(insertQuery, [variationId, result, testNo]);
+        } catch (error) {
+            console.error('Error adding variation test result:', error);
+            throw error;
+        }
+    }
+
+    async addNewVariationFinalResult(variationId, total_points, status) {
+        const deleteQuery = `
+            DELETE FROM final_variation_results
+            WHERE variation_id = ?
+        `;
+        const insertQuery = `
+            INSERT INTO final_variation_results (variation_id, total_points, status, results)
+            VALUES (?, ?, ?, NULL)
+        `;
+
+        try {
+            await this.pool.query(deleteQuery, [variationId]);
+            await this.pool.query(insertQuery, [variationId, total_points, status]);
+        } catch (error) {
+            console.error('Error adding final variation result:', error);
+            throw error;
+        }
+    }
+
+    async updateFinalVariationResults(variationId, variationResults, totalPoints, status) {
+        const selectQuery = `
+            SELECT COUNT(1) as cnt
+            FROM final_variation_results
+            WHERE variation_id = ?`;
+
+        const updateQuery = `
+            UPDATE final_variation_results
+            SET results = ?, total_points = ?, status = ?
+            WHERE variation_id = ?
+        `;
+
+        const insertQuery = `
+            INSERT INTO final_variation_results (variation_id, results, total_points, status)
+            VALUES (?, ?, ?, ?)
+        `;
+
+        try {
+            const [results] = await this.pool.query(selectQuery, [variationId]);
+            if (results[0].cnt > 0) {
+                await this.pool.query(updateQuery, [variationResults, totalPoints, status, variationId]);
+            } else {
+                await this.pool.query(insertQuery, [variationId, variationResults, totalPoints, status]);
+            }
+        } catch (error) {
+            console.error('Error moving variation results:', error);
+            throw error;
+        }
+    }
+
+    async clearVariationAutoTestResults(variationId) {
+        const query = `
+            DELETE FROM variation_test_results
+            WHERE variation_id = ?
+        `;
+        try {
+            await this.pool.query(query, [variationId]);
+        } catch (error) {
+            console.error('Error clearing variation test results:', error);
+            throw error;
+        }
+    }
+
+    async getFinalVariationResults(variationId) {
+        const query = `
+            SELECT * FROM final_variation_results
+            WHERE variation_id = ?
+        `;
+        try {
+            const [results] = await this.pool.query(query, [variationId]);
+            return results.length > 0 ? results[0] : null;
+        } catch (error) {
+            console.error('Error retrieving final variation results:', error);
+            throw error;
+        }
+    }
+
+    async isTestRunningForVariation(variationId) {
+        const query = `
+            SELECT COUNT(*) AS count
+            FROM final_variation_results
+            WHERE variation_id = ? AND status = 'TESTIRANJE'
+        `;
+        try {
+            const [results] = await this.pool.query(query, [variationId]);
+            return results[0].count > 0;
+        } catch (error) {
+            console.error('Error checking for running variation test:', error);
+            throw error;
+        }
+    }
     
+    async getResultsForVariation(variationId) {
+        const query = `
+            SELECT * FROM variation_test_results
+            WHERE variation_id = ?
+        `;
+        try {
+            const [rows] = await this.pool.query(query, [variationId]);
+            return rows.length > 0 ? rows : [];
+        } catch (error) {
+            console.error('Error retrieving results for variation:', error);
+            throw error;
+        }
+    }
 }
 
 module.exports = Database;

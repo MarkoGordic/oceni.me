@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { toast } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
 import Select from 'react-select';
 import makeAnimated from 'react-select/animated';
 import './modifyStudentModal.css';
@@ -117,11 +117,11 @@ function ModifyStudentModal({ isOpen, onClose, studentId, onStudentDeleted, onCo
                     credentials: 'include',
                 });
                 if (response.ok) {
+                    setStudentData(null);
+                    onStudentDeleted(studentId);
+                    setActiveTab('studentInfo');
                     toast.success("Student je uspešno obrisan.");
                     onClose();
-                    setActiveTab('studentInfo');
-                    setStudentData(null);
-                    onStudentDeleted();
                 } else {
                     toast.error("Došlo je do greške prilikom brisanja studenta.");
                 }
@@ -286,6 +286,7 @@ function ModifyStudentModal({ isOpen, onClose, studentId, onStudentDeleted, onCo
 
     return (
         <div className="modify-student-modal-overlay" onClick={handleOverlayClick}>
+            <ToastContainer theme='dark'/>
             <div className="modify-student-modal-content" onClick={handleModalContentClick}>
             <div className='modify-student-modal-column-left'>
                 <div className="tabs-container">

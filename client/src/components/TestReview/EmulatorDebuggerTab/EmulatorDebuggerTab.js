@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import "./emulatorDebuggerTab.css";
 
-const EmulatorDebuggerTab = ({ taskNo, testNo, pc, setDebbugLine, setDebbugFile, breakpoints, setDebbugLineContent, isVariationModeActive, selectedVariation }) => {
+const EmulatorDebuggerTab = ({ taskNo, testNo, pc, setDebbugLine, setDebbugFile, breakpoints, setDebbugLineContent, isVariationModeActive, selectedVariationID }) => {
     const { testid } = useParams();
 
     const [gdbData, setGdbData] = useState(null);
@@ -49,28 +49,28 @@ const EmulatorDebuggerTab = ({ taskNo, testNo, pc, setDebbugLine, setDebbugFile,
 
     useEffect(() => {
         if (taskNo === null || pc === null || testNo === null || testid === null) return;
-
+    
         const fetchDebuggerData = async () => {
             try {
-                const endpoint = isVariationModeActive && selectedVariation
+                const endpoint = isVariationModeActive && selectedVariationID
                     ? 'http://localhost:8000/review/edits/debugger'
                     : `http://localhost:8000/review/debugger/${testid}/${pc}/${taskNo}/${testNo}`;
-                
-                const response = isVariationModeActive && selectedVariation
+    
+                const response = isVariationModeActive && selectedVariationID
                     ? await fetch(endpoint, {
                         credentials: 'include',
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ testId: testid, pc, taskNo, testNo })
+                        body: JSON.stringify({ testId: testid, pc, taskNo, testNo, variationId: selectedVariationID })
                     })
                     : await fetch(endpoint, {
                         credentials: 'include'
                     });
-
+    
                 if (!response.ok) {
                     throw new Error('Failed to load debugger data');
                 }
-
+    
                 const data = await response.json();
                 setGdbData(data);
             } catch (error) {
@@ -78,9 +78,9 @@ const EmulatorDebuggerTab = ({ taskNo, testNo, pc, setDebbugLine, setDebbugFile,
                 console.error("Error fetching debugger data:", error);
             }
         };
-
+    
         fetchDebuggerData();
-    }, [taskNo, pc, testid, testNo, isVariationModeActive, selectedVariation]);
+    }, [taskNo, pc, testid, testNo, isVariationModeActive, selectedVariationID]);
 
     const handleTypeChange = (register, type) => {
         setRegisterTypes(prev => ({ ...prev, [register]: type }));

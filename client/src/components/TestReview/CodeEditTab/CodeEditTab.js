@@ -50,21 +50,37 @@ const customSelectStyles = {
     }),
 };
 
-const CodeEditTab = ({ testId, taskNo, testNo, pc, setIsVariationModeActive, setVariationName, hasPendingChanges, saveFileChanges }) => {
+const CodeEditTab = ({ testId, taskNo, testNo, pc, setIsVariationModeActive, setVariationName, hasPendingChanges, saveFileChanges, selectedVariationId, setSelectedVariationId }) => {
     const [isActivated, setIsActivated] = useState(false);
-    const [variationNames, setvariationNames] = useState([]);
-    const [newVariationName, setnewVariationName] = useState('');
-    const [selectedVariation, setselectedVariation] = useState('');
+    const [variations, setVariations] = useState([]);
+    const [newVariationName, setNewVariationName] = useState('');
+    const [dockerStatus, setDockerStatus] = useState('SPREMAN');
+    const [results, setResults] = useState([]);
 
     const setVariationActive = (status) => {
         setIsVariationModeActive(status);
         setIsActivated(status);
-    }
+    };
 
-    const setVariation = (variationName) => {
+    const setVariation = (variationId, variationName) => {
         setVariationName(variationName);
-        setselectedVariation(variationName);
-    }
+        setSelectedVariationId(variationId);
+    };
+
+    const getStatusClass = () => {
+        switch (dockerStatus) {
+            case 'TESTIRANJE':
+                return "TESTIRANJE";
+            case 'PRIPREMLJEN':
+                return "PRIPREMLJEN";
+            case 'AT OCENJEN':
+                return "AT_OCENJEN";
+            case 'OCENJEN':
+                return "OCENJEN";
+            default:
+                return "";
+        }
+    };
 
     useEffect(() => {
         if (!taskNo || !testNo) {
@@ -81,16 +97,16 @@ const CodeEditTab = ({ testId, taskNo, testNo, pc, setIsVariationModeActive, set
                 });
 
                 if (!response.ok) {
-                    toast.error("Došlo je do greške prilikom dobijanja imena varijacija.");
+                    toast.error("Došlo je do greške prilikom dobijanja varijacija.");
                     return;
                 }
 
                 const data = await response.json();
-                setvariationNames(data.variations || []);
+                setVariations(data.variations || []);
             } catch (error) {
-                console.error('Error fetching varijation names:', error);
-                toast.error('Došlo je do greške prilikom dobijanja imena varijacija.');
-                setvariationNames([]);
+                console.error('Error fetching variations:', error);
+                toast.error('Došlo je do greške prilikom dobijanja varijacija.');
+                setVariations([]);
             }
         };
 
@@ -107,7 +123,7 @@ const CodeEditTab = ({ testId, taskNo, testNo, pc, setIsVariationModeActive, set
             const response = await fetch('http://localhost:8000/review/edits/new', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ testId, taskNo, pc, varijationName: newVariationName }),
+                body: JSON.stringify({ testId, taskNo, pc, variationName: newVariationName }),
                 credentials: 'include'
             });
 
@@ -117,47 +133,144 @@ const CodeEditTab = ({ testId, taskNo, testNo, pc, setIsVariationModeActive, set
                 return;
             }
 
-            setvariationNames(prev => [...prev, newVariationName]);
-            setnewVariationName('');
+            const { variationId } = await response.json();
+            setVariations(prev => [...prev, { id: variationId, name: newVariationName }]);
+            setNewVariationName('');
             toast.success(`Varijacija "${newVariationName}" je uspešno kreirana.`);
         } catch (error) {
-            console.error('Error creating varijation:', error);
+            console.error('Error creating variation:', error);
             toast.error('Došlo je do serverske greške prilikom kreiranja nove varijacije.');
         }
     };
 
-    const handleDeleteVarijation = async () => {
-        if (!selectedVariation) {
+    const handleDeleteVariation = async () => {
+        if (!selectedVariationId) {
             toast.error("Morate izabrati varijaciju za brisanje.");
             return;
         }
-    
+
         try {
             const response = await fetch('http://localhost:8000/review/edits/delete', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ testId, taskNo, pc, varijationName: selectedVariation }),
+                body: JSON.stringify({ variationId: selectedVariationId, pc }),
                 credentials: 'include'
             });
-    
+
             if (!response.ok) {
                 const errorData = await response.json();
                 toast.error(errorData.error || "Došlo je do greške prilikom brisanja varijacije.");
                 return;
             }
-    
-            setvariationNames(prev => prev.filter(name => name !== selectedVariation));
-            setselectedVariation('');
-            toast.success(`Varijacija "${selectedVariation}" je uspešno obrisana.`);
+
+            setVariations(prev => prev.filter(variation => variation.id !== selectedVariationId));
+            setSelectedVariationId(null);
+            toast.success("Varijacija je uspešno obrisana.");
         } catch (error) {
-            console.error('Error deleting varijation:', error);
+            console.error('Error deleting variation:', error);
             toast.error('Došlo je do serverske greške prilikom brisanja varijacije.');
         }
-    };    
+    };
+
+    const handleStartTesting = async () => {
+        if (!selectedVariationId) {
+          toast.error("Morate izabrati varijaciju za testiranje.");
+          return;
+        }
+    
+        setResults([]);
+
+        try {
+          const response = await fetch('http://localhost:8000/autotest/run/variation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ variationId: selectedVariationId, testId, pc }),
+            credentials: 'include'
+          });
+    
+          if (!response.ok) {
+            if(response.status === 409) {
+                toast.error("Testiranje je već u toku.");
+            } else {
+                toast.error("Došlo je do greške prilikom pokretanja testiranja.");
+            }
+            return;
+          }
+    
+          toast.success('Testiranje je uspešno započeto.');
+          setDockerStatus('TESTIRANJE');
+        } catch (error) {
+          console.error('Error starting testing:', error);
+          toast.error('Došlo je do serverske greške prilikom pokretanja testiranja.');
+        }
+    };
+
+    const handleRefreshStatus = async () => {
+        if (!selectedVariationId) {
+          toast.error("Morate izabrati varijaciju za osvežavanje statusa.");
+          return;
+        }
+      
+        try {
+          const response = await fetch('http://localhost:8000/autotest/progress/variation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ variationId: selectedVariationId, testId }),
+            credentials: 'include'
+          });
+      
+          if (!response.ok) {
+            const errorData = await response.json();
+            toast.error(errorData.error || "Došlo je do greške prilikom osvežavanja statusa.");
+            return;
+          }
+      
+          const progressData = await response.json();
+
+          if (progressData != null) {
+            setDockerStatus(progressData.status);
+            toast.success("Status osvežen.");
+          } else {
+            setDockerStatus('SPREMAN');
+            toast.info("Testiranje nije u toku ili nema rezultata za ovu varijaciju.");
+          }
+        } catch (error) {
+          console.error('Error refreshing variation progress:', error);
+          toast.error("Došlo je do serverske greške prilikom osvežavanja statusa.");
+        }
+      };
+
+    const fetchVariationResults = async () => {
+        if (!selectedVariationId) {
+        toast.error("Morate izabrati varijaciju za prikaz rezultata.");
+        return;
+        }
+
+        try {
+        const response = await fetch('http://localhost:8000/review/edits/get_variation_results', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ variationId: selectedVariationId }),
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            toast.error(errorData.error || "Došlo je do greške prilikom preuzimanja rezultata.");
+            return;
+        }
+
+        const data = await response.json();
+        setResults(JSON.parse(data.results) || []);
+        } catch (error) {
+        console.error("Error fetching variation results:", error);
+        toast.error("Došlo je do serverske greške prilikom preuzimanja rezultata.");
+        }
+    };
 
     const areTasksSelected = taskNo && testNo;
 
-    const selectOptions = variationNames.map(name => ({ value: name, label: name }));
+    const selectOptions = variations.map(({ id, name }) => ({ value: id, label: name }));
 
     return (
         <div className="code-edit-tab">
@@ -167,8 +280,11 @@ const CodeEditTab = ({ testId, taskNo, testNo, pc, setIsVariationModeActive, set
                         <div className="code-edit-tab-row">
                             <div className="select-container">
                                 <Select
-                                    value={selectOptions.find(option => option.value === selectedVariation)}
-                                    onChange={option => setVariation(option ? option.value : '')}
+                                    value={selectOptions.find(option => option.value === selectedVariationId)}
+                                    onChange={option => {
+                                        const selected = variations.find(variation => variation.id === option.value);
+                                        setVariation(option.value, selected.name);
+                                    }}
                                     options={selectOptions}
                                     placeholder="-- Izaberite varijaciju --"
                                     styles={customSelectStyles}
@@ -179,15 +295,15 @@ const CodeEditTab = ({ testId, taskNo, testNo, pc, setIsVariationModeActive, set
                                 <input
                                     type="text"
                                     value={newVariationName}
-                                    onChange={e => setnewVariationName(e.target.value)}
+                                    onChange={e => setNewVariationName(e.target.value)}
                                     placeholder="Unesite ime nove varijacije"
                                     className="new-variation-input"
-                                />  
+                                />
                             </div>
                         </div>
 
                         <div className="code-edit-tab-row">
-                            <button className="code-edit-delete-btn" onClick={handleDeleteVarijation}>
+                            <button className="code-edit-delete-btn" onClick={handleDeleteVariation}>
                                 <i className="fi fi-rr-trash"></i> OBRIŠI VARIJACIJU
                             </button>
 
@@ -201,10 +317,36 @@ const CodeEditTab = ({ testId, taskNo, testNo, pc, setIsVariationModeActive, set
                         </div>
 
                         <div className="code-edit-tab-row">
-                            {hasPendingChanges ? <p className="code-edit-pending-changes">DETEKTOVANE SU NESAČUVANE PROMENE!</p> : <p className="code-edit-no-changes">NEMA PROMENA</p> }
-                            <button className="code-edit-save-btn" onClick={() => {saveFileChanges();}}>
+                            {hasPendingChanges ? <p className="code-edit-pending-changes">DETEKTOVANE SU NESAČUVANE PROMENE!</p> : <p className="code-edit-no-changes">NEMA PROMENA</p>}
+                            <button className="code-edit-save-btn" onClick={() => saveFileChanges()}>
                                 <i className="fi fi-rr-save"></i> SAČUVAJ PROMENE
                             </button>
+                        </div>
+
+                        <div className="code-edit-tab-row">
+                            <p className={`code-edit-docker-status ${getStatusClass()}`}>STATUS: {dockerStatus}</p>
+                            
+                            <div className="code-edit-docker-buttons">
+                                <button className="code-edit-save-btn" onClick={handleStartTesting}>ZAPOČNI TESTIRANJE</button>
+                                <button className="code-edit-save-btn" onClick={() => { handleRefreshStatus(); fetchVariationResults(); }}>OSVEŽI STATUS</button>
+                            </div>
+                        </div>
+
+                        <div className="code-edit-tab-row">
+                            <div className="code-edit-results">
+                                {Object.keys(results).length > 0 ? (
+                                    Object.keys(results).sort().map((key, index) => {
+                                        const result = results[key];
+                                        return (
+                                            <div className="code-edit-single-result" key={index}>
+                                                {key}: {result}
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <p>Nema rezultata za prikaz.</p>
+                                )}
+                            </div>
                         </div>
                     </>
                 ) : (
