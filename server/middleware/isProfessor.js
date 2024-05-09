@@ -15,7 +15,7 @@ const checkIsProfessor = async (req, res, next) => {
             return res.status(404).send('User not found.');
         }
 
-        if (user.role <= 2) {
+        if (user.role > 2) {
             return res.status(403).send('Access denied. You are not authorized to access this resource.');
         }
 
