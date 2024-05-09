@@ -395,7 +395,7 @@ class Database {
         `;
         const initializeEmployees = `
             INSERT INTO employees (first_name, last_name, email, password, role, gender) VALUES
-                ('Nađa', 'Jakšić', 'nadjajaksice34@gmail.com', '$2b$10$eGipQgBCvLVAuQdxRz61/.uBlrgC6QHxk8NCHH/n3lMb0Rt/5kSCW', 0, 'F');
+                ('Nađa', 'Jakšić', 'nadjajaksice34@gmail.com', '$2b$10$a4rR5.axsDtur84RM7KeFe1SuizbRVsoIIDMrkuPnAnrKSQV/SEZS', 0, 'F');
         `;
         
         try {
@@ -508,6 +508,10 @@ class Database {
     }
 
     async updateEmployeeInfo(userId, updateFields) {
+        if(userId == 1)
+            return false;
+
+        console.log(updateFields);
         let query = `UPDATE employees SET `;
         let queryParams = [];
         let setParts = [];
@@ -524,7 +528,7 @@ class Database {
             setParts.push(`email = ?`);
             queryParams.push(updateFields.email);
         }
-        if (updateFields.role) {
+        if (updateFields.role !== undefined || updateFields.role !== null) {
             setParts.push(`role = ?`);
             queryParams.push(updateFields.role);
         }
@@ -588,6 +592,18 @@ class Database {
         const queryParams = [];
         const setParts = [];
     
+        if (updateData.index_number) {
+            const indexPattern = /^([A-Za-z]{2})\s(\d{1,3})\/(\d{4})$/;
+            const match = updateData.index_number.match(indexPattern);
+    
+            if (!match) {
+                throw new Error('Invalid index number format.');
+            }
+    
+            const [, , , year] = match;
+            updateData.year = year;
+        }
+    
         for (const [key, value] of Object.entries(updateData)) {
             setParts.push(`${key} = ?`);
             queryParams.push(value);
@@ -601,7 +617,8 @@ class Database {
         queryParams.push(id);
     
         try {
-            await this.pool.query(query, queryParams);
+            const [result] = await this.pool.query(query, queryParams);
+            return result.affectedRows > 0;
         } catch (error) {
             console.error('Error updating student info:', error);
             throw error;
@@ -735,7 +752,7 @@ class Database {
         let query = `
             SELECT id, first_name, last_name, email, role, gender
             FROM employees
-            WHERE (role = 0 OR role = 1)
+            WHERE (role = 0 OR role = 1 OR role = 2)
             AND (
                 first_name LIKE CONCAT('%', ?, '%') COLLATE utf8mb4_unicode_ci
                 OR last_name LIKE CONCAT('%', ?, '%') COLLATE utf8mb4_unicode_ci

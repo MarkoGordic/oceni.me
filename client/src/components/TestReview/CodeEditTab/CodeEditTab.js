@@ -247,24 +247,24 @@ const CodeEditTab = ({ testId, taskNo, testNo, pc, setIsVariationModeActive, set
         }
 
         try {
-        const response = await fetch('http://localhost:8000/review/edits/get_variation_results', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ variationId: selectedVariationId }),
-            credentials: 'include'
-        });
+            const response = await fetch('http://localhost:8000/review/edits/get_variation_results', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ variationId: selectedVariationId }),
+                credentials: 'include'
+            });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            toast.error(errorData.error || "Došlo je do greške prilikom preuzimanja rezultata.");
-            return;
-        }
+            if (!response.ok) {
+                const errorData = await response.json();
+                toast.error(errorData.error || "Došlo je do greške prilikom preuzimanja rezultata.");
+                return;
+            }
 
-        const data = await response.json();
-        setResults(JSON.parse(data.results) || []);
+            const data = await response.json();
+            setResults(JSON.parse(data.results) || []);
         } catch (error) {
-        console.error("Error fetching variation results:", error);
-        toast.error("Došlo je do serverske greške prilikom preuzimanja rezultata.");
+            console.error("Error fetching variation results:", error);
+            toast.error("Došlo je do serverske greške prilikom preuzimanja rezultata.");
         }
     };
 

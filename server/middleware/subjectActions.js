@@ -15,7 +15,7 @@ const checkAuthForSubjects = async (req, res, next) => {
             return res.status(404).send('User not found.');
         }
         
-        if (user.role === 0) {
+        if (user.role === 0 || user.role === 1) {
             return next();
         }
 

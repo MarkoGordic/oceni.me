@@ -8,10 +8,11 @@ function AddSubjectEmployeeModal({ isOpen, onClose, existingEmployees, subjectId
     const [searchResults, setSearchResults] = useState([]);
 
     const roleMap = {
-        0: 'Dekan',
-        1: 'Profesor',
-        2: 'Asistent',
-        3: 'Demonstrator',
+        0: 'Superadmin',
+        1: 'Dekan',
+        2: 'Profesor',
+        3: 'Asistent',
+        4: 'Demonstrator',
     };
 
     const performSearch = async () => {

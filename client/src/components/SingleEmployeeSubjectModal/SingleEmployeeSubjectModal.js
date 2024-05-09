@@ -4,10 +4,11 @@ import 'react-toastify/dist/ReactToastify.css';
 
 const SingleEmployeeSubjectModal = ({ employee, subjectId, onAddSuccess }) => {
     const roleOptions = [
-        { value: 0, label: 'Dekan'},
-        { value: 1, label: 'Profesor' },
-        { value: 2, label: 'Asistent' },
-        { value: 3, label: 'Demonstrator' },
+        { value: 0, label: 'Superadmin'},
+        { value: 1, label: 'Dekan'},
+        { value: 2, label: 'Profesor' },
+        { value: 3, label: 'Asistent' },
+        { value: 4, label: 'Demonstrator' },
     ];
 
     const handleAddClick = async () => {

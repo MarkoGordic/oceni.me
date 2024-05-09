@@ -6,6 +6,10 @@ import { useUser } from '../../contexts/UserContext';
 function Sidebar() {
     const { user } = useUser();
 
+    useEffect(() => {
+        console.log(user);
+    }, [user]);
+
     return (
         <div className="sidebar">
             <div className='sidebar-app-logo'>
@@ -21,11 +25,11 @@ function Sidebar() {
                 <SidebarRoute icon='fi fi-bs-user' text='Korisnička zona' path='/profile' />
             </div>
             
-            {user.role === 0 && (
+            {user.role <= 1  && (
                 <div className='sidebar-delim'></div>
             )}
 
-            {user.role === 0 && (
+            {user.role <= 1 && (
                 <div className='sidebar-routes'>
                     <SidebarRoute icon='fi fi-rr-fingerprint' text='Upravljanje zaposlenima' path='/admin/users' />
                     <SidebarRoute icon='fi fi-rr-graduation-cap' text='Upravljanje predmetima' path='/admin/subjects' />

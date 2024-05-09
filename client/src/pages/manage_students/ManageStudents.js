@@ -109,6 +109,7 @@ function ManageStudents() {
     };
 
     const handleStudentUpdated = async () => {
+        setSearchResults([]);
         performSearch();
     };
 
@@ -126,7 +127,6 @@ function ManageStudents() {
         return () => window.removeEventListener('scroll', handleScroll);
     }, [hasMore, loading]);
     
-
     useEffect(() => {
         setSearchResults([]);
         setPage(1);
@@ -236,7 +236,10 @@ function ManageStudents() {
                 toast.success("Uspešno kreiran nalog za studenta " + studentData.first_name + " " + studentData.last_name + "!");
                 setModalOpen(false);
             } else {
-                toast.error("Došlo je do neočekivane greške prilikom kreiranja studentskog naloga.");
+                if(response.status == 409)
+                    toast.error("Došlo je do greške prilikom kreiranja studentskog naloga. Student sa unetim brojem indeksa već postoji.");
+                else
+                    toast.error("Došlo je do neočekivane greške prilikom kreiranja studentskog naloga.");
             }
         } catch (error) {
             toast.error("Došlo je do neočekivane greške prilikom kreiranja studentskog naloga.");
@@ -392,8 +395,17 @@ function ManageStudents() {
     return (
         <div className='wrap'>
             <Sidebar />
-            <ToastContainer theme='dark'/>
             <div className='content'>
+                <ToastContainer
+                    theme='dark'
+                    position="top-right"
+                    autoClose={5000}
+                    hideProgressBar={false}
+                    closeOnClick
+                    pauseOnHover
+                    draggable
+                    style={{textAlign: 'left'}}
+                />
                 <h1>Upravljanje studentima</h1>
                 <div className="search-bar">
                     <i className="fi fi-rr-search search-icon"></i>

@@ -271,7 +271,7 @@ function ManageSubject() {
             if (response.ok) {
                 const data = await response.json();
                 console.log(data);
-                setSubjectData({ 
+                setSubjectData({
                     course_code: data.course_code, 
                     year: data.year, 
                     name: data.name, 

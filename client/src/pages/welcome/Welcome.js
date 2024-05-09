@@ -201,6 +201,7 @@ function Welcome() {
                                         isClearable={false}
                                         className="gender-select"
                                         onChange={handleGenderSelectChange}
+                                        required
                                     />
                                 </div>
 
@@ -225,7 +226,7 @@ function Welcome() {
             }
         ];
         setTabs(newTabs);
-    }, [isLoading, linesToShow]);
+    }, [isLoading, linesToShow, selectedGender]);
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -278,11 +279,16 @@ function Welcome() {
             password: document.getElementById('password').value,
             confirmPassword: document.getElementById('confirmPassword').value,
             gender: selectedGender,
-            role: 0
+            role: 1
         };
-    
+
         if(formData.password !== formData.confirmPassword || formData.email !== formData.confirmEmail) {
             toast.error('Lozinke ili email adrese se ne poklapaju.');
+            return;
+        }
+
+        if(!formData.first_name || !formData.last_name || !formData.email || !formData.password || !formData.gender){
+            toast.error('Niste popunili sva polja.');
             return;
         }
     

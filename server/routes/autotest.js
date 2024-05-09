@@ -360,6 +360,12 @@ router.post('/progress/variation', checkAuthForAutoTest, async (req, res) => {
     } else {
       console.table(variationResults);
       const tmpGrading = await db.getFinalVariationResults(variationId);
+      if(!tmpGrading)
+        return res.json({
+          status: 'SPREMAN',
+          totalPoints: -1
+        });
+        
       return res.json({
         status: tmpGrading.status || 'TESTIRANJE',
         totalPoints: -1

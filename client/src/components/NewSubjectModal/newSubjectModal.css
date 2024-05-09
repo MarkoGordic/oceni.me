@@ -33,8 +33,9 @@
     color: #F7F7FF; 
     border: 1px solid #F7F7FF;
     margin-bottom: 10px;
-    padding: 10px;
+    padding: 20px;
     border-radius: 5px;
+    box-sizing: border-box;
 }
 
 .new-subject-modal-content input:focus {
@@ -96,6 +97,7 @@
 
 .new-subject-input-wrap {
     width: 100%;
+    box-sizing: border-box;
 }
 
 .professor-results-dropdown {

@@ -339,7 +339,7 @@ router.post('/edits/get_variation_results', async (req, res) => {
         const results = await db.getFinalVariationResults(variationId);
 
         if (!results) {
-            return res.status(404).json({ error: 'Results not found for the given variation.' });
+            return res.status(404).json({ error: 'Nisu pronađeni rezultati za varijaciju!' });
         }
 
         res.json(results);

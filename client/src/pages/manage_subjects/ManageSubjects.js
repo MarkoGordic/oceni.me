@@ -347,7 +347,15 @@ function ManageSubjects() {
 
     const handleModalSubmit = async (event) => {
         event.preventDefault();
-
+    
+        const requiredFields = ['subject_name', 'code', 'professorId', 'year', 'course_code'];
+        const missingFields = requiredFields.filter(field => !subjectData[field]);
+    
+        if (missingFields.length > 0) {
+            toast.error('Nedostaju sledeća polja: ' + missingFields.join(', '));
+            return;
+        }
+    
         const formData = new FormData();
         formData.append('subject_name', subjectData.subject_name);
         formData.append('code', subjectData.code);
@@ -365,19 +373,19 @@ function ManageSubjects() {
             if (response.status === 201) {
                 setModalOpen(false);
                 fetchSubjects();
-                toast.success("Uspešno kreiran predmet " + subjectData.subject_name + " - " + subjectData.code + " !");
+                toast.success(`Uspešno kreiran predmet ${subjectData.subject_name} - ${subjectData.code}!`);
                 return;
             } else if (response.status === 409) {
                 toast.error("Predmet sa unetim kodom već postoji.");
                 return;
             }
-            
+    
             toast.error("Došlo je do neočekivane greške prilikom kreiranja novog predmeta.");
         } catch (error) {
             console.error('Error adding subject:', error);
             toast.error('Došlo je do greške prilikom dodavanja predmeta.');
         }
-    };
+    };    
     
     return (
         <div className='wrap'>

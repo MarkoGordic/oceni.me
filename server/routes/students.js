@@ -92,7 +92,7 @@ router.post('/new', checkIsAssistant, upload.single('profile_image'), async (req
         console.log(error)
         await db.createLogEntry(null, `${employee.first_name} ${employee.last_name}`, `Neuspešan pokušaj kreiranja korisničkog naloga za studenta ${first_name} ${last_name}.`, 'GREŠKA', 'INFO', req.ip, userAgent);
         if (error.code === 'ER_DUP_ENTRY') {
-            return res.status(400).send("Student with that index number already exists");
+            return res.status(409).send("Student with that index number already exists");
         }
         res.status(500).send("Error adding student");
     }

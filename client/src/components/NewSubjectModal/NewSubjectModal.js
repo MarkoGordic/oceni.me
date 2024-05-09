@@ -286,10 +286,10 @@ function NewSubjectModal({ isOpen, onClose, onSubmit, subjectData, onInputChange
 
                     <div className='new-subject-input-wrap'>
                         <label htmlFor="subject_name">Naziv predmeta</label>
-                        <input id="subject_name" type="text" name="subject_name" placeholder="Unesite naziv predmeta" value={subjectData.subject_name} onChange={onInputChange} />
+                        <input id="subject_name" type="text" name="subject_name" placeholder="Unesite naziv predmeta" value={subjectData.subject_name} onChange={onInputChange} required />
 
                         <label htmlFor="subject_code">Šifra predmeta</label>
-                        <input id="subject_code" type="text" name="code" placeholder="Unesite šifru predmeta" value={subjectData.code} onChange={onInputChange} />
+                        <input id="subject_code" type="text" name="code" placeholder="Unesite šifru predmeta" value={subjectData.code} onChange={onInputChange} required />
                     </div>
 
                     <label>Odabir predmetnog profesora</label>
@@ -341,6 +341,7 @@ function NewSubjectModal({ isOpen, onClose, onSubmit, subjectData, onInputChange
                                     isClearable={true}
                                     className="course-select"
                                     onChange={onSelectCourseChnage}
+                                    required
                                 />
                                 <Select
                                     id="year"
@@ -350,14 +351,15 @@ function NewSubjectModal({ isOpen, onClose, onSubmit, subjectData, onInputChange
                                     placeholder="Godina"
                                     className="year-select"
                                     onChange={onSelectYearChange}
+                                    required
                                 />
                             </div>
                         </div>
                     </div>
 
                     <div className="modal-action-buttons">
-                        <button type="submit" className="submit-button">Sačuvaj izmene</button>
-                        <button type="button" className="cancel-button" onClick={onClose}>Odustani</button>
+                        <button type="submit" className="submit-button">SAČUVAJ IZMENE</button>
+                        <button type="button" className="cancel-button" onClick={onClose}>ODUSTANI</button>
                     </div>
                 </form>
             </div>

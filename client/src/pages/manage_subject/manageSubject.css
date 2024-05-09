@@ -86,6 +86,7 @@ body, #root {
     text-align: left;
 }
 
+
 .subject-manage-employee-details {
     margin-right: auto;
 }
@@ -212,4 +213,11 @@ body, #root {
     align-items: center;
     justify-content: center;
     margin: 0;
+}
+
+.subject-manage-employees {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
 }

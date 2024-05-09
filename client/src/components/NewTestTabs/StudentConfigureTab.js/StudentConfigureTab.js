@@ -91,7 +91,7 @@ const StudentConfigureTab = ({ isLoading, missingIndexes, subjectID, setMissingS
             <div className="loader"></div>
         ) : (
             <div className="newtest-wrap">
-                <h1>Configure New Students</h1>
+                <h1>Konfiguriši nove studente</h1>
                 <p style={{ maxWidth: "900px" }}>
                     U nastavku možete dodati studente koji nisu registrovani na platformi. Studenti će automatski biti prijavljeni na test.
                 </p>
@@ -106,7 +106,7 @@ const StudentConfigureTab = ({ isLoading, missingIndexes, subjectID, setMissingS
                 )}
 
                 {missingIndexes && missingIndexes.length === 0 && (
-                    <p>No students to add.</p>
+                    <p>Svi studenti su registrovani na platformi.</p>
                 )}
 
                 <button className="confirm-missing-students-btn" onClick={confirmMissingStudents}>SACUVAJ I NASTAVI</button>

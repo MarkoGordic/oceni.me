@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import Select from 'react-select';
 import makeAnimated from 'react-select/animated';
 import './newEmployeeModal.css';
@@ -65,14 +65,14 @@ const customSelectStyles = {
 
 function NewEmployeeModal({ isOpen, onClose, onSubmit, employeeData, onInputChange, onSelectRoleChange, onSelectGenderChange }) {
     const animatedComponents = makeAnimated();
-    const wrapperRef = useRef(null);
 
     if (!isOpen) return null;
 
     const roleOptions = [
-        { value: 1, label: 'Profesor' },
-        { value: 2, label: 'Asistent' },
-        { value: 3, label: 'Demonstrator' },
+        { value: 1, label: 'Dekan'},
+        { value: 2, label: 'Profesor' },
+        { value: 3, label: 'Asistent' },
+        { value: 4, label: 'Demonstrator' },
     ];
 
     const genderOptions = [
@@ -90,10 +90,10 @@ function NewEmployeeModal({ isOpen, onClose, onSubmit, employeeData, onInputChan
                     <input type="file" id="profile_image" onChange={onInputChange} />
 
                     <label htmlFor="subject_name">Ime:</label>
-                    <input id="subject_name" type="text" name="first_name" placeholder="Petar" value={employeeData.first_name} onChange={onInputChange} />
+                    <input id="subject_name" type="text" name="first_name" placeholder="Petar" value={employeeData.first_name} onChange={onInputChange} required />
 
                     <label htmlFor="subject_code">Prezime:</label>
-                    <input id="subject_code" type="text" name="last_name" placeholder="Petrović" value={employeeData.last_name} onChange={onInputChange} />
+                    <input id="subject_code" type="text" name="last_name" placeholder="Petrović" value={employeeData.last_name} onChange={onInputChange} required />
 
                     <label htmlFor="email">Elektronska pošta:</label>
                     <input type="email" id="email" placeholder="primer.tidajem@uns.ac.rs" name="email" value={employeeData.email} onChange={onInputChange} required />
@@ -114,6 +114,7 @@ function NewEmployeeModal({ isOpen, onClose, onSubmit, employeeData, onInputChan
                                 isClearable={true}
                                 className="employee-role-select"
                                 onChange={onSelectRoleChange}
+                                required
                             />
                         </div>
                         <div className="select-gender">
@@ -127,6 +128,7 @@ function NewEmployeeModal({ isOpen, onClose, onSubmit, employeeData, onInputChan
                                 isClearable={true}
                                 className="gender-select"
                                 onChange={onSelectGenderChange}
+                                required
                             />
                         </div>
                     </div>

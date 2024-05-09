@@ -921,7 +921,6 @@ router.post('/remove_student', asyncHandler(async (req, res) => {
   }
 }));
 
-
 router.post('/all', asyncHandler(async (req, res) => {
   const { subjectId } = req.body;
 
@@ -966,23 +965,28 @@ router.get('/generate-pdf', asyncHandler(async (req, res) => {
 
   try {
     const testDetails = await db.getTestById(testId);
+    const subject_id = testDetails.subject_id;
+    const subject = await db.getSubjectById(subject_id);
     const gradings = await db.getTestGradings(testId);
     const studentList = JSON.parse(testDetails.final_students);
 
     const studentIdsIndexes = await db.getStudentIdsByIndexes(studentList.map(s => s.index));
-
     const indexToIdMap = studentIdsIndexes.reduce((acc, cur) => {
       acc[cur.index_number] = cur.id;
       return acc;
     }, {});
 
-    const employeeIds = gradings.map(gr => gr.employee_id).filter(id => id != null);
-    const employees = await db.getEmployeesByIds(employeeIds);
+    const employeeIdSet = new Set(gradings.map(gr => gr.employee_id).filter(id => id != null));
+    let employeeMap = {};
 
-    const employeeMap = employees.reduce((map, emp) => {
-      map[emp.id] = `${emp.first_name} ${emp.last_name}`;
-      return map;
-    }, {});
+    if (employeeIdSet.size > 0) {
+      const employeeIds = [...employeeIdSet];
+      const employees = await db.getEmployeesByIds(employeeIds);
+      employeeMap = employees.reduce((map, emp) => {
+        map[emp.id] = `${emp.first_name} ${emp.last_name}`;
+        return map;
+      }, {});
+    }
 
     const gradingMap = gradings.reduce((map, item) => {
       const employeeName = item.employee_id ? employeeMap[item.employee_id] : "AT BOT";
@@ -990,64 +994,92 @@ router.get('/generate-pdf', asyncHandler(async (req, res) => {
       return map;
     }, {});
 
+    let taskNames = [];
+    try {
+      taskNames = Object.keys(JSON.parse(testDetails.tasks));
+      if (!Array.isArray(taskNames)) {
+        throw new Error("Parsed tasks are not an array");
+      }
+    } catch (error) {
+      console.warn("Invalid task structure:", error.message);
+      taskNames = [];
+    }
+
+    const tableHeaders = ['Broj', 'Indeks', 'Ime i Prezime', ...taskNames, 'Ukupno Poena', 'Ocenio'];
+
+    const tableBody = [
+      tableHeaders.map(header => ({ text: header, style: 'tableHeader' })),
+      ...studentList.map((item, index) => {
+        const grading = gradingMap[indexToIdMap[item.index]] || {};
+        const gradings = JSON.parse(grading.gradings) || {};
+        const taskPoints = taskNames.map(task => {
+          const taskDetails = gradings[task] || {};
+          return Object.values(taskDetails).reduce((sum, score) => sum + score, 0);
+        });
+        const totalPoints = grading.total_points || 0;
+        const employeeName = grading.employeeName || '/';
+
+        return [
+          index + 1,
+          item.index,
+          `${item.firstName} ${item.lastName}`,
+          ...taskPoints,
+          `${totalPoints} / ${testDetails.total_points}`,
+          employeeName
+        ];
+      })
+    ];
+
     const docDefinition = {
       content: [
-          {
-              text: 'Arhitektura Računara - T1234',
-              style: 'header'
+        {
+          text: `${subject.name} - ${testDetails.name}`,
+          style: 'header'
+        },
+        {
+          text: `Datum: ${new Date(testDetails.created_at).toLocaleDateString('sr-Latn-RS', { year: 'numeric', month: 'long', day: 'numeric' })}`,
+          style: 'subheader'
+        },
+        {
+          style: 'tableExample',
+          table: {
+            widths: ['auto', 'auto', 'auto', ...taskNames.map(() => 'auto'), 'auto', 'auto'],
+            body: tableBody
           },
-          {
-              text: `Datum: ${new Date(testDetails.created_at).toLocaleDateString('sr-Latn-RS', { year: 'numeric', month: 'long', day: 'numeric' })}`,
-              style: 'subheader'
-          },
-          {
-              style: 'tableExample',
-              table: {
-                  widths: ['auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
-                  body: [
-                      ['Broj', 'Indeks', 'PC', 'Ime i Prezime', 'Poeni / Max', 'Ocenio'].map(header => ({ text: header, style: 'tableHeader' })),
-                      ...studentList.map((item, index) => [
-                        index + 1,
-                        item.index,
-                        item.pc,
-                        `${item.firstName} ${item.lastName}`,
-                        `${gradingMap[indexToIdMap[item.index]] ? gradingMap[indexToIdMap[item.index]].total_points : 0} / ${testDetails.total_points}`,
-                        `${gradingMap[indexToIdMap[item.index]] ? gradingMap[indexToIdMap[item.index]].employeeName : '/'}`
-                    ])                        
-                  ]
-              },
-              layout: 'lightHorizontalLines'
-          }
+          layout: 'lightHorizontalLines'
+        }
       ],
-      footer: function(currentPage, pageCount) {
-          return {
-                text: currentPage.toString() + ' od ' + pageCount + ' | Generisano pomoću oceni.me | © FTN, Marko Gordić 2024 | N <3',
-                alignment: 'center',
-          };
-      },
+      footer: (currentPage, pageCount) => ({
+        text: `${currentPage} od ${pageCount} | Generisano pomoću oceni.me | © FTN, Marko Gordić 2024 | N <3`,
+        alignment: 'center'
+      }),
       styles: {
-          header: {
-            fontSize: 18,
-            bold: true,
-            margin: [0, 0, 0, 10],
-            color: '#005b96'
-          },
-          tableExample: {
-              margin: [0, 5, 0, 15]
-          },
-          tableHeader: {
-            bold: true,
-            fontSize: 13,
-            color: '#4d4d4d'
-          },
-          footer: {
-              fontSize: 10
-          }
+        header: {
+          fontSize: 18,
+          bold: true,
+          margin: [0, 0, 0, 10],
+          color: '#005b96'
+        },
+        subheader: {
+          fontSize: 14,
+          margin: [0, 0, 0, 10]
+        },
+        tableExample: {
+          margin: [0, 5, 0, 15]
+        },
+        tableHeader: {
+          bold: true,
+          fontSize: 13,
+          color: '#4d4d4d'
+        },
+        footer: {
+          fontSize: 10
+        }
       },
       defaultStyle: {
-          alignment: 'justify'
+        alignment: 'justify'
       }
-  };
+    };
 
     const pdfDoc = printer.createPdfKitDocument(docDefinition);
     const filename = 'acs_izvestaj.pdf';
@@ -1060,6 +1092,5 @@ router.get('/generate-pdf', asyncHandler(async (req, res) => {
     res.status(500).send('An error occurred while generating the PDF.');
   }
 }));
-
 
 module.exports = router;

@@ -57,7 +57,16 @@ root.render(
           <Route path="/admin/users" element={<ProtectedRoute><UserProvider><ManageEmployees /></UserProvider></ProtectedRoute>} />
           <Route path="/admin/logs" element={<ProtectedRoute><UserProvider><SystemLogs /></UserProvider></ProtectedRoute>} />
         </Routes>
-        <ToastContainer theme="dark" />
+        <ToastContainer
+          theme='dark'
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          closeOnClick
+          pauseOnHover
+          draggable
+          style={{textAlign: 'left'}}
+        />
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>

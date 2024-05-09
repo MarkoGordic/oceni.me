@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ToastContainer, toast } from 'react-toastify';
+import { toast } from 'react-toastify';
 import Select from 'react-select';
 import makeAnimated from 'react-select/animated';
 import './modifyStudentModal.css';
+import 'react-toastify/dist/ReactToastify.css';
 
 const customSelectStyles = {
     control: (styles, { isFocused, isSelected }) => ({
@@ -286,7 +287,6 @@ function ModifyStudentModal({ isOpen, onClose, studentId, onStudentDeleted, onCo
 
     return (
         <div className="modify-student-modal-overlay" onClick={handleOverlayClick}>
-            <ToastContainer theme='dark'/>
             <div className="modify-student-modal-content" onClick={handleModalContentClick}>
             <div className='modify-student-modal-column-left'>
                 <div className="tabs-container">

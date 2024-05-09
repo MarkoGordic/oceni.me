@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 import Select from 'react-select';
 import makeAnimated from 'react-select/animated';
 import './modifyEmployeeModal.css';
+import { useUser } from '../../contexts/UserContext';
 
 const customSelectStyles = {
     control: (styles, { isFocused, isSelected }) => ({
@@ -53,6 +54,8 @@ const customSelectStyles = {
   };
 
 function ModifyEmployeeModal({ isOpen, onClose, employeeId, onEmployeeDeleted, onComplete}) {
+    const { user } = useUser();
+    const currentUserId = user.id;
     const [employeeData, setEmployeeData] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('employeeInfo');
@@ -77,11 +80,11 @@ function ModifyEmployeeModal({ isOpen, onClose, employeeId, onEmployeeDeleted, o
                 credentials: 'include',
             });
             if (!response.ok) {
-                throw new Error('Failed to fetch data');
+                toast.error("Došlo je do greške prilikom dohvatanja podataka zaposlenog.");
+                return;
             }
             const data = await response.json();
-
-
+            data.password = '';
 
             const roleOption = roleOptions.find(option => option.value === data.role) || { value: 'NP', label: 'NIJE POZNATO' };
             const genderOption = genderOptions.find(option => option.value === data.gender) || { value: 'NP', label: 'NIJE POZNATO' };
@@ -111,7 +114,11 @@ function ModifyEmployeeModal({ isOpen, onClose, employeeId, onEmployeeDeleted, o
                 setEmployeeData(null);
                 onEmployeeDeleted();
             } else {
-                toast.error("Došlo je do greške prilikom brisanja zaposlenog.");
+                if(response.status === 403) {
+                    toast.error("Ne možete obrisati svog nalog.");
+                } else {
+                    toast.error("Došlo je do greške prilikom brisanja zaposlenog.");
+                }
             }
         } catch (error) {
             console.error("Error deleting employee:", error);
@@ -154,10 +161,11 @@ function ModifyEmployeeModal({ isOpen, onClose, employeeId, onEmployeeDeleted, o
     };
 
     const roleOptions = [
-        { value: 0, label: 'Dekan' },
-        { value: 1, label: 'Profesor' },
-        { value: 2, label: 'Asistent' },
-        { value: 3, label: 'Demonstrator' },
+        { value: 0, label: 'Superadmin' },
+        { value: 1, label: 'Dekan' },
+        { value: 2, label: 'Profesor' },
+        { value: 3, label: 'Asistent' },
+        { value: 4, label: 'Demonstrator' },
     ];
 
     const saveChanges = async () => {
@@ -182,7 +190,12 @@ function ModifyEmployeeModal({ isOpen, onClose, employeeId, onEmployeeDeleted, o
             });
     
             if (!response.ok) {
-                toast.error("Došlo je do greške prilikom ažuriranja podataka zaposlenog.");
+                if(response.status === 423)
+                    toast.error("Ne možete menjati podatke za superadmina.");
+                else if(response.status === 403)
+                    toast.error("Ne možete postaviti korisnika kao superadmina.");
+                else
+                    toast.error("Došlo je do greške prilikom ažuriranja podataka zaposlenog.");
             }
     
             toast.success("Podaci zaposlenog su uspešno ažurirani.");
@@ -201,6 +214,15 @@ function ModifyEmployeeModal({ isOpen, onClose, employeeId, onEmployeeDeleted, o
             return <div>Loading...</div>;
         }
 
+        if (employeeId === 1 && currentUserId !== 1) {
+            return (
+                <div style={{ color: '#FF5555', fontWeight: 'bold', padding: '20px' }}>
+                    <i className="fi fi-rr-warning"></i>
+                    <p>Nije dozvoljeno menjati podatke za ovog zaposlenog.</p>
+                </div>
+            );
+        }
+
         if (!employeeData) {
             return <div>Podaci o zaposlenom nisu pronađeni. Kontaktirajte administratora.</div>;
         }
@@ -213,10 +235,10 @@ function ModifyEmployeeModal({ isOpen, onClose, employeeId, onEmployeeDeleted, o
                             <img className='employeeInfo-avatar' src={'http://localhost:8000/user_pfp/' + employeeData.id + '.jpg'} alt="Employee Avatar" />
                             <div className='employeeInfo-data-wrap'>
                                 <label className='employeeInfo-label' htmlFor="first_name">Ime zaposlenog:</label>
-                                <input className='employeeInfo-input' type="text" id="first_name" name="first_name" value={employeeData.first_name || ''} onChange={handleEmployeeInputChange}/>
+                                <input className='employeeInfo-input' type="text" id="first_name" name="first_name" value={employeeData.first_name || ''} onChange={handleEmployeeInputChange} />
 
                                 <label className='employeeInfo-label' htmlFor="last_name">Prezime zaposlenog:</label>
-                                <input className='employeeInfo-input' type="text" id="last_name" name="last_name" value={employeeData.last_name || ''} onChange={handleEmployeeInputChange}/>
+                                <input className='employeeInfo-input' type="text" id="last_name" name="last_name" value={employeeData.last_name || ''} onChange={handleEmployeeInputChange} />
 
                                 <label className='employeeInfo-label' htmlFor="gender">Pol:</label>
                                 <Select
@@ -245,10 +267,10 @@ function ModifyEmployeeModal({ isOpen, onClose, employeeId, onEmployeeDeleted, o
                                 />
 
                                 <label className='employeeInfo-label' htmlFor="email">Email:</label>
-                                <input className='employeeInfo-input' type="email" id="email" name="email" value={employeeData.email || ''} onChange={handleEmployeeInputChange}/>
+                                <input className='employeeInfo-input' type="email" id="email" name="email" value={employeeData.email || ''} onChange={handleEmployeeInputChange} />
 
                                 <label className='employeeInfo-label' htmlFor="password">Postavi novu lozinku:</label>
-                                <input className='employeeInfo-input' type="text" id="password" name="password" placeholder="MnogoJakaSifra" onChange={handleEmployeeInputChange}/>
+                                <input className='employeeInfo-input' type="text" id="password" name="password" placeholder="MnogoJakaSifra" onChange={handleEmployeeInputChange} />
                             </div>
                         </div>
                     </div>

@@ -82,7 +82,7 @@ router.post('/me/update', async (req, res) => {
             logDetails.push(`email: ${currentUser.email} -> ${email}`);
         }
 
-        await db.updateEmployeeInfo(userId, { firstName, lastName, email });
+        await db.updateEmployeeInfo(userId, { first_name: firstName, last_name: lastName, email });
 
         if (logDetails.length > 0) {
             const logMessage = `Izmenjeni su lični podaci korisnika. (${logDetails.join(', ')})`;
@@ -168,7 +168,6 @@ router.post('/reset_password', async (req, res) => {
     }
 });
 
-
 router.post('/new', upload.single('profile_image'), async (req, res) => {
     const { first_name, last_name, email, password, role, gender } = req.body;
     const userAgent = req.headers['user-agent'] || 'Unknown User Agent';
@@ -216,6 +215,14 @@ router.post('/update', async (req, res) => {
         return res.status(400).json({ error: 'Employee ID is required' });
     }
 
+    if (id == 1) {
+        return res.status(423).json({ error: 'You cannot modify the superadmin account' });
+    }
+
+    if (role === 0) {
+        return res.status(403).json({ error: 'You cannot set a user as a superadmin' });
+    }
+
     try {
         const employee = await db.getEmployeeById(id);
         if (!employee) {
@@ -226,42 +233,50 @@ router.post('/update', async (req, res) => {
         if (first_name) updateData.first_name = first_name;
         if (last_name) updateData.last_name = last_name;
 
-        if(email){
+        if (email) {
             const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailPattern.test(email)) {
-                return res.status(400).send("Invalid email format.");
+                return res.status(400).json({ error: "Invalid email format." });
             }
             updateData.email = email;
-        } else
+        } else {
             updateData.email = employee.email;
+        }
 
-            if (gender) {
-                if(gender === "M" || gender === "F")
-                    updateData.gender = gender;
-                else
-                    updateData.gender = employee.gender;
-            } else
+        if (gender) {
+            if (gender === "M" || gender === "F") {
+                updateData.gender = gender;
+            } else {
                 updateData.gender = employee.gender;
+            }
+        } else {
+            updateData.gender = employee.gender;
+        }
 
-        if (gender) updateData.gender = gender;
+        if (role !== undefined || role !== null)
+            updateData.role = role;
+        else
+            updateData.role = employee.role;
 
         if (password) {
             const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{10,}$/;
             if (!passwordPattern.test(password)) {
-                return res.status(400).send("Password does not meet criteria.");
+                return res.status(400).json({ error: "Password does not meet criteria." });
             }
-    
+
             const hashedPassword = await bcrypt.hash(password, 10);
             updateData.password = hashedPassword;
         }
 
         await db.updateEmployeeInfo(id, updateData);
 
-        await db.createLogEntry(req.session.userId, `${user.first_name} ${user.last_name}`, `Promenjeni su podaci za zaposlenog ${first_name} ${last_name}`, 'INFO', 'INFO', req.ip, req.headers['user-agent']);
+        await db.createLogEntry( req.session.userId, `${user.first_name} ${user.last_name}`, `Promenjeni su podaci za zaposlenog ${first_name} ${last_name}, uključujući ulogu ${role}.`, 'INFO', 'INFO', req.ip, req.headers['user-agent']
+        );
 
         res.status(200).json({ message: 'Employee updated successfully' });
     } catch (error) {
-        await db.createLogEntry(req.session.userId, `${user.first_name} ${user.last_name}`, `Neuspešan pokusaj promene podataka za zaposlenog sa ID ${id}.`, 'GREŠKA', 'GREŠKA', req.ip, req.headers['user-agent']);
+        await db.createLogEntry( req.session.userId, `${user.first_name} ${user.last_name}`, `Neuspešan pokušaj promene podataka za zaposlenog sa ID ${id}.`, 'GREŠKA', 'GREŠKA', req.ip, req.headers['user-agent']
+        );
         console.error("Error updating employee:", error);
         res.status(500).json({ error: 'Internal server error' });
     }
@@ -288,8 +303,9 @@ router.get('/delete/:id', async (req, res) => {
     const userAgent = req.headers['user-agent'] || 'Unknown User Agent';
     const sessionUserId = req.session.userId;
 
-    if (id === sessionUserId) {
-        return res.status(403).send("Cannot delete your own account.");
+    if (id == sessionUserId) {
+        console.log("User tried to delete their own account");
+        return res.status(403).send("You cannot delete your own account.");
     }
 
     const employee = await db.getEmployeeById(sessionUserId);

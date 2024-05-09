@@ -28,10 +28,11 @@ function ManageEmployees() {
     const handleCloseModal = () => setModalOpen(false);
 
     const roleMap = {
-        0: 'Dekan',
-        1: 'Profesor',
-        2: 'Asistent',
-        3: 'Demonstrator',
+        0: 'Superadmin',
+        1: 'Dekan',
+        2: 'Profesor',
+        3: 'Asistent',
+        4: 'Demonstrator',
     };
 
     useEffect(() => {
@@ -108,6 +109,11 @@ function ManageEmployees() {
         const emailPattern = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
         const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_])[A-Za-z\d\W_]{10,}$/;
         
+        if (!employeeData.first_name || !employeeData.last_name) {
+            toast.error("Neuspešno kreiranje zaposlenog. Molimo unesite ime i prezime zaposlenog.");
+            return;
+        }
+
         if (!employeeData.role) {
             toast.error("Neuspešno kreiranje zaposlenog. Molimo izaberite poziciju zaposlenog.");
             return;
@@ -145,9 +151,10 @@ function ManageEmployees() {
                 toast.success("Uspešno kreiran nalog za zaposlenog " + employeeData.first_name + " " + employeeData.last_name + "!");
                 setModalOpen(false);
             } else {
-                toast.error("Došlo je do neočekivane greške prilikom kreiranja studentskog naloga.");
+                toast.error("Došlo je do neočekivane greške prilikom kreiranja naloga za zaposlenog.");
             }
         } catch (error) {
+            toast.error("Došlo je do neočekivane greške prilikom kreiranja naloga za zaposlenog.");
             console.error("Error submitting form:", error);
         }
     };

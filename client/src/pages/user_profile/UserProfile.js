@@ -32,7 +32,7 @@ const UserProfile = () => {
             toast.info('Niste uneli nikakve izmene.');
             return;
         }
-
+    
         fetch('http://localhost:8000/employees/me/update', {
             method: 'POST',
             headers: {
@@ -41,16 +41,30 @@ const UserProfile = () => {
             body: JSON.stringify(changes),
             credentials: 'include',
         })
-        .then(response => response.json())
-        .then(data => {
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Problem with response');
+            }
+            return response.json();
+        })
+        .then(updatedData => {
             toast.success("Vaši podaci su uspešno ažurirani.");
-            setUser(user => ({ ...user, ...changes }));
+
+            const updatedName = `${changes.firstName || user.firstName} ${changes.lastName || user.lastName}`;
+    
+            setUser(prevUser => ({
+                ...prevUser,
+                ...changes,
+                name: updatedName,
+            }));
+    
             setChanges({});
         })
         .catch(error => {
+            console.error('Error:', error);
             toast.error("Neuspešno ažuriranje podataka.");
         });
-    };
+    };    
 
     const handlePasswordUpdate = () => {
         if (newPassword !== confirmNewPassword) {
