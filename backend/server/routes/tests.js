@@ -968,9 +968,19 @@ router.get('/generate-pdf', asyncHandler(async (req, res) => {
     const subject_id = testDetails.subject_id;
     const subject = await db.getSubjectById(subject_id);
     const gradings = await db.getTestGradings(testId);
-    const studentList = JSON.parse(testDetails.final_students);
 
+    const safeParseJSON = (jsonString, defaultValue) => {
+      try {
+        return JSON.parse(jsonString);
+      } catch (error) {
+        console.warn("Invalid JSON structure:", error.message);
+        return defaultValue;
+      }
+    };
+
+    const studentList = safeParseJSON(testDetails.final_students, []);
     const studentIdsIndexes = await db.getStudentIdsByIndexes(studentList.map(s => s.index));
+
     const indexToIdMap = studentIdsIndexes.reduce((acc, cur) => {
       acc[cur.index_number] = cur.id;
       return acc;
@@ -996,7 +1006,7 @@ router.get('/generate-pdf', asyncHandler(async (req, res) => {
 
     let taskNames = [];
     try {
-      taskNames = Object.keys(JSON.parse(testDetails.tasks));
+      taskNames = Object.keys(safeParseJSON(testDetails.tasks, {}));
       if (!Array.isArray(taskNames)) {
         throw new Error("Parsed tasks are not an array");
       }
@@ -1011,7 +1021,7 @@ router.get('/generate-pdf', asyncHandler(async (req, res) => {
       tableHeaders.map(header => ({ text: header, style: 'tableHeader' })),
       ...studentList.map((item, index) => {
         const grading = gradingMap[indexToIdMap[item.index]] || {};
-        const gradings = JSON.parse(grading.gradings) || {};
+        const gradings = safeParseJSON(grading.gradings, {});
         const taskPoints = taskNames.map(task => {
           const taskDetails = gradings[task] || {};
           return Object.values(taskDetails).reduce((sum, score) => sum + score, 0);
@@ -1092,5 +1102,6 @@ router.get('/generate-pdf', asyncHandler(async (req, res) => {
     res.status(500).send('An error occurred while generating the PDF.');
   }
 }));
+
 
 module.exports = router;

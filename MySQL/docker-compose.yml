@@ -1,0 +1,16 @@
+version: '3.1'
+
+services:
+  db:
+    build: .
+    container_name: mysql_ocenime
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: ocenime
+    ports:
+      - "3310:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 3

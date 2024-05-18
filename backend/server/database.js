@@ -53,10 +53,10 @@ class Database {
                 index_number VARCHAR(20) NOT NULL UNIQUE,
                 email VARCHAR(100) NOT NULL,
                 password VARCHAR(100) NOT NULL,
-                course_code VARCHAR(10),
+                course_code VARCHAR(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
                 FOREIGN KEY (course_code) REFERENCES courses(code)
                     ON DELETE SET NULL ON UPDATE CASCADE
-            );
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         `;
 
         const createCoursesTable = `
@@ -359,7 +359,7 @@ class Database {
             console.info("[INFO] : Employees table created successfully.");
             await this.pool.execute(createCoursesTable);
             console.info("[INFO] : Courses table created successfully.");
-            await this.pool.execute(populateCoursesTable);
+            //await this.pool.execute(populateCoursesTable);
             console.info("[INFO] : Courses table populated successfully.");
             await this.pool.execute(createStudentsTable);
             console.info("[INFO] : Students table created successfully.");

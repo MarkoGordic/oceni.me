@@ -4,7 +4,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 
 function generateTestirajSH(test_data, destinationPath, solutionFilePath, currIndex) {
-    return new Promise(async (resolve, reject) => {    
+    return new Promise(async (resolve, reject) => {
         let TESTS_FINAL = "(";
         for (let i = 0; i < test_data.length; i++) {
             if(i == test_data.length - 1)
@@ -35,7 +35,11 @@ function generateTestirajSH(test_data, destinationPath, solutionFilePath, currIn
             const data = await fs.readFile('./util/get_results.sh', 'utf8');
             let outputData = data.replace('<TESTS_PLACEHOLDER>', TESTS_FINAL);
             outputData = outputData.replace('<TESTS_INPUTS_PLACEHOLDER>', TESTS_INPUTS);
-            await fs.writeFile(path.join(destinationPath, 'get_results.sh'), outputData);
+            const getResultsPath = path.join(destinationPath, 'get_results.sh');
+            await fs.writeFile(getResultsPath, outputData);
+
+            // Make get_results.sh executable
+            await fs.chmod(getResultsPath, 0o755);
 
             try {
                 await runGetResultsScript(solutionFilePath, destinationPath);
@@ -81,7 +85,11 @@ function generateTestirajSH(test_data, destinationPath, solutionFilePath, currIn
             outputData = templateData.replace('<TESTS_PLACEHOLDER>', TESTS_FINAL);
             outputData = outputData.replace('<TESTS_INPUTS_OUTPUTS_PLACEHOLDER>', TESTS_INPUTS_OUTPUTS);
             outputData = outputData.replace('<EXITS_PLACEHOLDER>', EXITS_FINAL);
-            await fs.writeFile(path.join(destinationPath, 'testiraj.sh'), outputData);
+            const testirajPath = path.join(destinationPath, 'testiraj.sh');
+            await fs.writeFile(testirajPath, outputData);
+
+            // Make testiraj.sh executable
+            await fs.chmod(testirajPath, 0o755);
             
             resolve();
         } catch (err) {
@@ -99,18 +107,15 @@ function runGetResultsScript(solutionFilePath, destinationPath) {
             return;
         }
 
-        const wslSolutionPath = path.resolve(solutionFilePath).replace(/\\/g, '/').replace(/^C:/, '/mnt/c');
-        const wslDestinationPath = destinationPath.replace(/\\/g, '/').replace(/^C:/, '/mnt/c');
-        const wslOutputPath = path.join(wslDestinationPath, 'results.json').replace(/\\/g, '/');
+        const outputPath = path.join(destinationPath, 'results.json');
 
-        const scriptProcess = spawn('wsl', [ // TODO: Remove wsl if not running on Windows
-            `${wslDestinationPath}/get_results.sh`,
-            wslSolutionPath,
-            wslOutputPath
+        const scriptProcess = spawn('bash', [
+            path.join(destinationPath, 'get_results.sh'),
+            solutionFilePath,
+            outputPath
         ], {
             cwd: destinationPath,
-            stdio: 'inherit',
-            shell: true
+            stdio: 'inherit'
         });
 
         scriptProcess.on('error', (error) => {
