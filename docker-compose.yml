@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: mysql_ocenime
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: ocenime
+      MYSQL_USER: ftnadmin
+      MYSQL_PASSWORD: ftnadmin
+    ports:
+      - "3310:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  app:
+    build: backend
+    container_name: ocenime_backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_USER: ftnadmin
+      DB_PASSWORD: ftnadmin
+      DB_NAME: ocenime
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: ["npm", "start"]
+
+  front:
+    build: frontend
+    container_name: ocenime_frontend
+    ports:
+      - "3000:3000"
+    depends_on: 
+      - app
+    command: ["npm", "start"]
+
+volumes:
+  mysql_data:

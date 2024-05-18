@@ -6,9 +6,7 @@
 
 Aplikacija omogućava **brzo, efikasno i pre svega bezbedno** testiranje studentskih kodova u okviru **ograničenog Docker okruženja**. Na taj način pregledanje i ocenjivanje postaju brži, a ujedno se sprečava pokretanje potencijalno nestabilnih ili malicioznih kodova na ličnim računarima zaposlenih.
 
-## 💙 Posebno priznanje
-
-Ovaj projekat mi je veoma drag, jer verujem da će pomoći kako mnogim asistentima tako i studentima. Želeo bih **posebno da se zahvalim** jednoj meni veoma posebnoj osobi koja je moja najveća motivacija za sve stvari u životu i bez koje ovaj projekat ne bi bio to što jeste. Takve osobe su nezamenljive, i ukoliko ih pronađete, čuvajte ih. Hvala ti, N. 💙
+# Za detaljnu tehničku dokumentaciju kliknite <a href="./docs.md">OVDE</a>
 
 # 💻 Tehnologije
 
@@ -30,53 +28,58 @@ Aplikacija je razvijena uz sledeće tehnologije:
 
 # 🚀 Pokretanje aplikacije
 
-Aplikacija je dostupna za Windows i Linux operativne sisteme. Može se pokrenuti pomoću Docker tehnologije ili manuelno. Za ručno pokretanje, potrebne su sledeće komponente:
+Aplikacija je dostupna za Windows i Linux operativne sisteme. Može se pokrenuti pomoću Docker tehnologije ili manuelno. Za ručno pokretanje, potrebno je ispratiti sledeće korake:
 
-1. **Node.js**  
-2. **React**  
-3. **MySQL Server**  
-4. **Docker**  
-5. **npm**
+## UNIX
+
+1. Preuzmite [**Git**](https://git-scm.com/downloads)
+2. `git clone https://github.com/MarkoGordic/oceni.me`
+3. `cd ./oceni.me`
+4. Preuzmite [**Docker Desktop**](https://www.docker.com/products/docker-desktop/)  
+5. `./docker-compose build`
+6. `cd ./server/util`
+7. `docker build . -t gcc-build`
+8. `cd ../../`
+9. `./docker-compose up`
+10. Pratite instrukcije od same aplikacije
 
 Po pokretanju, korisnik treba uneti lične podatke radi konfiguracije svog naloga. Nakon prijave, otvara se korisnički interfejs.
 
-<center><img src="./assets/interface.png" width="600px"></center>
+## 📑 Stranice i funkcionalnosti
 
-# 📑 Stranice i funkcionalnosti
-
-## 🏠 Početna stranica
+### 🏠 Početna stranica
 
 Na početnoj stranici korisnik može videti vremensku liniju i poslednjih pet aktivnosti koje su izvršene na trenutnoj instanci.
 
-## 📚 Moji predmeti
+### 📚 Moji predmeti
 
 Otvaranjem stranice **Moji predmeti**, korisnik može pregledati spisak svih predmeta kojima ima pristup, bez obzira na ulogu (profesor, asistent ili demonstrator).
 
-## 👩‍🎓 Upravljanje studentima
+### 👩‍🎓 Upravljanje studentima
 
 Na stranici **Upravljanje studentima** korisniku je omogućen pregled, pretraga, brisanje i izmena postojećih studenata, kao i dodavanje novih popunjavanjem forme sa parametrima poput imena, prezimena, broja indeksa i e-mail adrese.
 
-## 🛠️ Korisnička zona
+### 🛠️ Korisnička zona
 
 Na stranici **Korisnička zona** korisnik može izmeniti trenutno vidljive parametre i lozinku svog naloga.
 
-## 👨‍💼 Upravljanje zaposlenima
+### 👨‍💼 Upravljanje zaposlenima
 
 Stranica **Upravljanje zaposlenima** pruža pregled svih unetih zaposlenih, kao i opcije pretrage, brisanja, izmene i dodavanja novih popunjavanjem forme sa odgovarajućim parametrima. Moguće pozicije uključuju dekana, profesora, asistenta i demonstratora.
 
-## 🏫 Upravljanje predmetima
+### 🏫 Upravljanje predmetima
 
 Na stranici **Upravljanje predmetima** moguće je pretražiti i izmeniti postojeće predmete, kao i dodati nove popunjavanjem forme sa parametrima predmeta. Pri dodavanju novog predmeta, unosi se i odgovarajući profesor pod uslovom da već postoji u sekciji *Upravljanje zaposlenima*.
 
-## 🕰️ Istorija aktivnosti
+### 🕰️ Istorija aktivnosti
 
 Stranica **Istorija aktivnosti** automatski prikazuje sve aktivnosti koje su izvršene u sistemu i aplikaciji u tabelarnom formatu. Korisnik može videti tip aktivnosti (informacija, upozorenje, greška).
 
-# 🔍 Stranice predmeta i njihove funkcionalnosti
+## 🔍 Stranice predmeta i njihove funkcionalnosti
 
 Klikom na određeni predmet na stranici *Moji predmeti*, u navigacionom meniju pojavljuju se dodatne funkcionalnosti vezane za predmet, kao što su kreiranje kolokvijuma, spisak studenata, kreiranje konfiguracije i automatsko testiranje.
 
-## 🛠️ Kreiraj konfiguraciju
+### 🛠️ Kreiraj konfiguraciju
 
 Stranica **Kreiraj konfiguraciju** prvi je korak za pripremu automatskog testiranja. Korisnik može da:
 
@@ -86,7 +89,7 @@ Stranica **Kreiraj konfiguraciju** prvi je korak za pripremu automatskog testira
 - Dodeli bodove za svaki primer
 - Dodaje .ZIP datoteku sa rešenjem zadatka
 
-## 📝 Novi kolokvijum
+### 📝 Novi kolokvijum
 
 Stranica **Novi kolokvijum** drugi je korak u pripremi automatskog testiranja. Na ovoj stranici korisnik treba da:
 
@@ -95,7 +98,7 @@ Stranica **Novi kolokvijum** drugi je korak u pripremi automatskog testiranja. N
 
 Time se omogućava automatsko testiranje i registracija studenata na platformu.
 
-## ⚙️ Konfiguracije
+### ⚙️ Konfiguracije
 
 Stranica **Konfiguracije** pruža pregled svih konfiguracija sa opcijama za:
 
@@ -103,14 +106,14 @@ Stranica **Konfiguracije** pruža pregled svih konfiguracija sa opcijama za:
 - Preuzimanje
 - Učitavanje dodatnih informacija
 
-## 🏷️ Kolokvijumi
+### 🏷️ Kolokvijumi
 
 Stranica **Kolokvijumi** pruža korisniku listing svih postojećih kolokvijuma uz informacije o njima. Korisnik može:
 
 - Obrisati kolokvijum
 - Pristupiti stranici za automatsko testiranje
 
-## 📋 Automatsko testiranje
+### 📋 Automatsko testiranje
 
 Na stranici automatskog testiranja, korisnik može:
 
@@ -121,7 +124,7 @@ Na stranici automatskog testiranja, korisnik može:
 
 Testiranje je moguće i za svakog studenta pojedinačno, a dostupne su i opcije ručnog ocenjivanja, testiranja i pregleda koda.
 
-## 🛠️ Ručni pregled koda
+### 🛠️ Ručni pregled koda
 
 Na stranici za ručni pregled koda, korisnik može:
 
@@ -130,19 +133,26 @@ Na stranici za ručni pregled koda, korisnik može:
 - Dodati varijacije koda bez izmene originalnog koda
 - Ručno izmeniti bodove za svaki automatski test
 
-## 📋 Spisak studenata
+### 📋 Spisak studenata
 
 Stranica **Spisak studenata** pruža tabelarni pregled svih studenata određenog predmeta sa osnovnim informacijama.
 
-## 🛠️ Upravljanje predmetom
+### 🛠️ Upravljanje predmetom
 
 Stranica **Upravljanje predmetom** omogućava korisniku upravljanje opštim parametrima o predmetu i dodavanje novih ili uklanjanje postojećih zaposlenih. Klikom na "Napusti predmet," korisnik se vraća na početni interfejs aplikacije.
+
+# 💙 Posebno priznanje
+
+Ovaj projekat mi je veoma drag, jer verujem da će pomoći kako mnogim asistentima tako i studentima. Želeo bih **posebno da se zahvalim** jednoj meni veoma posebnoj osobi koja je moja najveća motivacija za sve stvari u životu i bez koje ovaj projekat ne bi bio to što jeste. Takve osobe su nezamenljive, i ukoliko ih pronađete, čuvajte ih. Hvala ti, N. 💙
+
 
 # 👥 Autori i priznanja
 
 + [Marko Gordić](https://github.com/MarkoGordic) - Autor  
 + [Radovan Turović]() - Inicijator projekta  
 + [Sara Poparić]() - Pomoć pri realizaciji aplikacije  
++ [Nađa Jakšić]() - README i tehnička dokumentacija
++ [Jovana Minčić]() - Tehnička dokumentacija
 
 # 📜 Licenca
 
