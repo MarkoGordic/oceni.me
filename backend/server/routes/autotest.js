@@ -26,7 +26,6 @@ const dockerQueue = async.queue(async (task, done) => {
       outputPath = `${process.cwd()}/uploads/tests/${task.testId}/data/${task.pc}/results`;
     }
 
-    console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
     console.table(task)
     console.log(taskPath);
     console.log(confPath);
@@ -36,16 +35,11 @@ const dockerQueue = async.queue(async (task, done) => {
       Image: 'gcc-build',
       Cmd: [],
       Tty: false,
-      Volumes: {
-        '/autotest/task': {},
-        '/autotest/conf': {},
-        '/output': {}
-      },
       HostConfig: {
         Binds: [
-          `${taskPath}:/autotest/task`,
-          `${confPath}:/autotest/conf`,
-          `${outputPath}:/output`
+          `${taskPath}:/autotest/task:rw`,
+          `${confPath}:/autotest/conf:rw`,
+          `${outputPath}:/output:rw`
         ],
         Memory: 500_000_000, // 500 MB
         NanoCpus: 500_000_000 // 50% of a CPU
@@ -182,34 +176,34 @@ router.post('/run/group', checkAuthForAutoTest, async (req, res) => {
     const taskDetails = JSON.parse(testData.tasks);
 
     for (let task of tasks) {
-        const student_id = students.find(student => student.index_number === task.studentIndex).id;
-        const pc = task.pc;
+      const student_id = students.find(student => student.index_number === task.studentIndex).id;
+      const pc = task.pc;
 
-        Object.entries(taskDetails).forEach(([taskNo, tests]) => {
-            Object.entries(tests).forEach(([testNo, points]) => {
-                const dockerTask = {
-                    testId,
-                    taskNo,
-                    testNo,
-                    points,
-                    pc,
-                    studentIndex: task.studentIndex,
-                    employee_id,
-                    student_id,
-                    testType: 'regular'
-                };
+      Object.entries(taskDetails).forEach(([taskNo, tests]) => {
+        Object.entries(tests).forEach(([testNo, points]) => {
+          const dockerTask = {
+            testId,
+            taskNo,
+            testNo,
+            points,
+            pc,
+            studentIndex: task.studentIndex,
+            employee_id,
+            student_id,
+            testType: 'regular'
+          };
 
-                dockerQueue.push(dockerTask);
-            });
+          dockerQueue.push(dockerTask);
         });
+      });
 
-        await db.addNewTestGrading(student_id, parseInt(testId), null, -1, 'TESTIRANJE');
+      await db.addNewTestGrading(student_id, parseInt(testId), null, -1, 'TESTIRANJE');
     }
 
     res.status(202).send('Docker process queued successfully for all students.');
   } catch (error) {
-      console.error('Error processing group request:', error);
-      res.status(500).send('Failed to process group request.');
+    console.error('Error processing group request:', error);
+    res.status(500).send('Failed to process group request.');
   }
 });
 
@@ -258,7 +252,7 @@ router.post('/run/variation', checkAuthForAutoTest, async (req, res) => {
 
 router.post('/progress', checkAuthForAutoTest, async (req, res) => {
   const { testId, studentIndexes } = req.body;
-  
+
   try {
     const students = await db.getStudentsByIndexes(studentIndexes);
     const testData = await db.getTestById(testId);
@@ -269,7 +263,7 @@ router.post('/progress', checkAuthForAutoTest, async (req, res) => {
       const student_index = student.index_number;
       const results = await db.getAutoTestResultsForStudent(student_id, testId);
       const completedTasks = results.length;
-    
+
       if (completedTasks === totalTasks) {
         let taskResults = {};
         let total_points = 0;
@@ -293,7 +287,7 @@ router.post('/progress', checkAuthForAutoTest, async (req, res) => {
 
         await db.updateFinalTestGrading(testId, student_id, total_points, JSON.stringify(taskResults), "AT OCENJEN", null);
         await db.clearAutoTestResultsForStudent(student_id, testId);
-        
+
         let autotest_progress = 100;
         return {
           studentId: student_id,
@@ -306,12 +300,13 @@ router.post('/progress', checkAuthForAutoTest, async (req, res) => {
         const tmpGrading = await db.getTestGradingForStudent(testId, student_id);
 
         if (tmpGrading && tmpGrading.status === 'AT OCENJEN') {
-          return { studentId: student_id, studentIndex: student_index, status: 'AT OCENJEN', autotest_progress: 100, points: tmpGrading.total_points};
+          return { studentId: student_id, studentIndex: student_index, status: 'AT OCENJEN', autotest_progress: 100, points: tmpGrading.total_points };
         } else {
           let autotest_progress = Math.floor((completedTasks / totalTasks) * 100);
-          return { studentId: student_id, studentIndex: student_index, status: 'TESTIRANJE', autotest_progress, points: '-1'};
+          return { studentId: student_id, studentIndex: student_index, status: 'TESTIRANJE', autotest_progress, points: '-1' };
+        }
       }
-    }}));
+    }));
 
     res.json(resultsList);
   } catch (error) {
@@ -360,12 +355,12 @@ router.post('/progress/variation', checkAuthForAutoTest, async (req, res) => {
     } else {
       console.table(variationResults);
       const tmpGrading = await db.getFinalVariationResults(variationId);
-      if(!tmpGrading)
+      if (!tmpGrading)
         return res.json({
           status: 'SPREMAN',
           totalPoints: -1
         });
-        
+
       return res.json({
         status: tmpGrading.status || 'TESTIRANJE',
         totalPoints: -1

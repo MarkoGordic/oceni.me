@@ -67,7 +67,7 @@ class Database {
         `;
 
         const populateCoursesTable = `
-            INSERT INTO courses (name, code) VALUES
+            INSERT IGNORE INTO courses (name, code) VALUES
                 ('Magistarske studije', 'MR'),
                 ('Arhitektura i urbanizam (INTEGRISANE STUDIJE)', 'XA'),
                 ('Elektrotehnika i računarstvo (INTEGRISANE STUDIJE)', 'XE'),
@@ -359,7 +359,7 @@ class Database {
             console.info("[INFO] : Employees table created successfully.");
             await this.pool.execute(createCoursesTable);
             console.info("[INFO] : Courses table created successfully.");
-            //await this.pool.execute(populateCoursesTable);
+            await this.pool.execute(populateCoursesTable);
             console.info("[INFO] : Courses table populated successfully.");
             await this.pool.execute(createStudentsTable);
             console.info("[INFO] : Students table created successfully.");
@@ -397,7 +397,7 @@ class Database {
             INSERT INTO employees (first_name, last_name, email, password, role, gender) VALUES
                 ('Nađa', 'Jakšić', 'nadjajaksice34@gmail.com', '$2b$10$a4rR5.axsDtur84RM7KeFe1SuizbRVsoIIDMrkuPnAnrKSQV/SEZS', 0, 'F');
         `;
-        
+
         try {
             await this.pool.execute(initializeConfig);
             console.info("[INFO] : Config table initialized successfully.");
@@ -429,7 +429,7 @@ class Database {
     }
 
     async getConfigValue(key) {
-        try{
+        try {
             const [rows] = await this.pool.query('SELECT config_value FROM ocenime_config WHERE config_key = ?', [key]);
             return rows.length > 0 ? rows[0].config_value : null;
         } catch (error) {
@@ -462,13 +462,13 @@ class Database {
         const placeholders = employeeIds.map(() => '?').join(',');
         const query = `SELECT id, first_name, last_name FROM employees WHERE id IN (${placeholders})`;
         try {
-          const [results] = await this.pool.query(query, employeeIds);
-          return results;
+            const [results] = await this.pool.query(query, employeeIds);
+            return results;
         } catch (error) {
-          console.error('Error retrieving employees by IDs:', error);
-          throw error;
+            console.error('Error retrieving employees by IDs:', error);
+            throw error;
         }
-      }      
+    }
 
     async deleteEmployeeById(id) {
         const query = 'DELETE FROM employees WHERE id = ?';
@@ -508,14 +508,14 @@ class Database {
     }
 
     async updateEmployeeInfo(userId, updateFields) {
-        if(userId == 1)
+        if (userId == 1)
             return false;
 
         console.log(updateFields);
         let query = `UPDATE employees SET `;
         let queryParams = [];
         let setParts = [];
-        
+
         if (updateFields.first_name) {
             setParts.push(`first_name = ?`);
             queryParams.push(updateFields.first_name);
@@ -540,14 +540,14 @@ class Database {
             setParts.push(`password = ?`);
             queryParams.push(updateFields.password);
         }
-    
+
         if (setParts.length === 0) {
             throw new Error("No fields provided for update");
         }
-    
+
         query += setParts.join(', ') + ` WHERE id = ?`;
         queryParams.push(userId);
-    
+
         try {
             const [result] = await this.pool.query(query, queryParams);
             return result.affectedRows > 0;
@@ -555,7 +555,7 @@ class Database {
             console.error('Error updating employee info:', error);
             throw error;
         }
-    }    
+    }
 
     async resetEmployeePassword(userId, hashedNewPassword) {
         const query = 'UPDATE employees SET password = ? WHERE id = ?';
@@ -591,31 +591,31 @@ class Database {
         let query = 'UPDATE students SET ';
         const queryParams = [];
         const setParts = [];
-    
+
         if (updateData.index_number) {
             const indexPattern = /^([A-Za-z]{2})\s(\d{1,3})\/(\d{4})$/;
             const match = updateData.index_number.match(indexPattern);
-    
+
             if (!match) {
                 throw new Error('Invalid index number format.');
             }
-    
+
             const [, , , year] = match;
             updateData.year = year;
         }
-    
+
         for (const [key, value] of Object.entries(updateData)) {
             setParts.push(`${key} = ?`);
             queryParams.push(value);
         }
-    
+
         if (setParts.length === 0) {
             throw new Error('No update fields provided');
         }
-    
+
         query += setParts.join(', ') + ' WHERE id = ?';
         queryParams.push(id);
-    
+
         try {
             const [result] = await this.pool.query(query, queryParams);
             return result.affectedRows > 0;
@@ -624,7 +624,7 @@ class Database {
             throw error;
         }
     }
-    
+
 
     async getStudentById(id) {
         const query = 'SELECT first_name, last_name, email, index_number, year, course_code, id, gender FROM students WHERE id = ?';
@@ -664,41 +664,41 @@ class Database {
             OR first_name LIKE CONCAT('%', ? COLLATE utf8mb4_unicode_ci, '%') 
             OR last_name LIKE CONCAT('%', ? COLLATE utf8mb4_unicode_ci, '%'))
         `;
-    
+
         const params = [searchString, searchString, searchString];
-    
+
         if (courseCode) {
             query += ' AND course_code = ?';
             params.push(courseCode);
         }
-    
+
         query += ' ORDER BY index_number';
         query += ' LIMIT ? OFFSET ?';
-    
+
         const offset = (page - 1) * limit;
         params.push(limit, offset);
-    
+
         try {
             const [results] = await this.pool.query(query, params);
             if (results.length === 0) {
                 return [];
             }
-    
+
             const courseCodes = results.map(student => student.course_code);
             if (courseCodes.length > 0) {
                 const coursesQuery = 'SELECT code, name FROM courses WHERE code IN (?)';
                 const [courseNames] = await this.pool.query(coursesQuery, [courseCodes]);
-    
+
                 const courseCodeToNameMap = courseNames.reduce((map, course) => {
                     map[course.code] = course.name;
                     return map;
                 }, {});
-    
+
                 const modifiedResults = results.map(student => ({
                     ...student,
                     course_name: courseCodeToNameMap[student.course_code] || 'Nepoznat studijski program'
                 }));
-    
+
                 return modifiedResults;
             }
             return results;
@@ -706,7 +706,7 @@ class Database {
             console.error('Error searching for students:', error);
             throw error;
         }
-    }    
+    }
 
     async getStudentsFromSubject(subjectId) {
         const subjectQuery = `
@@ -719,7 +719,7 @@ class Database {
                 throw new Error('Subject not found.');
             }
             const { year, course_code } = subjectResult[0];
-    
+
             const studentsQuery = `
                 SELECT * FROM students WHERE year = ? AND course_code = ?
             `;
@@ -730,7 +730,7 @@ class Database {
             throw error;
         }
     }
-    
+
     async searchEmplyees(searchString) {
         let query = `
             SELECT * FROM employees
@@ -738,7 +738,7 @@ class Database {
             OR last_name LIKE CONCAT('%', ? COLLATE utf8mb4_unicode_ci, '%')
             ORDER BY last_name, first_name;
         `;
-    
+
         try {
             const [results] = await this.pool.query(query, [searchString, searchString]);
             return results;
@@ -759,7 +759,7 @@ class Database {
             )
             ORDER BY last_name, first_name LIMIT 10;
         `;
-    
+
         try {
             const [results] = await this.pool.query(query, [searchString, searchString]);
             return results;
@@ -815,7 +815,7 @@ class Database {
             )
             ORDER BY name;
         `;
-    
+
         try {
             const [results] = await this.pool.query(query, [employee_id, employee_id]);
             return results;
@@ -824,7 +824,7 @@ class Database {
             throw error;
         }
     }
-    
+
     async getEmployeesForSubject(subjectId) {
         const query = `
             SELECT e.*
@@ -855,7 +855,7 @@ class Database {
             throw error;
         }
     }
-    
+
     async addSubject(name, code, professorId, courseCode, year) {
         const insertQuery = `
             INSERT INTO subjects (name, code, professor_id, course_code, year)
@@ -898,14 +898,14 @@ class Database {
                 console.log(`Unexpected or invalid field: ${key}`);
             }
         }
-    
+
         if (setParts.length === 0) {
             throw new Error('No valid fields provided for update.');
         }
-    
+
         query += setParts.join(', ') + ' WHERE id = ?';
         queryParams.push(subjectId);
-    
+
         try {
             const [result] = await this.pool.query(query, queryParams);
             return result.affectedRows > 0;
@@ -914,7 +914,7 @@ class Database {
             throw error;
         }
     }
-    
+
     async professorExists(professorId) {
         const query = 'SELECT * FROM employees WHERE id = ? AND role IN (0, 1)';
         try {
@@ -936,19 +936,19 @@ class Database {
             )
         `;
         const params = [searchString, searchString];
-    
+
         if (courseCode) {
             query += ' AND subjects.course_code = ?';
             params.push(courseCode);
         }
-    
+
         if (year) {
             query += ' AND subjects.year = ?';
             params.push(parseInt(year, 10));
         }
-    
+
         query += ' ORDER BY subjects.name';
-    
+
         try {
             const [results] = await this.pool.query(query, params);
             return results;
@@ -974,7 +974,7 @@ class Database {
     async getLogs({ employeeId = null, severity = null, startDate = null, endDate = null, offset = 0, limit = 15 }) {
         let conditions = [];
         const params = [];
-    
+
         if (employeeId) {
             conditions.push("employee_id = ?");
             params.push(employeeId);
@@ -991,18 +991,18 @@ class Database {
             conditions.push("created_at <= ?");
             params.push(endDate);
         }
-    
+
         const conditionString = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-    
+
         const query = `
             SELECT * FROM system_activity_logs
             ${conditionString}
             ORDER BY created_at DESC
             LIMIT ? OFFSET ?
         `;
-    
+
         params.push(limit + 1, offset);
-    
+
         try {
             const [results] = await this.pool.query(query, params);
             return results;
@@ -1010,36 +1010,36 @@ class Database {
             console.error('Error retrieving logs:', error);
             throw error;
         }
-    }    
-    
+    }
+
     async addNewTest(subjectId, name, test_no, employee_id, total_tasks, total_tests, total_points) {
         try {
             const insertQuery = `INSERT INTO tests (subject_id, name, test_no, initial_students, final_students, status, employee_id, total_tasks, total_tests, total_points, tasks) VALUES (?, ?, ?, NULL, NULL, 'DODATA_KONFIGURACIJA', ?, ?, ?, ?, NULL)`;
             await this.pool.query(insertQuery, [subjectId, name, test_no, employee_id, total_tasks, total_tests, total_points]);
-    
+
             const selectQuery = `SELECT id AS testId FROM tests WHERE subject_id = ? ORDER BY id DESC LIMIT 1`;
             const [selectResult] = await this.pool.query(selectQuery, [subjectId]);
-            
+
             if (selectResult.length === 0) {
                 throw new Error("Failed to retrieve the last inserted test ID.");
             }
 
             const testId = selectResult[0].testId;
-            
+
             return testId;
         } catch (error) {
             console.error('Error while adding test:', error);
             throw error;
         }
     }
-    
+
     async getStudentsByIndexes(indexes) {
         const placeholders = indexes.map(() => '?').join(',');
         const query = `
             SELECT * FROM students
             WHERE index_number IN (${placeholders})
         `;
-    
+
         try {
             const [results] = await this.pool.query(query, indexes);
             return results;
@@ -1102,7 +1102,7 @@ class Database {
             throw error;
         }
     }
-    
+
 
     async updateTestConfigStatus(configId, newStatus) {
         const query = 'UPDATE test_configs SET status = ? WHERE id = ?';
@@ -1114,7 +1114,7 @@ class Database {
             throw error;
         }
     }
-    
+
     async updateTestConfigs(configId, updateData) {
         const query = 'UPDATE test_configs SET test_configs = ? WHERE id = ?';
         try {
@@ -1161,7 +1161,7 @@ class Database {
     }
 
     async getTestsByStudentIndex(studentIndex) {
-        const studentIndexJSON = JSON.stringify({"index": studentIndex});
+        const studentIndexJSON = JSON.stringify({ "index": studentIndex });
         const query = `
             SELECT DISTINCT t.id, t.initial_students, t.final_students
             FROM tests t
@@ -1181,11 +1181,11 @@ class Database {
 
     async updateTestField(testId, fieldName, fieldValue) {
         const whitelist = ['initial_students', 'final_students', 'status', 'tasks'];
-        
+
         if (!whitelist.includes(fieldName)) {
             throw new Error('Invalid field name provided.');
         }
-        
+
         const query = `UPDATE tests SET ${fieldName} = ? WHERE id = ?`;
         try {
             const [result] = await this.pool.query(query, [fieldValue, testId]);
@@ -1217,7 +1217,7 @@ class Database {
             throw error;
         }
     }
-    
+
 
     async addNewTestGrading(studentId, testId, employeeId, total_points, status) {
         const deleteQuery = `
@@ -1228,10 +1228,10 @@ class Database {
             INSERT INTO test_gradings (student_id, test_id, employee_id, total_points, gradings, status)
             VALUES (?, ?, ?, ?, NULL, ?)
         `;
-    
+
         try {
             await this.pool.query(deleteQuery, [studentId, testId]);
-    
+
             await this.pool.query(insertQuery, [studentId, testId, employeeId, total_points, status]);
         } catch (error) {
             console.error('Error handling test grading:', error);
@@ -1245,18 +1245,18 @@ class Database {
             FROM test_gradings
             WHERE test_id = ? AND student_id = ?
         `;
-    
+
         const insertQuery = `
             INSERT INTO test_gradings (test_id, employee_id, student_id, total_points, gradings, status)
             VALUES (?, NULL, ?, ?, ?, ?)
         `;
-    
+
         const updateQuery = `
             UPDATE test_gradings
             SET total_points = ?, gradings = ?, status = ?, employee_id = ?
             WHERE test_id = ? AND student_id = ?
         `;
-    
+
         try {
             const [results] = await this.pool.query(selectQuery, [testId, studentId]);
             if (results[0].cnt > 0) {
@@ -1282,7 +1282,7 @@ class Database {
             console.error('Error deleting test grading:', error);
         }
     }
-    
+
     async deleteTestGradingByStudentId(testId, studentId) {
         const query = `
             DELETE FROM test_gradings
@@ -1295,7 +1295,7 @@ class Database {
             console.error('Error deleting test grading for student:', error);
             throw error;
         }
-    }    
+    }
 
     async getTestGradings(testId) {
         const query = `
@@ -1329,7 +1329,7 @@ class Database {
             throw error;
         }
     }
-    
+
 
     async getTestGradingForStudent(testId, studentId) {
         const query = `
@@ -1372,8 +1372,8 @@ class Database {
             console.error('Error retrieving test results for student:', error);
             throw error;
         }
-    }    
-      
+    }
+
     async isTestRunningForStudent(studentId, testId) {
         const query = `
             SELECT COUNT(*) AS count
@@ -1539,7 +1539,7 @@ class Database {
             return false;
         }
     }
-    
+
     async addNewVariationAutoTestResult(variationId, result, testNo) {
         const insertQuery = `
             INSERT INTO variation_test_results (variation_id, result, test_no)
@@ -1643,7 +1643,7 @@ class Database {
             throw error;
         }
     }
-    
+
     async getResultsForVariation(variationId) {
         const query = `
             SELECT * FROM variation_test_results

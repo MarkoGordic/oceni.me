@@ -58,6 +58,7 @@ Ovaj projekat mi je veoma drag, jer verujem da će pomoći kako mnogim asistenti
 + [Sara Poparić]() - Pomoć pri realizaciji aplikacije  
 + [Nađa Jakšić]() - README i tehnička dokumentacija
 + [Jovana Minčić]() - Tehnička dokumentacija
++ [Dušan Lazić](https://github.com/dusanlazic) - DevOps podrška
 
 # 📜 Licenca
 
