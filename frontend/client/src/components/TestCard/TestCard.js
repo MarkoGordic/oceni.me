@@ -38,7 +38,7 @@ function TestCard({ testData, onDeleteSuccess }) {
     };
 
     return (
-        <div className='test-configuration-card'>
+        <div className='test-configuration-card' onClick={handlePreview}>
             <img src={`http://localhost:8000/user_pfp/${employee_id}.jpg`} alt='User' />
             <div className='test-configuration-card-info'>
                 <p className='test-configuration-card-name'>{name}</p>

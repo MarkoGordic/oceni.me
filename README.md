@@ -35,11 +35,8 @@ Aplikacija je dostupna za Windows i Linux operativne sisteme. Može se pokrenuti
 3. `cd ./oceni.me`
 4. Preuzmite [**Docker Desktop**](https://www.docker.com/products/docker-desktop/)  
 5. `./docker-compose build`
-6. `cd ./server/util`
-7. `docker build . -t gcc-build`
-8. `cd ../../`
-9. `./docker-compose up`
-10. Pratite instrukcije od same aplikacije
+6. `./docker-compose up`
+7. Kada se aplikacija pokrene, za konfiguraciju posetite `/welcome`
 
 Po pokretanju, korisnik treba uneti lične podatke radi konfiguracije svog naloga. Nakon prijave, otvara se korisnički interfejs.
 

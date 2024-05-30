@@ -53,6 +53,12 @@ const dockerQueue = async.queue(async (task, done) => {
         if (container) {
           await container.stop();
           console.log(`Container for task ${task.taskNo} forcibly stopped due to timeout.`);
+          // In this case, we will handle this by giving student 0 points for given task
+          if (task.testType === 'variation') {
+            await db.addNewVariationAutoTestResult(task.variationId, 0, task.testNo);
+          } else {
+            await db.addNewAutoTestResult(task.student_id, parseInt(task.testId), task.employee_id, 0, task.taskNo, task.testNo);
+          }
         }
       } catch (error) {
         console.error('Error stopping container:', error);

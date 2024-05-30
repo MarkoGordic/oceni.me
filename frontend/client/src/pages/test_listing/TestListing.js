@@ -34,9 +34,14 @@ function TestListing() {
                     toast.error("Došlo je do greške prilikom učitavanja testova.");
                 }
                 const data = await response.json();
+                const sortedStudents = JSON.parse(data.final_students).sort((a, b) => {
+                    const aIndex = parseInt(a.index.split('/')[0].split(' ')[1]);
+                    const bIndex = parseInt(b.index.split('/')[0].split(' ')[1]);
+                    return aIndex - bIndex;
+                });
                 setTestData(data);
-                fetchAdditionalStudentDetails(JSON.parse(data.final_students));
-                setStudents(JSON.parse(data.final_students));
+                fetchAdditionalStudentDetails(sortedStudents);
+                setStudents(sortedStudents);
             } catch (err) {
                 toast.error("Failed to load tests.");
             }
@@ -67,11 +72,11 @@ function TestListing() {
                 const enrichedStudents = students.map(student => {
                     const grading = gradingsMap[student.index];
                     let autotest_progress = 0;
-
+                
                     if (grading && (grading.status === 'OCENJEN' || grading.status === "AT OCENJEN")) {
                         autotest_progress = 100;
                     }
-
+                
                     return {
                         ...student,
                         autotest_status: grading ? grading.status : 'PRIPREMLJEN',
@@ -79,8 +84,12 @@ function TestListing() {
                         maxPoints: testData.total_points,
                         autotest_progress: autotest_progress
                     };
+                }).sort((a, b) => {
+                    const aIndex = parseInt(a.index.split('/')[0].split(' ')[1]);
+                    const bIndex = parseInt(b.index.split('/')[0].split(' ')[1]);
+                    return aIndex - bIndex;
                 });
-
+                
                 setStudents(enrichedStudents);
             } catch (error) {
                 toast.error("Error loading test results.");
@@ -184,7 +193,12 @@ function TestListing() {
                     ...student,
                     autotest_status: 'TESTIRANJE',
                     autotest_progress: 0
-                }));
+                })).sort((a, b) => {
+                    const aIndex = parseInt(a.index.split('/')[0].split(' ')[1]);
+                    const bIndex = parseInt(b.index.split('/')[0].split(' ')[1]);
+                    return aIndex - bIndex;
+                });
+                
                 setStudents(updatedStudents);
             } else {
                 if (response.status === 409) {
@@ -236,14 +250,18 @@ function TestListing() {
                         };
                     }
                     return student;
+                }).sort((a, b) => {
+                    const aIndex = parseInt(a.index.split('/')[0].split(' ')[1]);
+                    const bIndex = parseInt(b.index.split('/')[0].split(' ')[1]);
+                    return aIndex - bIndex;
                 });
-    
+                
                 setStudents(updatedStudents);
             } else {
                 toast.error('Neuspešno osvežavanje automatskog testiranja.');
             }
         }).catch((error) => {
-            toast.error('Failed to update autotest status.');
+            toast.error('Neuspešno osvežavanje automatskog testiranja.');
             console.error(error);
         });
     };
@@ -264,7 +282,14 @@ function TestListing() {
                 };
             }
             return student;
+        }).sort((a, b) => {
+            const aIndex = parseInt(a.index.split('/')[0].split(' ')[1]);
+            const bIndex = parseInt(b.index.split('/')[0].split(' ')[1]);
+            return aIndex - bIndex;
         });
+        
+        setStudents(updatedStudents);
+        
         setStudents(updatedStudents);
     };    
 

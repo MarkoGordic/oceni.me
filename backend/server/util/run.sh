@@ -164,8 +164,7 @@ for n in "${TESTS[@]}"; do
     ok=1
     expect run ./zad "${tst[@]}" 1>$OUT1 2>&1
     code=$?
-    sed -i -e '$a\' $OUT1
-    sed -i 's/\x0//g' $OUT1
+    sed -i ':a;N;$!ba;s/\n/ /g' $OUT1
     sed -i 's/\xd//g' $OUT1
     sed -i 's/\x0//g' $OUT1
     for ((i=1; i<32; i++)); do
@@ -180,23 +179,16 @@ for n in "${TESTS[@]}"; do
         sed -i "s/\x$hex/[0x$hex]/g" $OUT1
     done
 
-    echo "RADIM DIFF"
-
     # OUT2 sadrzi expected output
     diff -q -a -w -B $OUT1 out2 1>/dev/null 2>/dev/null
 
-    echo "DIFF ZAVRSEN"
-    echo "DIFF CODE: $?"
-    echo "Izlaz programa: $(cat $OUT1)"
-    echo "Ocekivani izlaz: $cor"
-
     if [ $? -eq 0 ]; then
         # outputs are same
-        program_output=$(echo "$OUT1" | base64)
-
+        program_output=$(cat $OUT1 | base64 -w 0)
         output_status="success"
     else
         # exits are different
+        program_output=$(cat $OUT1 | base64 -w 0)
         output_status="failure"
         ok=0
     fi
@@ -230,13 +222,13 @@ for n in "${TESTS[@]}"; do
     nn=$((nn+1))
 done
 
+compile_output=$(echo "$compile_output" | base64 -w 0)
+echo "{\"compile\": \"$compile_status\", \"compile_output\": \"$compile_output\", \"error_msg\": \"$error_msg\", \"output_status\": \"$output_status\", \"program_output\": \"$program_output\", \"program_exit_code\": $program_exit_code, \"program_expected_code\": $program_expected_code, \"program_exit_status\": \"$program_exit_status\", \"gdb_exit_code\": $gdb_exit_code}" > /output/compile_status<COMPILE_STATUS_TASK_PLACEHOLDER>.json
+
 if [ $KEEP -eq 0 ]; then
     rm -f zad run $OUT1 out2 1>/dev/null 2>/dev/null
 else
     rm -f run 1>/dev/null 2>/dev/null
 fi
-
-compile_output=$(echo "$compile_output" | base64 -w 0)
-echo "{\"compile\": \"$compile_status\", \"compile_output\": \"$compile_output\", \"error_msg\": \"$error_msg\", \"output_status\": \"$output_status\", \"program_output\": \"$program_output\", \"program_exit_code\": $program_exit_code, \"program_expected_code\": $program_expected_code, \"program_exit_status\": \"$program_exit_status\", \"gdb_exit_code\": $gdb_exit_code}" > /output/compile_status<COMPILE_STATUS_TASK_PLACEHOLDER>.json
 
 exit 0

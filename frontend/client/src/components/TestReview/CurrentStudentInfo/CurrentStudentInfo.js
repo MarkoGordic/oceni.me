@@ -11,7 +11,7 @@ function CurrentStudentInfo({ student, currentPoints, maxPoints }) {
             <div className="review-student-card-info">
                 <img className='review-student-card-avatar' src={`http://localhost:8000/student_pfp/${student.id}.jpg`} alt="Student's Avatar" />
                 <div className='review-student-card-info-details'>
-                    <p className='review-student-card-full-name'>{student.first_name} {student.last_name}</p>
+                    <p className='review-student-card-full-name'>{student.first_name} {student.last_name} - {student.index_number}</p>
                     <p className='review-student-card-email'>{student.email}</p>
                 </div>
                 <div className='review-student-card-actions'>
