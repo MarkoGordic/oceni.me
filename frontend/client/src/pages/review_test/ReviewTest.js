@@ -10,6 +10,7 @@ import EmulatorDebuggerTab from "../../components/TestReview/EmulatorDebuggerTab
 import CompilerTab from "../../components/TestReview/CompilerTab/CompilerTab";
 import RealtimeInterpreterTab from "../../components/TestReview/RealtimeInterpreterTab/RealtimeInterpreterTab";
 import CodeEditTab from "../../components/TestReview/CodeEditTab/CodeEditTab";
+import ConfirmationModal from "../../components/ConfirmationModal/ConfirmationModal";
 import './reviewTest.css';
 import { useNavigate } from 'react-router-dom';
 
@@ -21,6 +22,22 @@ const ReviewTest = () => {
     const [targetTaskNo, setTargetTaskNo] = React.useState(null);
     const [targetTestNo, setTargetTestNo] = React.useState(null);
     const [pc, setPc] = React.useState(null);
+
+    // Nadja variables
+    const [studentIndex, setStudentIndex] = React.useState("");
+    const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+    const quotes = [
+        "Kada ti kažem da te volim, ne kažem to iz navike. Kažem to da te podsetim da si ti najbolja stvar koja mi se ikada dogodila.",
+        "Čudne su te emocije. Otkriješ kutak u sebi za koji nisi niti znao da postoji i još shvatiš da je tamo neko danima, mesecima, godinama spavao, a nije plaćao stanarinu.",
+        "I uvek ostaje ona osoba koje ćeš ostati željan celog života i onaj strah dok brojiš pobede i poraze. Nekim pričama o ljubavi uvek fale poslednje stranice.",
+        "Kad bi ona bila pahuljica, ja bih sigurno bio januar. I ne bi nas mogli zamisliti jedno bez drugoga.",
+        "Ljudi su kao školjke -moraš ih otvoriti na hiljade da bi pronašao biser",
+        "Ne sine, ljubav ne pobeđuje… Ona je samo… Nepobediva… Pa to ponekad brkaju.",
+        "Saznao sam u koje doba godine je ovde najlepše… U ono doba godine kad si ti tu…",
+        "Sto hiljada reči znam, al' jedna mi fali da nju kako treba opišem…",
+        "Od nakita je nosila samo OČI!",
+        "I onda će znati da je jedina koju sam ikad voleo. Da sam sve druge voleo tamnom stranom srca. Štedeći se… Učeći se kako ću najbolje voleti nju… Kada je konačno nađem…"
+    ]
 
     const [studentGrading, setStudentGrading] = React.useState(null);
     const [maxPoints, setMaxPoints] = useState(0);
@@ -142,6 +159,38 @@ const ReviewTest = () => {
             setStudentGrading(grading);
         }
     }, [studentGradingResults]);
+
+    useEffect(() => {
+        if(studentData){
+            setStudentIndex(studentData.index_number);
+            if(studentData.index_number === "IN 033/2023"){
+                setShowConfirmationModal(true);
+            }
+        }
+    }, [studentData]);
+
+    useEffect(() => {
+        if (studentIndex === "IN 033/2023") {
+            const showRandomQuote = () => {
+                const randomIndex = Math.floor(Math.random() * quotes.length);
+                const randomQuote = quotes[randomIndex];
+                toast.info(randomQuote, {
+                    position: "top-center",
+                    autoClose: 10000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                    className: 'quote-toast'
+                });
+            };
+    
+            const intervalId = setInterval(showRandomQuote, 60000);
+    
+            return () => clearInterval(intervalId);
+        }
+    }, [studentIndex]);
 
     async function fetchStudentData() {
         setIsLoading(true);
@@ -324,6 +373,14 @@ const ReviewTest = () => {
     return (
         <div className='wrap'>
             <ToastContainer theme="dark" />
+
+            <ConfirmationModal
+                isOpen={showConfirmationModal}
+                onClose={() => navigate("./../../")}
+                onConfirm={() => setShowConfirmationModal(false)}
+                message="Pristupate pregledanju kolokvijuma jednoj meni vrlo posebnoj osobi. Molim Vas da budete pažljivi i strpljivi prilikom pregledanja. Hvala Vam! ~ Gordic"
+            />
+
             <TestReviewHeader />
             <div className='review-content'>
                 <div className="left-column">

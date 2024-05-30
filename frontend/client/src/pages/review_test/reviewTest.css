@@ -99,3 +99,8 @@ body, #root {
 .test-review-grade-button:hover {
     background-color: #007bff;
 }
+
+.quote-toast {
+    width: 600px;
+    margin-left: -150px;
+}
