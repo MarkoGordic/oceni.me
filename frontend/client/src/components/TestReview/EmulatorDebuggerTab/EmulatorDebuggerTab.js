@@ -86,20 +86,26 @@ const EmulatorDebuggerTab = ({ taskNo, testNo, pc, setDebbugLine, setDebbugFile,
         setRegisterTypes(prev => ({ ...prev, [register]: type }));
     };
 
+    const cropValue = (value) => {
+        return value.length > 30 ? value.substring(0, 30) + "..." : value;
+    };
+
     const formatValueByType = (register, type) => {
         if (type === "string") {
-            return currentStringRegisterValues && currentStringRegisterValues[register] ? currentStringRegisterValues[register] : "N/A";
+            return currentStringRegisterValues && currentStringRegisterValues[register] 
+                ? cropValue(currentStringRegisterValues[register]) 
+                : "N/A";
         } else {
             const value = currentRegisterValues ? currentRegisterValues[register] : "N/A";
             switch (type) {
                 case "int":
-                    return parseInt(value).toString();
+                    return cropValue(parseInt(value).toString());
                 case "float":
-                    return parseFloat(value).toFixed(2);
+                    return cropValue(parseFloat(value).toFixed(2));
                 case "hex":
-                    return "0x" + parseInt(value).toString(16);
+                    return cropValue("0x" + parseInt(value).toString(16));
                 default:
-                    return value;
+                    return cropValue(value);
             }
         }
     };

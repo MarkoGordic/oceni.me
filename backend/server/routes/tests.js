@@ -956,6 +956,61 @@ router.post('/gradings/get', asyncHandler(async (req, res) => {
   }
 }));
 
+router.post('/download_task_data', asyncHandler(async (req, res) => {
+  const { testId, studentIndex, taskFolder } = req.body;
+
+  if (!testId || !studentIndex || !taskFolder) {
+      return res.status(400).send('Test ID, student index, and task folder are required.');
+  }
+
+  try {
+      const testDetails = await db.getTestById(testId);
+      if (!testDetails) {
+          return res.status(404).send('Test not found.');
+      }
+
+      const studentData = JSON.parse(testDetails.final_students || '[]').find(student => student.index === studentIndex);
+      if (!studentData) {
+          return res.status(404).send('Student not found in the test.');
+      }
+
+      const taskDirPath = path.join(__dirname, `../uploads/tests/${testId}/data/${studentData.pc}/${taskFolder}`);
+      const tempZipPath = path.join(__dirname, `../uploads/tests/${testId}/data/${studentData.pc}/task_${taskFolder}.zip`);
+
+      const output = fs.createWriteStream(tempZipPath);
+      const archive = archiver('zip', { zlib: { level: 9 } });
+
+      output.on('close', async () => {
+          res.setHeader('Content-Type', 'application/zip');
+          res.setHeader('Content-Disposition', `attachment; filename=task_${taskFolder}_${studentIndex}.zip`);
+          res.sendFile(tempZipPath, async (err) => {
+              if (err) {
+                  console.error('Error sending file:', err);
+              }
+              await fsp.unlink(tempZipPath);
+          });
+      });
+
+      archive.on('error', (err) => {
+          console.error('Archiver error:', err);
+          res.status(500).send('An error occurred while creating the zip file.');
+      });
+
+      archive.pipe(output);
+
+      const files = await fsp.readdir(taskDirPath);
+      files.forEach(file => {
+          const filePath = path.join(taskDirPath, file);
+          archive.file(filePath, { name: file });
+      });
+
+      await archive.finalize();
+  } catch (error) {
+      console.error('Error processing task data download:', error);
+      res.status(500).send('An error occurred while processing the task data download.');
+  }
+}));
+
 router.get('/generate-pdf', asyncHandler(async (req, res) => {
   const { testId } = req.query;
 

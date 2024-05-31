@@ -387,7 +387,7 @@ const ReviewTest = () => {
                     <CodePreview pc={pc} taskNo={targetTaskNo} testNo={targetTestNo} lineNumber={debbugLine} debbugFile={debbugFile} setBreakpoints={setBreakpoints} isVariationModeActive={isVariationModeActive} selectedVariationID={selectedVariationId} hasPendingChanges={hasPendingChanges} setHasPendingChanges={setHasPendingChanges} codeText={codeText} setCodeText={setCodeText} selectedFile={selectedFile} setSelectedFile={setSelectedFile} pendingAction={pendingAction} setPendingAction={setPendingAction} saveFileChanges={saveFileChanges} requestAction={requestAction} confirmDiscardChanges={confirmDiscardChanges} setConfirmDiscardChanges={setConfirmDiscardChanges} mode={mode} setMode={setMode} selectFile={selectFile} showContent={showContent} setShowContent={setShowContent} showConfirmDialog={showConfirmInappropriateDialog} setShowConfirmDialog={setShowConfirmInappropriateDialog} pendingFileContent={pendingFileContent} />
                 </div>
                 <div className="right-column">
-                    <CurrentStudentInfo student={studentData} currentPoints={currentPoints} maxPoints={maxPoints} />
+                    <CurrentStudentInfo student={studentData} currentPoints={currentPoints} maxPoints={maxPoints} pc={pc} />
                     <CodeSelectorInfo
                         testData={testData}
                         codeTask={targetTaskNo}

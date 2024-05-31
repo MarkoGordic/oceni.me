@@ -13,7 +13,7 @@ hljs.registerLanguage('x86asm', x86asm);
 hljs.registerLanguage('c', c);
 hljs.registerLanguage('shell', shell);
 
-const CodePreview = ({ taskNo, testNo, pc, lineNumber, debbugFile, setBreakpoints, isVariationModeActive, selectedVariationID, hasPendingChanges, setHasPendingChanges, codeText, setCodeText, selectedFile, setSelectedFile, pendingAction, setPendingAction, saveFileChanges, requestAction, confirmDiscardChanges, setConfirmDiscardChanges, mode, setMode, selectFile, showContent, setShowContent, showConfirmDialog, setShowConfirmDialog, pendingFileContent }) => {
+const CodePreview = ({ taskNo, testNo, pc, lineNumber, debbugFile, setBreakpoints, isVariationModeActive, selectedVariationID, hasPendingChanges, setHasPendingChanges, codeText, setCodeText, selectedFile, setSelectedFile, pendingAction, setPendingAction, saveFileChanges, requestAction, confirmDiscardChanges, setConfirmDiscardChanges, mode, setMode, selectFile, showContent, setShowContent, showConfirmDialog, setShowConfirmDialog, pendingFileContent, studentIndex }) => {
     const { testid } = useParams();
     const [highlightedCode, setHighlightedCode] = useState(null);
     const [breakpoints, setLocalBreakpoints] = useState([]);
@@ -195,6 +195,47 @@ const CodePreview = ({ taskNo, testNo, pc, lineNumber, debbugFile, setBreakpoint
         setBreakpoints(breakpoints[selectedFile] || []);
     }, [breakpoints, selectedFile, setBreakpoints]);
 
+    const handleDownloadClick = async () => {
+        if (!taskNo || !testid || !pc) {
+            toast.error("Nedostaju podaci za preuzimanje fajlova.");
+            return;
+        }
+    
+        const endpoint = 'http://localhost:8000/tests/download_task_data';
+    
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    testId: testid,
+                    studentIndex: studentIndex,
+                    taskFolder: "z" + taskNo.toString()
+                })
+            });
+    
+            if (!response.ok) {
+                toast.error("Došlo je do greške prilikom preuzimanja fajlova.");
+                return;
+            }
+    
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `task_${taskNo}_${pc}.zip`);
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode.removeChild(link);
+        } catch (error) {
+            console.error("Error downloading files:", error);
+            toast.error("Došlo je do greške prilikom preuzimanja fajlova.");
+        }
+    };    
+
     return (
         <div className="code-preview">
             {isVariationModeActive && !selectedVariationID ? (
@@ -234,13 +275,18 @@ const CodePreview = ({ taskNo, testNo, pc, lineNumber, debbugFile, setBreakpoint
 
                     <pre className="code-preview-code">
                         <div className='code-preview-files'>
-                            {taskFiles && taskFiles.map((file, index) => (
-                                <div key={index}
-                                    className={`code-preview-file ${file === selectedFile ? 'selected-file' : ''}`}
-                                    onClick={() => requestAction({"type": "file", "action": file})}>
-                                    {file}
-                                </div>
-                            ))}
+                            <div className='code-preview-files-list'>
+                                {taskFiles && taskFiles.map((file, index) => (
+                                    <div key={index}
+                                        className={`code-preview-file ${file === selectedFile ? 'selected-file' : ''}`}
+                                        onClick={() => requestAction({"type": "file", "action": file})}>
+                                        {file}
+                                    </div>
+                                ))}
+                            </div>
+                            <div className='code-files-download' onClick={handleDownloadClick}>
+                                <i className="fi fi-rr-download"></i>
+                            </div>
                         </div>
                         <div className='code-preview-code-lines' ref={editorRef}>
                             {mode === 'edit' ? (

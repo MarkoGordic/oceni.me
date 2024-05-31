@@ -14,6 +14,7 @@
     display: inline-flex;
     overflow: auto;
     margin-bottom: 10px;
+    justify-content: space-between;
 }
 
 .code-preview-file {
@@ -28,6 +29,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.code-preview-files-list {
+    display: inline-flex;
 }
 
 .code-preview-file:hover {
@@ -297,4 +302,24 @@
 
 .confirmation-dialog button:active {
     background-color: #003f7f;
+}
+
+.code-files-download {
+    height: 30px;
+    width: 30px;
+    border-radius: 100%;
+    background-color: #007bff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.code-files-download:hover {
+    background-color: #0056b3;
+}
+
+.code-files-download i {
+    margin: 0;
 }
