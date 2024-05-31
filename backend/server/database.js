@@ -1034,12 +1034,16 @@ class Database {
     }
 
     async getStudentsByIndexes(indexes) {
+        if (indexes.length === 0) {
+            return [];
+        }
+        
         const placeholders = indexes.map(() => '?').join(',');
         const query = `
             SELECT * FROM students
             WHERE index_number IN (${placeholders})
         `;
-
+    
         try {
             const [results] = await this.pool.query(query, indexes);
             return results;
@@ -1048,7 +1052,7 @@ class Database {
             throw error;
         }
     }
-
+    
     async getStudentIdsByIndexes(indexes) {
         const query = `
             SELECT id, index_number FROM students

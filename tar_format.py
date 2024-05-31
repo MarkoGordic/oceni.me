@@ -12,16 +12,17 @@ def rename_files(root_path):
         if 'laksi_SOV' in dirs:
             new_z1_path = os.path.join(root, 'z1')
             os.rename(os.path.join(root, 'laksi_SOV'), new_z1_path)
-            rename_S_file(new_z1_path, 'z1')
+            rename_zad_S_file(new_z1_path, 'z1')
             
         if 'SOV' in dirs:
             new_z2_path = os.path.join(root, 'z2')
             os.rename(os.path.join(root, 'SOV'), new_z2_path)
-            rename_S_file(new_z2_path, 'z2')
+            rename_zad_S_file(new_z2_path, 'z2')
 
-def rename_S_file(folder_path, new_name):
+def rename_zad_S_file(folder_path, new_name):
+    zad_S_file = 'zad.S'
     for f in os.listdir(folder_path):
-        if f.endswith('.S'):
+        if f == zad_S_file:
             new_file_path = os.path.join(folder_path, f'{new_name}.S')
             os.rename(os.path.join(folder_path, f), new_file_path)
 

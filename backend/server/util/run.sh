@@ -61,7 +61,9 @@ if [ $filename != "" ] && [ -f $filename ]; then
         fi
     fi
 
-    gcc -g -m32 -o zad $GLAVNI $filename 1>$OUT1 2>&1
+    zfiles=$(find . -type f -name '*.S' ! -name "$filename")
+
+    gcc -g -m32 -o zad $GLAVNI $filename $zfiles 1>$OUT1 2>&1
 
     compile_output=$(echo "$compile_output" | base64 -w 0)
 
