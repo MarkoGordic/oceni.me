@@ -81,7 +81,7 @@ const dockerQueue = async.queue(async (task, done) => {
         const resultsData = await fsp.readFile(resultsFilePath, 'utf8');
         const results = JSON.parse(resultsData);
 
-        if (results.output_status === 'success') {
+        if (results.output_status === 'success' && results.program_exit_status === 'success') {
           if (task.testType === 'variation') {
             await db.addNewVariationAutoTestResult(task.variationId, task.points, task.testNo);
           } else {
